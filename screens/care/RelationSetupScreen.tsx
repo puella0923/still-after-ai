@@ -1,0 +1,155 @@
+// @ts-nocheck — 미사용 레거시 화면 (PersonaCreateScreen으로 통합됨)
+import React, { useState } from 'react'
+import {
+  View, Text, StyleSheet, TouchableOpacity, TextInput,
+  ScrollView, KeyboardAvoidingView, Platform,
+} from 'react-native'
+import { LinearGradient } from 'expo-linear-gradient'
+import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { RouteProp } from '@react-navigation/native'
+import { RootStackParamList } from '../../navigation/RootNavigator'
+import { buildDefaultPersona } from '../../types/persona'
+import { savePersona } from '../../services/personaStorage'
+
+type Props = {
+  navigation: NativeStackNavigationProp<RootStackParamList, 'RelationSetup'>
+  route: RouteProp<RootStackParamList, 'RelationSetup'>
+}
+
+const PERSON_RELATIONS = ['부모님', '배우자', '자녀', '친구', '연인', '기타']
+const PET_TYPES = ['강아지', '고양이', '기타']
+
+const STAR_DOTS = Array.from({ length: 25 }, (_, i) => ({
+  top: `${(i * 37 + 13) % 100}%`,
+  left: `${(i * 53 + 7) % 100}%`,
+  size: (i % 3) + 1,
+  opacity: 0.15 + (i % 5) * 0.08,
+}))
+
+export default function RelationSetupScreen({ navigation, route }: Props) {
+  const { careType } = route.params
+  const isPerson = careType === 'person'
+  const [selectedRelation, setSelectedRelation] = useState<string | null>(null)
+  const [name, setName] = useState('')
+  const canProceed = selectedRelation !== null && name.trim().length > 0
+
+  const handleNext = async () => {
+    if (!canProceed) return
+    const trimmedName = name.trim()
+    const relation = selectedRelation as string
+    const persona = buildDefaultPersona(trimmedName, relation, careType)
+    await savePersona(persona).catch(() => {})
+    navigation.navigate('ServiceConsent', { careType, relation, name: trimmedName })
+  }
+
+  const chips = isPerson ? PERSON_RELATIONS : PET_TYPES
+
+  return (
+    <View style={styles.root}>
+      <LinearGradient colors={['#1a0118', '#200a2e', '#0f0520']} style={StyleSheet.absoluteFillObject} />
+      <View style={[styles.orb, styles.orb1]} />
+      <View style={[styles.orb, styles.orb2]} />
+      {STAR_DOTS.map((s, i) => (
+        <View key={i} style={{ position: 'absolute', top: s.top as any, left: s.left as any, width: s.size, height: s.size, borderRadius: s.size / 2, backgroundColor: '#fff', opacity: s.opacity }} />
+      ))}
+
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Text style={styles.backText}>← 뒤로</Text>
+          </TouchableOpacity>
+
+          <View style={styles.header}>
+            <Text style={styles.title}>{isPerson ? '어떤 관계인가요?' : '어떤 반려동물인가요?'}</Text>
+            <Text style={styles.subtitle}>
+              {isPerson ? '그리운 분과 어떤 사이였나요?\n천천히 기억해보세요.' : '함께했던 친구에 대해 알려주세요.'}
+            </Text>
+          </View>
+
+          {/* Chips */}
+          <View style={styles.chipGrid}>
+            {chips.map((item) => (
+              <TouchableOpacity key={item} onPress={() => setSelectedRelation(item)} activeOpacity={0.8}
+                style={[styles.chip, selectedRelation === item && styles.chipSelected]}>
+                {selectedRelation === item ? (
+                  <LinearGradient colors={['#a855f7', '#db2777']} style={styles.chipGrad}>
+                    <Text style={styles.chipTextSelected}>{item}</Text>
+                  </LinearGradient>
+                ) : (
+                  <Text style={styles.chipText}>{item}</Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Name input */}
+          <View style={styles.inputSection}>
+            <Text style={styles.inputLabel}>{isPerson ? '어떻게 불렀나요?' : '이름이 무엇인가요?'}</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder={isPerson ? '예) 엄마, 김민준' : '예) 초코, 뭉치'}
+              placeholderTextColor="rgba(255,255,255,0.3)"
+              value={name}
+              onChangeText={setName}
+              maxLength={20}
+              returnKeyType="done"
+            />
+          </View>
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <TouchableOpacity onPress={handleNext} disabled={!canProceed} activeOpacity={0.85}
+            style={[styles.nextButton, !canProceed && styles.nextButtonDisabled]}>
+            {canProceed ? (
+              <LinearGradient colors={['#a855f7', '#db2777']} style={styles.nextGrad}>
+                <Text style={styles.nextButtonText}>다음</Text>
+              </LinearGradient>
+            ) : (
+              <Text style={[styles.nextButtonText, { color: 'rgba(255,255,255,0.3)' }]}>다음</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, overflow: 'hidden' },
+  orb: { position: 'absolute', borderRadius: 999 },
+  orb1: { width: 280, height: 280, top: '5%', right: '-15%', backgroundColor: 'rgba(168, 85, 247, 0.12)' },
+  orb2: { width: 220, height: 220, bottom: '20%', left: '-10%', backgroundColor: 'rgba(219, 39, 119, 0.08)' },
+  scrollContent: { paddingHorizontal: 28, paddingTop: 60, paddingBottom: 20, gap: 32 },
+  backButton: { alignSelf: 'flex-start' },
+  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
+  header: { gap: 10 },
+  title: { fontSize: 24, fontWeight: '300', color: '#fff', letterSpacing: 0.3 },
+  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 22 },
+  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  chip: {
+    borderRadius: 50, overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: 20, paddingVertical: 12,
+  },
+  chipSelected: { padding: 0, borderColor: 'transparent' },
+  chipGrad: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 50 },
+  chipText: { fontSize: 15, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
+  chipTextSelected: { fontSize: 15, color: '#fff', fontWeight: '500' },
+  inputSection: { gap: 10 },
+  inputLabel: { fontSize: 15, color: '#fff', fontWeight: '500' },
+  textInput: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 14, paddingHorizontal: 18, paddingVertical: 16,
+    fontSize: 16, color: '#fff',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+  },
+  footer: { paddingHorizontal: 28, paddingBottom: 32, paddingTop: 12 },
+  nextButton: {
+    borderRadius: 14, overflow: 'hidden', alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)', paddingVertical: 16,
+  },
+  nextButtonDisabled: {},
+  nextGrad: { width: '100%', paddingVertical: 16, alignItems: 'center', borderRadius: 14 },
+  nextButtonText: { color: '#fff', fontSize: 16, fontWeight: '500', letterSpacing: 0.5 },
+})
