@@ -7,12 +7,14 @@ import {
   SafeAreaView,
   Animated,
   Dimensions,
+  Alert,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useAuth } from '../../context/AuthContext'
 import { C, RADIUS } from '../theme'
+import { signInWithGoogle } from '../../services/authService'
 
 const { width, height } = Dimensions.get('window')
 
@@ -33,6 +35,13 @@ export default function LoginScreen({ navigation }: Props) {
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(30)).current
   const iconScale = useRef(new Animated.Value(0)).current
+
+  const handleGoogleSignIn = async (): Promise<void> => {
+    const result = await signInWithGoogle()
+    if (!result.success) {
+      Alert.alert('구글 로그인', result.error ?? '구글 로그인에 실패했습니다.')
+    }
+  }
 
   useEffect(() => {
     if (session) {
@@ -122,6 +131,18 @@ export default function LoginScreen({ navigation }: Props) {
                 <Text style={styles.title}>Still After</Text>
                 <Text style={styles.tagline}>당신 곁을 여전히</Text>
               </View>
+
+              {/* Google login button */}
+              <TouchableOpacity
+                style={styles.googleButton}
+                onPress={handleGoogleSignIn}
+                activeOpacity={0.85}
+              >
+                <View style={styles.googleButtonInner}>
+                  <Text style={styles.googleButtonIcon}>G</Text>
+                  <Text style={styles.googleButtonText}>구글로 시작하기</Text>
+                </View>
+              </TouchableOpacity>
 
               {/* Email login button */}
               <TouchableOpacity
@@ -261,6 +282,41 @@ const styles = StyleSheet.create({
   tagline: {
     fontSize: 14,
     color: 'rgba(196, 181, 253, 0.8)',
+  },
+
+  // Google button
+  googleButton: {
+    borderRadius: RADIUS.MD,
+    overflow: 'hidden',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(167, 139, 250, 0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  googleButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    gap: 8,
+  },
+  googleButtonIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#FFFFFF',
+    color: '#111827',
+    textAlign: 'center',
+    lineHeight: 22,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  googleButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
 
   // Email button

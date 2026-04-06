@@ -5,7 +5,15 @@
 
 import * as Linking from 'expo-linking'
 import * as WebBrowser from 'expo-web-browser'
+import { Platform } from 'react-native'
 import { supabase } from './supabase'
+
+function getOAuthRedirectUrl(): string {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return `${window.location.origin}/auth/callback`
+  }
+  return Linking.createURL('auth/callback')
+}
 
 // ─── 이메일 회원가입 ───────────────────────────
 
@@ -136,18 +144,26 @@ export async function sendPasswordReset(
 
 export async function signInWithKakao(): Promise<{ success: boolean; error?: string }> {
   try {
-    const redirectUrl = Linking.createURL('/auth/callback')
+    const redirectUrl = getOAuthRedirectUrl()
+    const isWeb = Platform.OS === 'web'
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'kakao',
       options: {
         redirectTo: redirectUrl,
-        skipBrowserRedirect: true,
+        ...(isWeb ? {} : { skipBrowserRedirect: true }),
       },
     })
 
     if (error) return { success: false, error: error.message }
     if (!data.url) return { success: false, error: '카카오 로그인 URL을 가져올 수 없습니다.' }
+
+    if (isWeb) {
+      if (typeof window !== 'undefined' && window.location.href !== data.url) {
+        window.location.assign(data.url)
+      }
+      return { success: true }
+    }
 
     const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl)
 
@@ -170,18 +186,26 @@ export async function signInWithKakao(): Promise<{ success: boolean; error?: str
 
 export async function signInWithGoogle(): Promise<{ success: boolean; error?: string }> {
   try {
-    const redirectUrl = Linking.createURL('/auth/callback')
+    const redirectUrl = getOAuthRedirectUrl()
+    const isWeb = Platform.OS === 'web'
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: redirectUrl,
-        skipBrowserRedirect: true,
+        ...(isWeb ? {} : { skipBrowserRedirect: true }),
       },
     })
 
     if (error) return { success: false, error: error.message }
     if (!data.url) return { success: false, error: '구글 로그인 URL을 가져올 수 없습니다.' }
+
+    if (isWeb) {
+      if (typeof window !== 'undefined' && window.location.href !== data.url) {
+        window.location.assign(data.url)
+      }
+      return { success: true }
+    }
 
     const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl)
 
