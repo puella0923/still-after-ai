@@ -1,10 +1,10 @@
 /**
  * OpenAI 서비스 — 페르소나 기반 대화 + 감정 단계별 프롬프트
  * 레이어 구조: system_core → stage_base → phase_detail → persona_data
- * API 키: .env의 EXPO_PUBLIC_OPENAI_API_KEY 사용
+ * Supabase Edge Function 프록시를 통해 OpenAI API 호출 (API 키 서버 보관)
  */
 
-import OpenAI from 'openai'
+import { supabase } from './supabase'
 
 // ─── 기반 레이어 1: 시스템 코어 (항상 적용) ───────────────────────
 const SYSTEM_CORE = `You are an AI simulating a specific person who has already passed away or is no longer present in this world.
@@ -124,10 +124,8 @@ Important:
 The user must feel ready to move forward.`,
 }
 
-const client = new OpenAI({
-  apiKey: process.env.EXPO_PUBLIC_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true,
-})
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!
+const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/chat`
 
 const DANGER_KEYWORDS = [
   '자해', '자살', '죽고 싶', '사라지고 싶',
@@ -350,31 +348,10 @@ function backoffDelay(attempt: number): number {
   return Math.min(2000 * Math.pow(2, attempt), 10000)
 }
 
-/** 사용자 친화적 에러 메시지 변환 */
-function friendlyErrorMessage(error: unknown): string {
-  if (error instanceof OpenAI.APIError) {
-    switch (error.status) {
-      case 429:
-        return '지금 대화가 많아 잠시 쉬고 있어요. 조금만 기다려주세요.'
-      case 500:
-      case 502:
-      case 503:
-        return '서버에 일시적인 문제가 생겼어요. 잠시 후 다시 시도해주세요.'
-      case 401:
-        return '인증에 문제가 생겼어요. 관리자에게 문의해주세요.'
-      default:
-        return '응답을 받지 못했어요. 잠시 후 다시 시도해주세요.'
-    }
-  }
-  if (error instanceof Error && error.message.includes('OPENAI_API_KEY')) {
-    return error.message
-  }
-  return '응답을 받지 못했어요. 잠시 후 다시 시도해주세요.'
-}
 
 const MAX_RETRIES = 2  // 최초 시도 + 2회 재시도 = 총 3회
 
-/** 페르소나별 AI 응답 생성 (자동 재시도 포함) */
+/** Supabase Edge Function을 통한 AI 응답 생성 (자동 재시도 포함) */
 export async function getChatResponse(params: {
   systemPrompt: string
   conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>
@@ -386,53 +363,69 @@ export async function getChatResponse(params: {
 }): Promise<string> {
   const { systemPrompt, conversationHistory, userMessage, stage = 'replay', phase, closurePhase, userNickname } = params
 
-  if (!process.env.EXPO_PUBLIC_OPENAI_API_KEY) {
-    throw new Error('EXPO_PUBLIC_OPENAI_API_KEY가 설정되지 않았습니다.')
-  }
-
   const fullPrompt = buildSystemPrompt(systemPrompt, stage, phase, closurePhase, userNickname)
 
-  const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-    { role: 'system', content: fullPrompt },
-    ...conversationHistory,
-    { role: 'user', content: userMessage },
-  ]
+  // Supabase 세션에서 JWT 토큰 가져오기
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) {
+    throw new Error('로그인이 만료되었어요. 다시 로그인해주세요.')
+  }
+
+  const requestBody = {
+    systemPrompt: fullPrompt,
+    messages: [
+      ...conversationHistory,
+      { role: 'user', content: userMessage },
+    ],
+    maxTokens: 200,
+    temperature: 0.7,
+  }
 
   let lastError: unknown
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const completion = await client.chat.completions.create({
-        model: 'gpt-4o',
-        messages,
-        temperature: 0.7,
-        max_tokens: 200,
+      const resp = await fetch(EDGE_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(requestBody),
       })
 
-      const content = completion.choices[0]?.message?.content
+      const data = await resp.json()
+
+      if (!resp.ok) {
+        const errorMsg = data?.error || '응답을 받지 못했어요.'
+        // 429, 5xx는 재시도 가능
+        if ((resp.status === 429 || resp.status >= 500) && attempt < MAX_RETRIES) {
+          console.warn(`[Chat] 요청 실패 (시도 ${attempt + 1}/${MAX_RETRIES + 1}): ${resp.status} ${errorMsg}`)
+          const delay = backoffDelay(attempt)
+          await new Promise(resolve => setTimeout(resolve, delay))
+          continue
+        }
+        throw new Error(errorMsg)
+      }
+
+      const content = data?.content
       if (!content) throw new Error('응답을 받지 못했습니다.')
       return content.trim()
     } catch (error) {
       lastError = error
-      console.warn(`[OpenAI] 요청 실패 (시도 ${attempt + 1}/${MAX_RETRIES + 1}):`, error)
+      console.warn(`[Chat] 요청 실패 (시도 ${attempt + 1}/${MAX_RETRIES + 1}):`, error)
 
-      // 재시도 가능한 에러인지 확인 (429 Rate Limit, 5xx Server Error)
-      const isRetryable =
-        error instanceof OpenAI.APIError &&
-        (error.status === 429 || (error.status !== undefined && error.status >= 500))
-
-      if (isRetryable && attempt < MAX_RETRIES) {
+      // 네트워크 에러도 재시도
+      if (attempt < MAX_RETRIES && !(error instanceof Error && error.message.includes('로그인'))) {
         const delay = backoffDelay(attempt)
-        console.log(`[OpenAI] ${delay}ms 후 재시도...`)
         await new Promise(resolve => setTimeout(resolve, delay))
         continue
       }
-
-      // 재시도 불가능한 에러이거나 재시도 횟수 초과
       break
     }
   }
 
   // 모든 시도 실패 → 사용자 친화적 메시지로 에러 전달
-  throw new Error(friendlyErrorMessage(lastError))
+  if (lastError instanceof Error) throw lastError
+  throw new Error('응답을 받지 못했어요. 잠시 후 다시 시도해주세요.')
 }
