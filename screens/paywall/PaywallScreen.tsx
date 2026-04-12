@@ -116,8 +116,8 @@ export default function PaywallScreen({ navigation, route }: Props) {
 
         <TouchableOpacity onPress={handlePayment} activeOpacity={0.85}>
           <LinearGradient colors={['#a855f7', '#db2777']} style={styles.payButton}>
-            <Text style={styles.payButtonText}>구독하고 무제한 대화하기</Text>
-            <Text style={styles.payButtonSub}>월 9,900원 · 언제든 해지 가능</Text>
+            <Text style={styles.payButtonText}>결제하고 무제한 대화하기</Text>
+            <Text style={styles.payButtonSub}>페르소나당 19,900원 (1회 결제)</Text>
           </LinearGradient>
         </TouchableOpacity>
 

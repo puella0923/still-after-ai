@@ -10,6 +10,7 @@ import {
   Modal,
   Image,
   Dimensions,
+  Platform,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useFocusEffect } from '@react-navigation/native'
@@ -166,14 +167,7 @@ export default function PersonaListScreen({ navigation }: Props) {
             </TouchableOpacity>
           </View>
 
-          {/* Closure button */}
-          {isStable && !isArchived && (
-            <TouchableOpacity onPress={() => handleClosureRequest(item)} activeOpacity={0.85} style={styles.closureBtnWrap}>
-              <LinearGradient colors={['rgba(99, 102, 241, 0.3)', 'rgba(168, 85, 247, 0.3)']} style={styles.closureBtn}>
-                <Text style={styles.closureBtnText}>🌸 이별 준비하기</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          )}
+          {/* 이별 전환은 안정 단계 20회 대화 후 자동 전환 */}
         </LinearGradient>
       </TouchableOpacity>
     )
@@ -211,6 +205,7 @@ export default function PersonaListScreen({ navigation }: Props) {
           contentContainerStyle={styles.list}
           numColumns={SCREEN_WIDTH > 600 ? 2 : 1}
           key={SCREEN_WIDTH > 600 ? 'two' : 'one'}
+          columnWrapperStyle={SCREEN_WIDTH > 600 ? styles.columnWrapper : undefined}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyCard}>
@@ -334,7 +329,7 @@ const styles = StyleSheet.create({
   // Header
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingVertical: 14,
+    paddingHorizontal: 20, paddingTop: Platform.OS === 'web' ? 20 : 14, paddingBottom: 14,
     borderBottomWidth: 1, borderBottomColor: 'rgba(167, 139, 250, 0.2)',
     ...(({ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }) as any),
   },
@@ -350,10 +345,11 @@ const styles = StyleSheet.create({
   aiBannerText: { fontSize: 11, color: '#FDE68A', textAlign: 'center' },
 
   // List
-  list: { padding: 16, gap: 12 },
+  list: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 24, gap: 16 },
+  columnWrapper: { gap: 16, marginBottom: 16 },
 
   // Card
-  cardWrap: { flex: 1, marginBottom: 4 },
+  cardWrap: { flex: 1, marginBottom: 16 },
   card: {
     borderRadius: 16, padding: 20, borderWidth: 1,
     ...(({ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }) as any),

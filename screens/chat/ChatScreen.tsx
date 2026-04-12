@@ -29,12 +29,14 @@ import { C, RADIUS } from '../theme'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const FREE_MESSAGE_LIMIT = 10
-const STAGE_TRANSITION_THRESHOLD = 20
+const STAGE_TRANSITION_THRESHOLD = 30
 
-// 테스트/개발 계정은 Paywall 우회 (무제한 대화)
-const TEST_EMAILS = ['dev@stillafter.com', 'test@stillafter.com', 'stillafter.test@gmail.com']
+// 테스트/개발 계정은 Paywall 우회 — 프로덕션 빌드에서는 환경변수로 비활성화
+const TEST_EMAILS_RAW = process.env.EXPO_PUBLIC_TEST_EMAILS || ''
+const TEST_EMAILS = TEST_EMAILS_RAW ? TEST_EMAILS_RAW.split(',').map(e => e.trim().toLowerCase()) : []
 const isTestAccount = (email?: string | null) => !!email && TEST_EMAILS.includes(email.toLowerCase())
 const CLOSURE_MESSAGE_LIMIT = 20
+const STABLE_TRANSITION_THRESHOLD = 20
 
 function getStagePhase(count: number): 1 | 2 | 3 | 4 {
   if (count <= 5) return 1
@@ -264,10 +266,20 @@ export default function ChatScreen({ navigation, route }: Props) {
     } catch { showToast('잠시 후 다시 시도해주세요.') }
   }, [persona, showToast])
 
+  // PM-003: Paywall 도달 시 입력 차단
+  const isPaywallBlocked = !isPaidUser && freeUsageCount !== null && freeUsageCount >= FREE_MESSAGE_LIMIT
+
   const sendMessage = useCallback(async () => {
     const trimmed = inputText.trim()
     if (!trimmed || isTyping || !persona) return
 
+    // PM-003: 무료 한도 초과 시 Paywall 표시 및 차단
+    if (isPaywallBlocked) {
+      setShowPaywall(true)
+      return
+    }
+
+    // PM-008: 위험 감지 시 메시지를 대화에 추가하지 않고 기록만 남김
     if (detectDanger(trimmed)) { showDangerAlert(trimmed); setInputText(''); return }
 
     const userMsg: Message = { id: makeId(), role: 'user', content: trimmed }
@@ -319,16 +331,25 @@ export default function ChatScreen({ navigation, route }: Props) {
         } catch { /* ignore */ }
       }
 
-      // Stable milestones
+      // Stable milestones + auto transition to closure at 20
       if (persona.emotional_stage === 'stable') {
-        type SM = { content: string; action?: 'goto_closure' }
-        const stableMilestones: Record<number, SM> = { 5: { content: '이제, 당신의 이야기를 해도 괜찮아요' }, 10: { content: '지금 느끼는 감정을 말해도 괜찮습니다' }, 15: { content: '당신의 마음을 조금씩 이해하고 있어요' }, 18: { content: '이제, 천천히 준비하고 있어요\n\n전하고 싶었던 말이 정리됐다면\n이별 단계로 넘어가도 괜찮아요.', action: 'goto_closure' } }
-        const isRepeatCta = newStageCount >= 20 && (newStageCount - 20) % 3 === 0
-        if (isRepeatCta) {
-          setMessages(prev => [...prev, { id: makeId(), role: 'system', content: '이별을 준비할 시간이 됐어요\n\n담아두셨던 말을, 이제 전해도 괜찮아요.', action: 'goto_closure' }])
-        } else if (stableMilestones[newStageCount]) {
-          const m = stableMilestones[newStageCount]
-          setMessages(prev => [...prev, { id: makeId(), role: 'system', content: m.content, action: m.action }])
+        if (newStageCount < STABLE_TRANSITION_THRESHOLD) {
+          const stableMilestones: Record<number, string> = { 5: '이제, 당신의 이야기를 해도 괜찮아요', 10: '지금 느끼는 감정을 말해도 괜찮습니다', 15: '당신의 마음을 조금씩 이해하고 있어요', 18: '이제, 천천히 준비하고 있어요' }
+          if (stableMilestones[newStageCount]) {
+            setMessages(prev => [...prev, { id: makeId(), role: 'system', content: stableMilestones[newStageCount] }])
+          }
+        }
+        // Auto stage transition: stable → closure
+        if (newStageCount >= STABLE_TRANSITION_THRESHOLD) {
+          try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+              await supabase.from('personas').update({ emotional_stage: 'closure' }).eq('id', persona.id).eq('user_id', user.id)
+              setPersona(prev => prev ? { ...prev, emotional_stage: 'closure' } : prev)
+              setStageMessageCount(0)
+              setMessages(prev => [...prev, { id: makeId(), role: 'system', content: '🌸 이별 단계로 접어들었어요\n\n이제, 마지막 이야기를 나눌 시간이에요.\n서두르지 않아도 돼요. 하고 싶은 말만 꺼내도 괜찮아요.' }])
+            }
+          } catch { /* ignore */ }
         }
       }
 
@@ -413,13 +434,13 @@ export default function ChatScreen({ navigation, route }: Props) {
               <Text style={styles.modalIcon}>⚠️</Text>
               <Text style={styles.modalTitle}>많이 힘드시군요</Text>
               <Text style={styles.modalDesc}>지금 많이 힘드시죠. 전문 상담사와 이야기 나눠보세요.</Text>
-              <TouchableOpacity onPress={() => Linking.openURL('tel:1577-0199')} activeOpacity={0.85}>
-                <LinearGradient colors={['#DC2626', '#DB2777']} style={styles.modalBtnDanger}>
+              <TouchableOpacity activeOpacity={0.85} onPress={() => Linking.openURL('tel:1577-0199')} style={styles.dangerCallBtn}>
+                <LinearGradient colors={['#DC2626', '#DB2777']} style={styles.dangerCallBtnGrad}>
                   <Text style={styles.modalBtnText}>정신건강위기상담전화 연결 (1577-0199)</Text>
                 </LinearGradient>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setShowDangerModal(false)}>
-                <Text style={styles.modalBtnSecondaryText}>계속하기</Text>
+                <Text style={styles.modalBtnSecondaryText}>괜찮아요, 계속할게요</Text>
               </TouchableOpacity>
             </LinearGradient>
           </View>
@@ -433,9 +454,9 @@ export default function ChatScreen({ navigation, route }: Props) {
             <LinearGradient colors={['rgba(88, 28, 135, 0.8)', 'rgba(30, 58, 138, 0.8)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.modalGradient}>
               <Text style={styles.modalIcon}>✨</Text>
               <Text style={styles.modalTitle}>{personaName}와 더 대화하고 싶으신가요?</Text>
-              <Text style={styles.modalDesc}>무료 체험은 페르소나당 10회입니다.{'\n'}결제 후 무제한 대화가 가능합니다.</Text>
-              <TouchableOpacity activeOpacity={0.85} onPress={() => { setShowPaywall(false); navigation.replace('Paywall', { personaId: persona?.id ?? '', stage: currentStage }) }}>
-                <LinearGradient colors={['#7C3AED', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalBtnPrimary}>
+              <Text style={styles.modalDesc}>무료 체험은 페르소나당 10회입니다.{'\n'}결제 후 무제한 대화가 가능합니다.{'\n\n'}💎 페르소나당 19,900원 (1회 결제)</Text>
+              <TouchableOpacity activeOpacity={0.85} onPress={() => { setShowPaywall(false); navigation.replace('Paywall', { personaId: persona?.id ?? '', stage: currentStage }) }} style={styles.paywallPayBtn}>
+                <LinearGradient colors={['#7C3AED', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.paywallPayBtnGrad}>
                   <Text style={styles.modalBtnText}>결제하기</Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -600,6 +621,11 @@ export default function ChatScreen({ navigation, route }: Props) {
 
           {/* Input Area */}
           {!isReadOnly && (
+            isPaywallBlocked ? (
+              <TouchableOpacity style={styles.paywallBar} activeOpacity={0.85} onPress={() => setShowPaywall(true)}>
+                <Text style={styles.paywallBarText}>✨ 무료 체험이 끝났어요. 탭하여 계속 대화하기</Text>
+              </TouchableOpacity>
+            ) : (
             <View style={styles.inputArea}>
               <TextInput
                 style={styles.textInput}
@@ -630,6 +656,7 @@ export default function ChatScreen({ navigation, route }: Props) {
                 </LinearGradient>
               </TouchableOpacity>
             </View>
+            )
           )}
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -668,12 +695,26 @@ const styles = StyleSheet.create({
   modalIcon: { fontSize: 40, marginBottom: 12 },
   modalTitle: { fontSize: 20, fontWeight: '700', color: '#F3E8FF', textAlign: 'center', marginBottom: 10 },
   modalDesc: { fontSize: 14, color: '#E9D5FF', textAlign: 'center', lineHeight: 22, marginBottom: 24 },
-  modalBtnDanger: { width: '100%' as any, paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginBottom: 10 },
-  modalBtnPrimary: { width: '100%' as any, paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginBottom: 10,
+  modalBtnWrap: { width: '100%' as any, marginBottom: 10 },
+  modalBtnDanger: { width: '100%' as any, paddingVertical: 14, borderRadius: 12, alignItems: 'center' as const },
+  modalBtnPrimary: { width: '100%' as any, paddingVertical: 14, borderRadius: 12, alignItems: 'center' as const,
     shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
   modalBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '500' },
+  dangerCallBtn: {
+    alignSelf: 'stretch' as const, borderRadius: 12, overflow: 'hidden' as const, marginBottom: 10,
+  },
+  dangerCallBtnGrad: {
+    paddingVertical: 14, borderRadius: 12, alignItems: 'center' as const,
+  },
+  paywallPayBtn: {
+    alignSelf: 'stretch' as const, borderRadius: 12, overflow: 'hidden' as const, marginBottom: 10,
+    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6,
+  },
+  paywallPayBtnGrad: {
+    paddingVertical: 14, borderRadius: 12, alignItems: 'center' as const,
+  },
   modalBtnSecondary: {
-    width: '100%' as any, paddingVertical: 14, borderRadius: 12, alignItems: 'center',
+    alignSelf: 'stretch' as const, paddingVertical: 14, borderRadius: 12, alignItems: 'center' as const,
     backgroundColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)',
   },
   modalBtnSecondaryText: { color: '#FFFFFF', fontSize: 15, fontWeight: '500' },
@@ -717,6 +758,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(167, 139, 250, 0.15)',
   },
   readOnlyBannerText: { fontSize: 13, color: 'rgba(167, 139, 250, 0.7)', textAlign: 'center' },
+  paywallBar: {
+    backgroundColor: 'rgba(124, 58, 237, 0.15)', paddingHorizontal: 20, paddingVertical: 16,
+    borderTopWidth: 1, borderTopColor: 'rgba(167, 139, 250, 0.3)',
+    alignItems: 'center',
+  },
+  paywallBarText: { fontSize: 14, color: '#C4B5FD', fontWeight: '600', textAlign: 'center' },
 
   // Messages
   messageList: { paddingTop: 16, paddingBottom: 8 },

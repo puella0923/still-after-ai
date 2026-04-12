@@ -344,7 +344,37 @@ ${stageBase}${phaseDetail}
 - 위 페르소나 데이터의 말투·표현 방식을 항상 유지하세요. AI처럼 매끄럽거나 정중하게 말하지 마세요.`
 }
 
-/** 페르소나별 AI 응답 생성 */
+/** 지수 백오프 대기 (밀리초) */
+function backoffDelay(attempt: number): number {
+  // 1차: 2초, 2차: 4초, 3차: 8초
+  return Math.min(2000 * Math.pow(2, attempt), 10000)
+}
+
+/** 사용자 친화적 에러 메시지 변환 */
+function friendlyErrorMessage(error: unknown): string {
+  if (error instanceof OpenAI.APIError) {
+    switch (error.status) {
+      case 429:
+        return '지금 대화가 많아 잠시 쉬고 있어요. 조금만 기다려주세요.'
+      case 500:
+      case 502:
+      case 503:
+        return '서버에 일시적인 문제가 생겼어요. 잠시 후 다시 시도해주세요.'
+      case 401:
+        return '인증에 문제가 생겼어요. 관리자에게 문의해주세요.'
+      default:
+        return '응답을 받지 못했어요. 잠시 후 다시 시도해주세요.'
+    }
+  }
+  if (error instanceof Error && error.message.includes('OPENAI_API_KEY')) {
+    return error.message
+  }
+  return '응답을 받지 못했어요. 잠시 후 다시 시도해주세요.'
+}
+
+const MAX_RETRIES = 2  // 최초 시도 + 2회 재시도 = 총 3회
+
+/** 페르소나별 AI 응답 생성 (자동 재시도 포함) */
 export async function getChatResponse(params: {
   systemPrompt: string
   conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>
@@ -368,14 +398,41 @@ export async function getChatResponse(params: {
     { role: 'user', content: userMessage },
   ]
 
-  const completion = await client.chat.completions.create({
-    model: 'gpt-4o',
-    messages,
-    temperature: 0.7,   // 0.85 → 0.7: 낮출수록 말투 일관성 ↑, 창의성 ↓
-    max_tokens: 200,
-  })
+  let lastError: unknown
 
-  const content = completion.choices[0]?.message?.content
-  if (!content) throw new Error('응답을 받지 못했습니다.')
-  return content.trim()
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const completion = await client.chat.completions.create({
+        model: 'gpt-4o',
+        messages,
+        temperature: 0.7,
+        max_tokens: 200,
+      })
+
+      const content = completion.choices[0]?.message?.content
+      if (!content) throw new Error('응답을 받지 못했습니다.')
+      return content.trim()
+    } catch (error) {
+      lastError = error
+      console.warn(`[OpenAI] 요청 실패 (시도 ${attempt + 1}/${MAX_RETRIES + 1}):`, error)
+
+      // 재시도 가능한 에러인지 확인 (429 Rate Limit, 5xx Server Error)
+      const isRetryable =
+        error instanceof OpenAI.APIError &&
+        (error.status === 429 || (error.status !== undefined && error.status >= 500))
+
+      if (isRetryable && attempt < MAX_RETRIES) {
+        const delay = backoffDelay(attempt)
+        console.log(`[OpenAI] ${delay}ms 후 재시도...`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        continue
+      }
+
+      // 재시도 불가능한 에러이거나 재시도 횟수 초과
+      break
+    }
+  }
+
+  // 모든 시도 실패 → 사용자 친화적 메시지로 에러 전달
+  throw new Error(friendlyErrorMessage(lastError))
 }

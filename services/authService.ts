@@ -28,7 +28,7 @@ export async function signUpWithEmail(
       password,
       options: {
         data: { nickname },
-        emailRedirectTo: Linking.createURL('/auth/callback'),
+        emailRedirectTo: getOAuthRedirectUrl(),
       },
     })
 
@@ -112,7 +112,7 @@ export async function resendConfirmationEmail(
       type: 'signup',
       email,
       options: {
-        emailRedirectTo: Linking.createURL('/auth/callback'),
+        emailRedirectTo: getOAuthRedirectUrl(),
       },
     })
 
@@ -130,7 +130,9 @@ export async function sendPasswordReset(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: Linking.createURL('/auth/reset-password'),
+      redirectTo: Platform.OS === 'web'
+        ? `${window.location.origin}/auth/reset-password`
+        : Linking.createURL('auth/reset-password'),
     })
 
     if (error) return { success: false, error: error.message }

@@ -161,14 +161,16 @@ export async function getPersonaById(id: string): Promise<Persona | null> {
   return data
 }
 
-/** 페르소나 수정 (사진, 애칭 등) */
+/** 페르소나 수정 (이름, 사진, 애칭 등) */
 export async function updatePersona(id: string, data: {
+  name?: string
   photoUrl?: string | null
   userNickname?: string | null
 }): Promise<void> {
   const userId = await getCurrentUserId()
 
   const payload: Record<string, unknown> = {}
+  if ('name' in data && data.name !== undefined) payload.name = data.name
   if ('photoUrl' in data) payload.photo_url = data.photoUrl
   if ('userNickname' in data) payload.user_nickname = data.userNickname
 

@@ -55,8 +55,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async (): Promise<void> => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    // 먼저 로컬 상태를 즉시 초기화 (UI가 바로 비인증 상태로 전환)
+    setUser(null)
+    setSession(null)
+    // 그 다음 Supabase 서버 측 세션 무효화
+    try {
+      await supabase.auth.signOut()
+    } catch (e) {
+      console.warn('[Auth] signOut 서버 요청 실패 (로컬은 이미 초기화됨):', e)
+    }
   }
 
   return (

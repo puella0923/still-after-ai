@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, Pressable, StyleSheet,
   ScrollView, Alert, ActivityIndicator, Platform, SafeAreaView, Image,
@@ -85,6 +85,30 @@ export default function PersonaCreateScreen({ navigation }: Props) {
       setIsParsing(false)
     }
   }
+
+  // 이름이 바뀌면 카카오 파싱 결과를 재계산 (이미 업로드된 파일이 있을 때)
+  // - 사용자가 "한솔"로 업로드 후 "마닷"으로 이름 변경 시, 파싱 결과가 새 이름 기준으로 갱신되어야 함
+  // - 400ms 디바운싱으로 타이핑 중 과도한 재파싱 방지
+  useEffect(() => {
+    if (activeTab !== 'kakao') return
+    if (!kakaoRawText) return
+    const trimmed = name.trim()
+    // 이미 현재 이름으로 파싱되어 있으면 스킵 (무한루프 방지)
+    if (parseResult && parseResult.parsed.partnerName === trimmed) return
+
+    const timer = setTimeout(() => {
+      try {
+        const parsed = parseKakaoChat(kakaoRawText, trimmed || undefined)
+        setParseResult({ parsed, rawText: kakaoRawText, fileName })
+        setErrorMsg('')
+      } catch (e) {
+        console.error('[PersonaCreate] 이름 변경 후 재파싱 오류:', e)
+      }
+    }, 400)
+
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, kakaoRawText, activeTab])
 
   // 웹 파일 선택
   const handleWebFilePick = () => {
@@ -226,7 +250,28 @@ export default function PersonaCreateScreen({ navigation }: Props) {
   }
 
   const handleCreate = async () => {
-    if (!user || !canSubmit()) return
+    if (!user) {
+      Alert.alert('로그인이 필요해요', '다시 로그인 후 기억 만들기를 진행해주세요.', [
+        { text: '확인', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Login' }] }) },
+      ])
+      return
+    }
+    if (!canSubmit()) {
+      setCreateErrorMsg(
+        !name.trim()
+          ? '이름을 입력해주세요.'
+          : !relationship
+          ? '관계를 선택해주세요.'
+          : activeTab === 'kakao' && !parseResult
+          ? '카카오톡 파일을 먼저 업로드해주세요.'
+          : activeTab === 'manual' && manualText.trim().length < 20
+          ? '기억을 20자 이상 입력해주세요.'
+          : !agreedToService
+          ? '서비스 동의가 필요해요.'
+          : '입력 정보를 다시 확인해주세요.'
+      )
+      return
+    }
     setLoading(true)
     setCreateErrorMsg('')
 
@@ -239,6 +284,8 @@ export default function PersonaCreateScreen({ navigation }: Props) {
         // fallback: parseResult 없이 rawText만 있는 경우
         const parsed = parseKakaoChat(kakaoRawText, name.trim() || undefined)
         systemPrompt = generateSystemPrompt(parsed, relationship)
+      } else if (activeTab === 'kakao') {
+        throw new Error('카카오톡 파일 분석 결과가 없어 기억을 만들 수 없어요. 파일을 다시 업로드해주세요.')
       } else {
         // 직접 작성: manualText를 시스템 프롬프트에 반영
         systemPrompt = `당신은 ${name.trim()}입니다. 사용자와 ${relationship} 관계입니다.
@@ -486,7 +533,7 @@ ${manualText.trim()}
                     <View style={styles.parseResultRow}>
                       <Text style={styles.parseResultLabel}>자주 쓰는 표현</Text>
                       <Text style={styles.parseResultValue}>
-                        {parseResult.parsed.commonPhrases.slice(0, 3).join(', ')}
+                        {parseResult.parsed.commonPhrases.slice(0, 8).join(', ')}
                       </Text>
                     </View>
                   )}

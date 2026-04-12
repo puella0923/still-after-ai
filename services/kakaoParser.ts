@@ -31,7 +31,26 @@ export type ParsedKakaoChat = {
   partnerMessageCount: number
   totalMessages: number
   commonPhrases: string[]
+  speechPatterns: SpeechPatterns
   avgMessageLength: number
+}
+
+/** 말투 분석 결과 */
+export type SpeechPatterns = {
+  /** 자주 쓰는 문장 종결 어미 (예: ~해, ~거든, ~잖아) */
+  endingPatterns: Array<{ pattern: string; count: number }>
+  /** 특징적인 전체 문장/표현 (예: "밥 먹었어?", "기다리고 있을게") */
+  characteristicPhrases: string[]
+  /** 자주 쓰는 단어/구문 */
+  frequentWords: Array<{ word: string; count: number }>
+  /** 평균 메시지 길이 */
+  avgLength: number
+  /** 이모지 사용 비율 (0~1) */
+  emojiRatio: number
+  /** 질문 빈도 (0~1) */
+  questionRatio: number
+  /** 반말/존댓말 비율 (informal 0~1) */
+  informalRatio: number
 }
 
 // 날짜 구분선
@@ -40,6 +59,104 @@ const DATE_DIVIDER = /^-{10,}\s*\d{4}년.*-{10,}$/
 const DATE_HEADER = /(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/
 // 메시지 라인: [이름] [오전/오후 H:MM] 내용
 const MESSAGE_LINE = /^\[(.+?)\]\s+\[(오전|오후)\s+(\d{1,2}:\d{2})\]\s+(.+)$/
+// 메시지 라인(신형): YYYY. M. D. 오전/오후 H:MM, 이름 : 내용
+const MESSAGE_LINE_NEW = /^(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.\s*(오전|오후)\s*(\d{1,2}:\d{2}),\s*(.+?)\s*:\s*(.+)$/
+// 메시지 라인(변형): 오전/오후 H:MM, 이름 : 내용
+const MESSAGE_LINE_SHORT = /^(오전|오후)\s*(\d{1,2}:\d{2}),\s*(.+?)\s*:\s*(.+)$/
+
+function normalizeKakaoText(text: string): string {
+  return text
+    .replace(/^\uFEFF/, '')     // BOM 제거
+    .replace(/\u0000/g, '')     // UTF-16이 UTF-8로 잘못 읽힌 경우 NUL 제거
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+}
+
+// ─────────────────────────────────────────────────────────────
+// 파트너 감지 — 이름 매칭이 아닌 빈도 기반
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * 파트너 발신자 감지
+ *
+ * 우선순위:
+ * 1. fallbackName(페르소나 이름)과 정확히 일치하는 발신자
+ * 2. fallbackName과 부분 일치하는 발신자 (포함 관계)
+ * 3. "나" 계열 제외 후 1명만 남으면 그 사람
+ * 4. 2명 이상이면 소수 발신자 (CSV에서 내보내기 한 사람 = 나 = 보통 메시지가 더 많음)
+ */
+const SELF_NAMES = new Set(['나', 'me', 'Me', 'ME', 'you', 'You', 'YOU'])
+
+function detectPartnerSender(senderCounts: Map<string, number>, fallbackName?: string): string {
+  if (senderCounts.size === 0) return 'Unknown'
+
+  const allSenders = [...senderCounts.entries()]
+  const nonSelfSenders = allSenders.filter(([name]) => !SELF_NAMES.has(name))
+
+  // ① fallbackName 정확 일치
+  if (fallbackName) {
+    const exactMatch = nonSelfSenders.find(([name]) => name === fallbackName)
+    if (exactMatch) return exactMatch[0]
+
+    // ② 부분 일치 (fallbackName이 발신자 이름에 포함되거나, 발신자 이름이 fallbackName에 포함)
+    const partialMatch = nonSelfSenders.find(([name]) =>
+      name.includes(fallbackName) || fallbackName.includes(name)
+    )
+    if (partialMatch) return partialMatch[0]
+  }
+
+  // ③ "나" 제외 후 1명만 남으면 → 파트너
+  if (nonSelfSenders.length === 1) return nonSelfSenders[0][0]
+
+  // ④ 2명 대화 (CSV): 소수 발신자 = 파트너
+  //    (카카오톡 내보내기 시, 내보내기 한 사용자가 보통 메시지가 같거나 더 많음)
+  if (nonSelfSenders.length === 2) {
+    const sorted = nonSelfSenders.sort((a, b) => a[1] - b[1]) // 오름차순 (소수 먼저)
+    return sorted[0][0]
+  }
+
+  // ⑤ 그룹 대화: 빈도 가장 높은 사람 (기존 로직)
+  if (nonSelfSenders.length > 0) {
+    return nonSelfSenders.sort((a, b) => b[1] - a[1])[0][0]
+  }
+
+  return allSenders.sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'Unknown'
+}
+
+// ─────────────────────────────────────────────────────────────
+// 카카오톡 시스템 메시지 필터링
+// ─────────────────────────────────────────────────────────────
+
+/** 카카오톡 시스템 메시지 여부 판별 (사진/동영상/파일 전송 등) */
+const SYSTEM_MESSAGE_EXACT = new Set([
+  '사진', '동영상', '이모티콘', '파일',
+  '보이스톡', '페이스톡', '라이브톡',
+  '삭제된 메시지입니다.', '삭제된 메시지입니다',
+  '',
+])
+
+const SYSTEM_MESSAGE_PATTERNS = [
+  /^사진\s*\d+장$/,                            // "사진 3장"
+  /^사진을?\s*보냈습니다/,                      // "사진을 보냈습니다"
+  /^동영상을?\s*보냈습니다/,                    // "동영상을 보냈습니다"
+  /^파일을?\s*보냈습니다/,                      // "파일을 보냈습니다"
+  /^(음성|보이스)메시지/,                       // "음성메시지", "보이스메시지"
+  /^연락처를?\s*공유/,                          // "연락처를 공유했습니다"
+  /^카카오톡\s*선물/,                           // "카카오톡 선물"
+  /^(지도|위치|장소)를?\s*(공유|보냈)/,          // "위치를 공유했습니다"
+  /^(송금|이체)/,                               // 송금/이체 알림
+  /^(투표|일정|공지)를?\s/,                     // 투표/일정/공지 시스템 메시지
+  /^(입금|출금)\s/,                             // 입금/출금 알림
+  /님이\s(나갔|들어왔|입장|퇴장)/,              // 입퇴장 알림
+  /^https?:\/\//,                               // URL만 있는 메시지
+]
+
+function isSystemMessage(content: string): boolean {
+  const trimmed = content.trim()
+  if (!trimmed) return true
+  if (SYSTEM_MESSAGE_EXACT.has(trimmed)) return true
+  return SYSTEM_MESSAGE_PATTERNS.some(p => p.test(trimmed))
+}
 
 // ─────────────────────────────────────────────────────────────
 // CSV 파싱 (형식 C)
@@ -53,7 +170,6 @@ function parseCsvLine(line: string): string[] {
   for (let i = 0; i < line.length; i++) {
     const ch = line[i]
     if (ch === '"') {
-      // 이중 따옴표("") → 리터럴 "
       if (inQuotes && line[i + 1] === '"') { current += '"'; i++ }
       else inQuotes = !inQuotes
     } else if (ch === ',' && !inQuotes) {
@@ -67,7 +183,7 @@ function parseCsvLine(line: string): string[] {
   return result
 }
 
-/** CSV 형식 여부 감지 — 첫 비어있지 않은 줄이 쉼표 포함 + 날짜/사용자/메시지 컬럼 */
+/** CSV 형식 여부 감지 */
 function isCsvFormat(lines: string[]): boolean {
   for (const line of lines) {
     if (!line.trim()) continue
@@ -75,7 +191,6 @@ function isCsvFormat(lines: string[]): boolean {
     const cols = parseCsvLine(line.trim())
     if (cols.length < 3) return false
     const first = cols[0].toLowerCase().replace(/["\s]/g, '')
-    // 헤더 행이거나, 날짜 형식 데이터 행
     return (
       first.includes('date') || first.includes('날짜') ||
       /^\d{4}-\d{2}-\d{2}/.test(cols[0]) ||
@@ -85,7 +200,7 @@ function isCsvFormat(lines: string[]): boolean {
   return false
 }
 
-/** CSV 형식 파싱 */
+/** CSV 형식 파싱 — fallbackName은 표시용, 파트너 감지는 빈도 기반 */
 function parseKakaoCsvFormat(text: string, fallbackName?: string): ParsedKakaoChat {
   const rawLines = text.split('\n').map(l => l.replace(/\r$/, ''))
 
@@ -101,11 +216,9 @@ function parseKakaoCsvFormat(text: string, fallbackName?: string): ParsedKakaoCh
     const cols = parseCsvLine(line.trim())
     if (cols.length < 3) continue
 
-    // 헤더 행 처리
     if (!headerSkipped) {
       const firstLower = cols[0].toLowerCase().replace(/["\s]/g, '')
       if (firstLower.includes('date') || firstLower.includes('날짜')) {
-        // 컬럼 인덱스 탐색
         for (let i = 0; i < cols.length; i++) {
           const c = cols[i].toLowerCase().replace(/["\s]/g, '')
           if (c.includes('date') || c.includes('날짜')) dateCol = i
@@ -123,9 +236,8 @@ function parseKakaoCsvFormat(text: string, fallbackName?: string): ParsedKakaoCh
     const content = (cols[msgCol]  ?? '').replace(/^"|"$/g, '').trim()
 
     if (!sender || !content) continue
-    if (content === '삭제된 메시지입니다.') continue
+    if (isSystemMessage(content)) continue
 
-    // 날짜/시간 추출
     const dateMatch = rawDate.match(/(\d{4})[\/.-](\d{2})[\/.-](\d{2})/)
     const timeMatch = rawDate.match(/(\d{1,2}:\d{2})/)
     const date = dateMatch ? `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}` : ''
@@ -135,33 +247,26 @@ function parseKakaoCsvFormat(text: string, fallbackName?: string): ParsedKakaoCh
     messages.push({ sender, isPartner: false, content, date, time })
   }
 
-  // 파트너 이름 결정: fallbackName 우선, 없으면 가장 많이 등장한 발신자
-  let partnerName = fallbackName ?? ''
-  if (!partnerName && senderCounts.size > 0) {
-    // '나', 'me', 'Me' 제외 후 가장 빈도 높은 발신자
-    const sorted = [...senderCounts.entries()].sort((a, b) => b[1] - a[1])
-    const candidate = sorted.find(([n]) => n !== '나' && n.toLowerCase() !== 'me') ?? sorted[0]
-    partnerName = candidate[0]
-  }
-
-  for (const msg of messages) {
-    msg.isPartner = msg.sender === partnerName
-  }
-
   if (messages.length === 0) {
     throw new Error('CSV 파일에서 메시지를 찾지 못했어요.\n카카오톡에서 내보낸 CSV 파일인지 확인해주세요.')
   }
 
-  return buildResult(partnerName || 'Unknown', messages)
+  // ★ 파트너 감지: fallbackName(페르소나 이름) 매칭 우선, 실패 시 소수 발신자
+  const detectedPartner = detectPartnerSender(senderCounts, fallbackName)
+  const displayName = fallbackName || detectedPartner
+
+  for (const msg of messages) {
+    msg.isPartner = msg.sender === detectedPartner
+  }
+
+  return buildResult(displayName, messages)
 }
 
 // ─────────────────────────────────────────────────────────────
 // PC TXT 형식 감지
 // ─────────────────────────────────────────────────────────────
 
-/** PC 형식 여부 확인 */
 function isPcFormat(lines: string[]): boolean {
-  // 첫 번째 비어있지 않은 줄이 'Date    User   Message' 형태인지 확인
   for (const line of lines) {
     if (line.trim()) {
       return /^Date\s+User\s+Message/.test(line.trim())
@@ -170,15 +275,12 @@ function isPcFormat(lines: string[]): boolean {
   return false
 }
 
-/** PC 형식 파싱 (Date  User  Message 헤더) */
 function parseKakaoPcFormat(text: string, fallbackName: string): ParsedKakaoChat {
   const rawLines = text.split('\n').map(l => l.replace(/\r$/, ''))
-  const partnerName = fallbackName || 'Unknown'
 
-  // 1단계: 모든 메시지의 컬럼 위치 수집
   type RawEntry = { timestamp: string; colPos: number; content: string; date: string }
   const rawEntries: RawEntry[] = []
-  let i = 1 // 헤더 스킵
+  let i = 1
 
   while (i + 2 < rawLines.length) {
     const yearPart = rawLines[i].trim()
@@ -203,8 +305,6 @@ function parseKakaoPcFormat(text: string, fallbackName: string): ParsedKakaoChat
     }
   }
 
-  // 2단계: 컬럼 위치의 자연 분포에서 두 그룹 사이의 최대 gap을 기준으로 split point 계산
-  // (고정값 18 대신 동적으로 결정 → 파일마다 다른 레이아웃에 대응)
   let splitPoint = 18
   if (rawEntries.length >= 4) {
     const sortedPositions = [...new Set(rawEntries.map(e => e.colPos))].sort((a, b) => a - b)
@@ -218,19 +318,241 @@ function parseKakaoPcFormat(text: string, fallbackName: string): ParsedKakaoChat
     }
   }
 
-  // 3단계: split point 기준으로 발신자 판별 (낮은 col = 파트너, 높은 col = 나)
+  const displayName = fallbackName || 'Unknown'
   const messages: KakaoMessage[] = rawEntries.map(e => ({
-    sender: e.colPos < splitPoint ? partnerName : '나',
+    sender: e.colPos < splitPoint ? displayName : '나',
     isPartner: e.colPos < splitPoint,
     content: e.content,
     date: e.date,
     time: e.timestamp,
   }))
 
-  return buildResult(partnerName, messages)
+  if (messages.length === 0) {
+    throw new Error('PC 내보내기 파일에서 메시지를 찾지 못했어요.\n카카오톡에서 내보낸 원본 파일인지 확인해주세요.')
+  }
+
+  return buildResult(displayName, messages)
 }
 
-/** 공통 결과 생성 */
+// ─────────────────────────────────────────────────────────────
+// 말투 분석 — 단편 단어 대신 실제 말투 특성 추출
+// ─────────────────────────────────────────────────────────────
+
+/** 한국어 문장 종결 어미 추출 */
+function extractEndingPatterns(messages: KakaoMessage[]): Array<{ pattern: string; count: number }> {
+  const endingCounts: Record<string, number> = {}
+
+  // 한국어 주요 종결 어미 패턴 (2~4글자)
+  const endingRegex = /(.{2,4})[\.\?!~ㅋㅎㅠㅜ]*$/
+
+  for (const m of messages) {
+    if (isSystemMessage(m.content)) continue
+    if (/^[ㅋㅎㅠㅜㅡ.!?~\s]+$/.test(m.content.trim())) continue
+    const text = m.content.replace(/[ㅋㅎㅠㅜ~.!?\s]+$/g, '').trim()
+    if (text.length < 2) continue
+
+    // 마지막 2~4글자를 어미로 추출
+    for (const len of [2, 3, 4]) {
+      if (text.length >= len) {
+        const ending = text.slice(-len)
+        // 한글만 포함된 어미
+        if (/^[\uAC00-\uD7AF]+$/.test(ending)) {
+          endingCounts[ending] = (endingCounts[ending] ?? 0) + 1
+        }
+      }
+    }
+  }
+
+  return Object.entries(endingCounts)
+    .filter(([_, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 15)
+    .map(([pattern, count]) => ({ pattern, count }))
+}
+
+/** 특징적인 전체 문장 추출 (짧고 반복적인 표현) */
+function extractCharacteristicPhrases(messages: KakaoMessage[]): string[] {
+  const phraseCounts: Record<string, number> = {}
+
+  for (const m of messages) {
+    const text = m.content.trim()
+    // 너무 짧거나(2글자 이하) 너무 긴(30자 초과) 메시지 제외
+    if (text.length < 3 || text.length > 30) continue
+    // 시스템 메시지 제외
+    if (isSystemMessage(text)) continue
+    // ㅋㅋ, ㅎㅎ 등 단순 반응만 있는 메시지 제외
+    if (/^[ㅋㅎㅠㅜㅡ.!?~\s]+$/.test(text)) continue
+
+    phraseCounts[text] = (phraseCounts[text] ?? 0) + 1
+  }
+
+  // 2회 이상 반복된 전체 문장 (실제 말버릇)
+  return Object.entries(phraseCounts)
+    .filter(([_, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 20)
+    .map(([phrase]) => phrase)
+}
+
+/** 자주 쓰는 의미 있는 단어/구문 추출 */
+function extractFrequentWords(messages: KakaoMessage[], allSenderNames?: string[]): Array<{ word: string; count: number }> {
+  // 불용어 확장 — 의미 없는 단어, 감탄사, 대명사, 접속사, 조사/어미, 시스템 토큰 제거
+  const stopTokens = new Set([
+    // 감탄사/반응
+    '응', '네', '어', '음', '야', '요', '엉', '으', '오', '아', '헉', '흠', '웅',
+    '아아', '어어', '오오', '에이', '아이', '예',
+    'ㅋㅋ', 'ㅋㅋㅋ', 'ㅎㅎ', 'ㅎㅎㅎ', 'ㅠㅠ', 'ㅜㅜ', 'ㅋ', 'ㅎ', 'ㅠ', 'ㅜ',
+    // 대명사
+    '나', '너', '내', '네', '제', '저', '우리', '얘', '걔', '이거', '그거', '저거',
+    '여기', '거기', '저기', '이런', '그런', '저런', '뭐', '누구', '언제', '어디',
+    // 부사/접속사
+    '그냥', '진짜', '근데', '그리고', '그래서', '왜냐하면', '아니', '맞아',
+    '좀', '되게', '엄청', '완전', '약간', '그때', '이제', '지금', '오늘', '내일', '어제',
+    '일단', '아직', '또', '다시', '이미', '아까', '나중', '잠깐', '바로', '많이',
+    '아직', '벌써', '정말', '매우', '너무', '항상', '자꾸', '계속', '아마',
+    // 조사/어미/접미사 (독립으로 나오는 경우)
+    '에서', '에게', '한테', '까지', '부터', '처럼', '같이', '때문', '대로',
+    '니까', '니깐', '거든', '잖아', '라고', '라서', '인데', '은데', '는데',
+    '어서', '아서', '으니', '으면', '지만', '더니', '다가', '면서',
+    // 일반 동사/형용사/서술어
+    '있어', '없어', '했어', '해서', '하고', '하면', '해도', '해야', '할게',
+    '알겠어', '알았어', '모르겠어', '그래', '그럼', '그러면',
+    '해줘', '할게', '됐어', '했다', '한다', '해봐', '하자', '하지',
+    '싶어', '같아', '봐봐', '볼게', '갈게', '올게', '줄게',
+    '거야', '건데', '거든', '거지', '거잖아', '건가', '거기',
+    // 카카오톡 시스템 메시지 잔여 토큰
+    '사진', '동영상', '이모티콘', '파일', '삭제된', '메시지입니다', '보냈습니다',
+    '보이스톡', '페이스톡', '라이브톡',
+  ])
+
+  // 대화에 등장하는 사람 이름도 불용어에 추가 (호칭은 말투가 아님)
+  if (allSenderNames) {
+    for (const name of allSenderNames) {
+      stopTokens.add(name)
+      // "연아", "연수야" 등 호칭 변형도 추가
+      if (name.length >= 2) {
+        stopTokens.add(name + '야')
+        stopTokens.add(name + '아')
+        stopTokens.add(name + '이')
+        stopTokens.add(name.slice(-2)) // 이름 끝 2글자 (예: "연수" → "연수")
+        if (name.length >= 3) {
+          stopTokens.add(name.slice(-2) + '야') // "수야"
+          stopTokens.add(name.slice(-2) + '아') // "수아"
+        }
+      }
+    }
+  }
+
+  const wordCounts: Record<string, number> = {}
+
+  for (const m of messages) {
+    // 시스템 메시지 제외
+    if (isSystemMessage(m.content)) continue
+    // ㅋㅋ, ㅎㅎ 등 단순 반응만 있는 메시지 제외
+    if (/^[ㅋㅎㅠㅜㅡ.!?~\s]+$/.test(m.content.trim())) continue
+
+    const normalized = m.content
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+    if (!normalized || normalized.length < 2) continue
+
+    const tokens = normalized.split(' ').filter(t =>
+      t.length >= 2 &&
+      !stopTokens.has(t) &&
+      !/^[ㅋㅎㅠㅜㅡ]+$/.test(t) &&    // ㅋㅋㅋㅋ 등 변형
+      !/^[a-zA-Z]{1,2}$/.test(t)         // 영어 1~2글자 무의미
+    )
+
+    // 단일 단어 수집: 한글 2글자 이상 허용 (stopTokens로 조사·감탄사는 이미 차단)
+    // - 예: "오늘", "밥", "나도" 같은 의미 있는 짧은 단어를 포함해 노출 개수 확보
+    for (const token of tokens) {
+      if (token.length >= 2) {
+        wordCounts[token] = (wordCounts[token] ?? 0) + 1
+      }
+    }
+
+    // 2-gram 구문 (더 의미 있는 표현)
+    for (let i = 0; i < tokens.length - 1; i++) {
+      const bigram = `${tokens[i]} ${tokens[i + 1]}`
+      wordCounts[bigram] = (wordCounts[bigram] ?? 0) + 1
+    }
+
+    // 3-gram 구문 (특징적 표현)
+    for (let i = 0; i < tokens.length - 2; i++) {
+      const trigram = `${tokens[i]} ${tokens[i + 1]} ${tokens[i + 2]}`
+      wordCounts[trigram] = (wordCounts[trigram] ?? 0) + 1
+    }
+  }
+
+  // 적응형 최소 빈도: 메시지 수가 적으면 기준 완화
+  // - 100개 미만: 2회 이상, 100개 이상: 3회 이상
+  const minCount = messages.length < 100 ? 2 : 3
+
+  return Object.entries(wordCounts)
+    .filter(([word, count]) => count >= minCount && word.length >= 2)
+    .sort((a, b) => {
+      // 빈도 우선, 동률 시 긴 구문 우선
+      if (b[1] !== a[1]) return b[1] - a[1]
+      const aWords = a[0].split(' ').length
+      const bWords = b[0].split(' ').length
+      return bWords - aWords
+    })
+    .slice(0, 40)
+    .map(([word, count]) => ({ word, count }))
+}
+
+/** 종합 말투 분석 */
+function analyzeSpeechPatterns(messages: KakaoMessage[]): SpeechPatterns {
+  const partnerMsgs = messages.filter(m => m.isPartner)
+  // 대화에 등장하는 모든 발신자 이름 수집 (불용어로 사용)
+  const allSenderNames = [...new Set(messages.map(m => m.sender))]
+
+  if (partnerMsgs.length === 0) {
+    return {
+      endingPatterns: [],
+      characteristicPhrases: [],
+      frequentWords: [],
+      avgLength: 0,
+      emojiRatio: 0,
+      questionRatio: 0,
+      informalRatio: 0,
+    }
+  }
+
+  const avgLength = Math.round(
+    partnerMsgs.reduce((s, m) => s + m.content.length, 0) / partnerMsgs.length
+  )
+
+  // 이모지 비율
+  const emojiRegex = /[\u{1F300}-\u{1FFFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u
+  const emojiCount = partnerMsgs.filter(m => emojiRegex.test(m.content)).length
+  const emojiRatio = emojiCount / partnerMsgs.length
+
+  // 질문 비율
+  const questionCount = partnerMsgs.filter(m => /\?|[가-힣]+\?/.test(m.content)).length
+  const questionRatio = questionCount / partnerMsgs.length
+
+  // 반말/존댓말 비율 (존댓말 마커: ~요, ~습니다, ~세요, ~까요)
+  const formalMarkers = /[요까]$|습니다$|세요$|십시오$/
+  const formalCount = partnerMsgs.filter(m => formalMarkers.test(m.content.replace(/[.!?~\s]+$/g, ''))).length
+  const informalRatio = 1 - (formalCount / partnerMsgs.length)
+
+  return {
+    endingPatterns: extractEndingPatterns(partnerMsgs),
+    characteristicPhrases: extractCharacteristicPhrases(partnerMsgs),
+    frequentWords: extractFrequentWords(partnerMsgs, allSenderNames),
+    avgLength,
+    emojiRatio,
+    questionRatio,
+    informalRatio,
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// 공통 결과 생성
+// ─────────────────────────────────────────────────────────────
+
 function buildResult(partnerName: string, messages: KakaoMessage[]): ParsedKakaoChat {
   const partnerMessages = messages.filter(m => m.isPartner)
   const partnerMessageCount = partnerMessages.length
@@ -240,98 +562,122 @@ function buildResult(partnerName: string, messages: KakaoMessage[]): ParsedKakao
     ? Math.round(partnerMessages.reduce((s, m) => s + m.content.length, 0) / partnerMessages.length)
     : 0
 
-  const endingCounts: Record<string, number> = {}
-  for (const m of partnerMessages) {
-    const t = m.content.replace(/[.!?ㅋㅎ~\s]+$/, '')
-    if (t.length >= 2) {
-      const e = t.slice(-2)
-      endingCounts[e] = (endingCounts[e] ?? 0) + 1
-    }
-  }
-  const commonPhrases = Object.entries(endingCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([phrase]) => phrase)
+  const speechPatterns = analyzeSpeechPatterns(messages)
 
-  return { partnerName, messages, partnerMessageCount, totalMessages, commonPhrases, avgMessageLength }
+  // commonPhrases: 빈도 높은 의미 있는 구문 (하위 호환용 + 개선된 버전)
+  // 사용자가 "제대로 추출되었다"고 느끼려면 최소 10개 이상 노출이 필요
+  // 특징 문장(실제 반복된 말) + 자주 쓴 단어/구문을 중복 제거하여 결합
+  const combinedRaw = [
+    ...speechPatterns.characteristicPhrases.slice(0, 8),
+    ...speechPatterns.frequentWords.slice(0, 25).map(w => w.word),
+    ...speechPatterns.endingPatterns.slice(0, 10).map(e => `~${e.pattern}`),
+  ]
+  const seen = new Set<string>()
+  const commonPhrases: string[] = []
+  for (const p of combinedRaw) {
+    const key = p.trim()
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    commonPhrases.push(key)
+    if (commonPhrases.length >= 20) break
+  }
+
+  return { partnerName, messages, partnerMessageCount, totalMessages, commonPhrases, speechPatterns, avgMessageLength }
 }
 
+// ─────────────────────────────────────────────────────────────
+// 메인 파싱 함수
+// ─────────────────────────────────────────────────────────────
+
 export function parseKakaoChat(text: string, fallbackName?: string): ParsedKakaoChat {
-  const allLines = text.split('\n').map(l => l.replace(/\r$/, ''))
+  const normalized = normalizeKakaoText(text)
+  const allLines = normalized.split('\n').map(l => l.replace(/\r$/, ''))
 
   // CSV 형식 감지 (PC 내보내기 .csv)
   if (isCsvFormat(allLines)) {
-    return parseKakaoCsvFormat(text, fallbackName)
+    return parseKakaoCsvFormat(normalized, fallbackName)
   }
 
   // PC TXT 형식 감지
   if (isPcFormat(allLines)) {
-    return parseKakaoPcFormat(text, fallbackName ?? 'Unknown')
+    return parseKakaoPcFormat(normalized, fallbackName ?? 'Unknown')
   }
 
   // 모바일 형식 파싱
   const lines = allLines.map(l => l.trim()).filter(Boolean)
 
-  // 대화상대 이름 추출
-  let partnerName = ''
+  // 대화상대 이름 추출 (파일 헤더에서)
+  let headerPartnerName = ''
   for (const line of lines) {
     const m = line.match(/^대화상대:\s*(.+)$/)
-    if (m) { partnerName = m[1].trim(); break }
-  }
-
-  if (!partnerName) {
-    // 파일명에서 이름 추출 시도 (fallbackName이 있으면 사용)
-    if (fallbackName) {
-      partnerName = fallbackName
-    } else {
-      throw new Error(
-        '카카오톡 내보내기 파일 형식이 아닙니다.\n' +
-        '카카오톡 앱 → 채팅방 → 우측 상단 메뉴 → 대화 내보내기로 내보낸 .txt 또는 .csv 파일을 올려주세요.'
-      )
-    }
+    if (m) { headerPartnerName = m[1].trim(); break }
   }
 
   const messages: KakaoMessage[] = []
+  const senderCounts = new Map<string, number>()
   let currentDate = ''
 
   for (const line of lines) {
-    // 날짜 구분선에서 날짜 추출
     if (DATE_DIVIDER.test(line)) {
       const dm = line.match(DATE_HEADER)
       if (dm) currentDate = `${dm[1]}-${dm[2].padStart(2,'0')}-${dm[3].padStart(2,'0')}`
       continue
     }
 
-    // 헤더 스킵
     if (
       line.startsWith('카카오톡 대화') ||
       line.startsWith('대화상대:') ||
       line.startsWith('저장한 날짜')
     ) continue
 
+    let sender = '', content = '', date = currentDate, time = ''
+
     const mm = line.match(MESSAGE_LINE)
-    if (!mm) continue
+    if (mm) {
+      sender = mm[1].trim()
+      time = `${mm[2]} ${mm[3]}`
+      content = mm[4].trim()
+    } else {
+      const mn = line.match(MESSAGE_LINE_NEW)
+      if (mn) {
+        date = `${mn[1]}-${mn[2].padStart(2, '0')}-${mn[3].padStart(2, '0')}`
+        time = `${mn[4]} ${mn[5]}`
+        sender = mn[6].trim()
+        content = mn[7].trim()
+      } else {
+        const ms = line.match(MESSAGE_LINE_SHORT)
+        if (ms) {
+          time = `${ms[1]} ${ms[2]}`
+          sender = ms[3].trim()
+          content = ms[4].trim()
+        } else {
+          continue
+        }
+      }
+    }
 
-    const sender  = mm[1].trim()
-    const ampm    = mm[2]
-    const timeRaw = mm[3]
-    const content = mm[4].trim()
+    if (!sender || !content) continue
+    if (isSystemMessage(content)) continue
 
-    if (content === '삭제된 메시지입니다.' || content === '') continue
-
-    // 시간 12h → 표시용
-    const time = `${ampm} ${timeRaw}`
-
-    messages.push({
-      sender,
-      isPartner: sender === partnerName,
-      content,
-      date: currentDate,
-      time,
-    })
+    senderCounts.set(sender, (senderCounts.get(sender) ?? 0) + 1)
+    messages.push({ sender, isPartner: false, content, date, time })
   }
 
-  return buildResult(partnerName, messages)
+  if (messages.length === 0) {
+    throw new Error(
+      '메시지를 추출하지 못했어요.\n카카오톡 대화 내보내기(.txt/.csv) 원본 파일인지 확인해주세요.'
+    )
+  }
+
+  // ★ 파트너 감지: 헤더 이름 > fallbackName 매칭 > 소수 발신자
+  const detectedPartner = headerPartnerName || detectPartnerSender(senderCounts, fallbackName)
+  const displayName = fallbackName || detectedPartner
+
+  for (const msg of messages) {
+    msg.isPartner = msg.sender === detectedPartner
+  }
+
+  return buildResult(displayName, messages)
 }
 
 /** 파트너 메시지만 텍스트로 추출 (AI 학습용) */
@@ -349,16 +695,15 @@ export function generateSystemPrompt(
 ): string {
   const partnerMsgs = parsed.messages.filter(m => m.isPartner)
   const allMsgs = parsed.messages
+  const sp = parsed.speechPatterns
 
   // ── 대화 쌍 샘플 추출 (가장 중요한 부분) ──
-  // 파트너 메시지만이 아닌, 실제 대화 흐름(나→파트너)을 보여줌
-  // → AI가 "어떤 맥락에서 어떻게 답하는지"를 직접 학습
   const pairSample = buildConversationPairs(allMsgs, parsed.partnerName, 40)
 
   // 파트너 단독 메시지 (말투 보충용, 최근 30개)
   const soloPhrases = partnerMsgs.slice(-30).map(m => m.content).join('\n')
 
-  // 말투 특징 분석
+  // 말투 특징 분석 (개선된 버전)
   const avgLen = parsed.avgMessageLength
   const lengthNote = avgLen > 0
     ? (avgLen <= 8
@@ -370,15 +715,41 @@ export function generateSystemPrompt(
         : '비교적 길게, 2~3문장으로 답해요.')
     : ''
 
-  // 이모지 사용 여부 분석
-  const emojiRegex = /[\u{1F300}-\u{1FFFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u
-  const emojiCount = partnerMsgs.filter(m => emojiRegex.test(m.content)).length
-  const emojiRatio = partnerMsgs.length > 0 ? emojiCount / partnerMsgs.length : 0
-  const emojiNote = emojiRatio < 0.05
+  // 이모지 사용 여부
+  const emojiNote = sp.emojiRatio < 0.05
     ? '- 이모지를 절대 사용하지 마세요. 실제 대화 샘플에 이모지가 거의 없습니다.'
-    : emojiRatio < 0.2
+    : sp.emojiRatio < 0.2
     ? '- 이모지는 아주 드물게(10번에 1번 이하)만 사용하세요.'
     : '- 이모지는 실제 대화 샘플에 나온 것만, 자연스러운 타이밍에만 사용하세요.'
+
+  // 반말/존댓말
+  const toneNote = sp.informalRatio > 0.8
+    ? '- 반말로 대화합니다. 절대 존댓말(~요, ~습니다)을 쓰지 마세요.'
+    : sp.informalRatio > 0.5
+    ? '- 주로 반말을 쓰지만 가끔 존댓말도 섞어요.'
+    : '- 존댓말을 기본으로 사용합니다.'
+
+  // 질문 빈도
+  const questionNote = sp.questionRatio > 0.3
+    ? '- 질문을 자주 합니다 (대화의 30% 이상). 상대에게 관심을 표현하는 스타일이에요.'
+    : sp.questionRatio > 0.15
+    ? '- 가끔 질문을 합니다. 자연스러운 빈도로 질문하세요.'
+    : '- 질문보다 진술을 많이 합니다. 질문은 최소한으로 하세요.'
+
+  // 종결 어미 패턴
+  const endingNote = sp.endingPatterns.length > 0
+    ? `- 자주 쓰는 문장 끝 패턴: ${sp.endingPatterns.slice(0, 8).map(e => `"~${e.pattern}"(${e.count}회)`).join(', ')}`
+    : ''
+
+  // 특징적 표현
+  const phraseNote = sp.characteristicPhrases.length > 0
+    ? `- 자주 반복하는 표현: ${sp.characteristicPhrases.map(p => `"${p}"`).join(', ')}`
+    : ''
+
+  // 자주 쓰는 단어
+  const wordNote = sp.frequentWords.length > 0
+    ? `- 자주 쓰는 단어/구문: ${sp.frequentWords.slice(0, 10).map(w => `"${w.word}"(${w.count}회)`).join(', ')}`
+    : ''
 
   const hasData = partnerMsgs.length > 0
 
@@ -390,7 +761,12 @@ export function generateSystemPrompt(
 - 당신은 오직 ${parsed.partnerName}으로서만 말하세요. AI 특유의 공손한 표현, 격식체, 설명 투 절대 금지
 - 응답은 짧고 자연스럽게 (1~3문장). 긴 설명, 목록, 요약 금지
 ${lengthNote ? `- ${lengthNote}` : ''}
+${toneNote}
+${questionNote}
 ${emojiNote}
+${endingNote}
+${phraseNote}
+${wordNote}
 - AI임을 직접 물어볼 때만 솔직하게 인정하고, 그 외에는 ${parsed.partnerName}로서만 대화
 - 위험 키워드(자해, 자살, 죽고 싶다 등) 감지 시 즉시 정신건강위기상담전화 1577-0199 안내
 
@@ -411,10 +787,11 @@ ${pairSample}
 [${parsed.partnerName} 단독 메시지 추가 샘플 — 말투·어조·습관적 표현 참고]
 ${soloPhrases}
 
-[말투 분석]
-- 자주 쓰는 어미/표현: ${parsed.commonPhrases.length > 0 ? parsed.commonPhrases.join(', ') : '없음'}
+[말투 상세 분석]
 - 평균 메시지 길이: ${avgLen > 0 ? `${avgLen}자` : '미확인'}
-- 이모지 사용 빈도: ${Math.round(emojiRatio * 100)}%
+- 이모지 사용 빈도: ${Math.round(sp.emojiRatio * 100)}%
+- 질문 비율: ${Math.round(sp.questionRatio * 100)}%
+- 반말 비율: ${Math.round(sp.informalRatio * 100)}%
 - 학습한 메시지 수: ${partnerMsgs.length}개
 
 이 사람의 말투·리듬·어조·습관적 표현을 그대로 재현하세요. 절대로 AI답게 매끄럽게 바꾸지 마세요.` : `[주의] 대화 데이터가 충분하지 않아요. ${parsed.partnerName}의 일반적인 ${relationship} 말투로 따뜻하게 대화하세요.`}`
@@ -422,7 +799,6 @@ ${soloPhrases}
 
 /**
  * 대화 쌍 추출 — 나 + 파트너가 교차하는 실제 대화 흐름을 텍스트로 구성
- * 파트너 응답이 포함된 대화 블록을 우선으로 최근 순 최대 N쌍 추출
  */
 function buildConversationPairs(
   messages: KakaoMessage[],
@@ -431,13 +807,11 @@ function buildConversationPairs(
 ): string {
   if (messages.length === 0) return '(대화 데이터 없음)'
 
-  // 파트너 메시지 주변 컨텍스트(앞뒤 2개)를 블록으로 수집
   const blocks: string[] = []
   const partnerIndices = messages
     .map((m, i) => m.isPartner ? i : -1)
     .filter(i => i >= 0)
 
-  // 최근 순으로 순회
   for (let k = partnerIndices.length - 1; k >= 0 && blocks.length < maxPairs; k--) {
     const idx = partnerIndices[k]
     const windowStart = Math.max(0, idx - 3)
@@ -455,14 +829,6 @@ function buildConversationPairs(
     }
   }
 
-  // 역순 정렬 (오래된 것 먼저, 자연스러운 대화 흐름)
   blocks.reverse()
-
   return blocks.join('\n\n')
-}
-
-function sampleEvenly<T>(arr: T[], n: number): T[] {
-  if (arr.length <= n) return arr
-  const step = arr.length / n
-  return Array.from({ length: n }, (_, i) => arr[Math.floor(i * step)])
 }

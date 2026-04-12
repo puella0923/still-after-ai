@@ -125,7 +125,7 @@ function SettingRow({ label, value, onPress, danger = false, rightEl, isFirst = 
 
 // ─── Main ───────────────────────────────────────────────────────────────────
 export default function SettingsScreen({ navigation }: Props) {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const [notifEnabled, setNotifEnabled] = useState(false)
   const [personaCount, setPersonaCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -177,9 +177,15 @@ export default function SettingsScreen({ navigation }: Props) {
 
   const handleLogoutConfirm = async () => {
     setLoading(true)
-    try { await supabase.auth.signOut() }
-    catch { closeModal(); setResultModal({ title: '오류', message: '로그아웃에 실패했어요. 다시 시도해주세요.' }) }
-    finally { setLoading(false) }
+    try {
+      closeModal()
+      await signOut()
+      // 네비게이션은 App.tsx의 key 변경으로 자동 처리
+    } catch {
+      setResultModal({ title: '오류', message: '로그아웃에 실패했어요. 다시 시도해주세요.' })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleModalConfirm = () => { if (activeModal === 'logout') handleLogoutConfirm() }

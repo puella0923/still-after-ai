@@ -1,9 +1,10 @@
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ScrollView, ActivityIndicator,
   Animated, Modal, Dimensions, Platform,
 } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
@@ -34,13 +35,40 @@ const STAR_DOTS = Array.from({ length: 30 }, (_, i) => ({
   opacity: 0.15 + (i % 5) * 0.08,
 }))
 
+const DRAFT_KEY_PREFIX = '@stillafter/closure_draft_'
+
 export default function ClosureCeremonyScreen({ navigation, route }: Props) {
   const { personaId, personaName, aiFarewell } = route.params
+  const draftKey = `${DRAFT_KEY_PREFIX}${personaId}`
 
   const [letter, setLetter] = useState('')
   const [isAnimating, setIsAnimating] = useState(false)
   const [completed, setCompleted] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [draftLoaded, setDraftLoaded] = useState(false)
+
+  // 화면 진입 시 임시 저장된 편지 복원
+  useEffect(() => {
+    AsyncStorage.getItem(draftKey).then(draft => {
+      if (draft) setLetter(draft)
+      setDraftLoaded(true)
+    }).catch(() => setDraftLoaded(true))
+  }, [draftKey])
+
+  // 편지 내용 변경 시 자동 임시 저장 (debounce 500ms)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (!draftLoaded) return
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(() => {
+      if (letter.trim().length > 0) {
+        AsyncStorage.setItem(draftKey, letter).catch(() => {})
+      } else {
+        AsyncStorage.removeItem(draftKey).catch(() => {})
+      }
+    }, 500)
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
+  }, [letter, draftKey, draftLoaded])
 
   const overlayOpacity = useRef(new Animated.Value(0)).current
   const letterOpacity = useRef(new Animated.Value(1)).current
@@ -67,8 +95,10 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
       await supabase.from('personas').update({
         is_active: false, is_archived: true, archived_at: new Date().toISOString(),
       }).eq('id', personaId)
+      // 봉인 완료 후 임시 저장 삭제
+      await AsyncStorage.removeItem(draftKey).catch(() => {})
     } catch (err) { console.error('[ClosureCeremony] 저장 중 예외:', err) }
-  }, [personaId, letter, aiFarewell])
+  }, [personaId, letter, aiFarewell, draftKey])
 
   const runFarewellAnimation = useCallback(() => {
     setShowConfirm(false)

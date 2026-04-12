@@ -67,7 +67,7 @@ function formatDate(iso: string | undefined): string {
 }
 
 export default function AccountProfileScreen({ navigation }: Props) {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const [personaCount, setPersonaCount] = useState<number | null>(null)
   const [conversationCount, setConversationCount] = useState<number | null>(null)
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0)
@@ -89,7 +89,7 @@ export default function AccountProfileScreen({ navigation }: Props) {
     try {
       await supabase.from('conversations').delete().eq('user_id', user.id)
       await supabase.from('personas').delete().eq('user_id', user.id)
-      await supabase.auth.signOut()
+      await signOut()
     } catch { setDeleting(false); setDeleteStep(0) }
     finally { setDeleting(false) }
   }

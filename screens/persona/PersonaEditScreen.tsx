@@ -32,6 +32,7 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
   const [photoUri, setPhotoUri] = useState<string | null>(currentPhotoUrl ?? null)
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null)
   const [photoFileName, setPhotoFileName] = useState('')
+  const [name, setName] = useState(personaName)
   const [nickname, setNickname] = useState(currentNickname ?? '')
   const [loading, setLoading] = useState(false)
   const [photoChanged, setPhotoChanged] = useState(false)
@@ -83,6 +84,11 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
 
   const handleSave = async () => {
     if (!user) return
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      Alert.alert('이름을 입력해주세요', '이 사람을 어떻게 부를지 알려주세요.')
+      return
+    }
     setLoading(true)
     try {
       let newPhotoUrl: string | null | undefined = undefined
@@ -90,6 +96,7 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
         newPhotoUrl = photoBlob && photoFileName ? await uploadPersonaPhoto(user.id, photoBlob, photoFileName) : null
       }
       await updatePersona(personaId, {
+        ...(trimmedName !== personaName ? { name: trimmedName } : {}),
         ...(photoChanged ? { photoUrl: newPhotoUrl } : {}),
         userNickname: nickname.trim() || null,
       })
@@ -113,7 +120,7 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Text style={styles.backIcon}>‹</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{personaName} 수정</Text>
+          <Text style={styles.headerTitle}>{(name || personaName)} 수정</Text>
           <TouchableOpacity style={[styles.saveBtn, loading && { opacity: 0.6 }]} onPress={handleSave} disabled={loading}>
             {loading
               ? <ActivityIndicator size="small" color="#FFFFFF" />
@@ -131,14 +138,14 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
               <Image source={{ uri: photoUri }} style={styles.photoImage} />
             ) : (
               <LinearGradient colors={['rgba(168, 85, 247, 0.3)', 'rgba(219, 39, 119, 0.2)']} style={styles.photoPlaceholder}>
-                <Text style={styles.photoIconText}>{personaName.charAt(0)}</Text>
+                <Text style={styles.photoIconText}>{(name || personaName).charAt(0)}</Text>
               </LinearGradient>
             )}
             <View style={styles.photoEditOverlay}>
               <Text style={styles.photoEditIcon}>📷</Text>
             </View>
           </TouchableOpacity>
-          <Text style={styles.photoHint}>사진을 눌러 변경하세요</Text>
+          <Text style={styles.photoHint}>사진을 눌러 변경하거나 추가하세요</Text>
           {photoUri && (
             <TouchableOpacity onPress={handleRemovePhoto}>
               <Text style={styles.photoRemove}>사진 지우기</Text>
@@ -146,10 +153,24 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
           )}
         </View>
 
+        {/* Name */}
+        <View style={styles.section}>
+          <Text style={styles.label}>이 사람을 어떻게 부를까요?</Text>
+          <TextInput
+            style={styles.input}
+            placeholder='예: 엄마, 지수, 준혁'
+            value={name}
+            onChangeText={setName}
+            maxLength={20}
+            placeholderTextColor="rgba(255,255,255,0.25)"
+          />
+          <Text style={styles.inputHint}>대화 목록과 말풍선에 이 이름이 표시돼요</Text>
+        </View>
+
         {/* Nickname */}
         <View style={styles.section}>
           <Text style={styles.label}>
-            {personaName}이(가) 나를 뭐라고 불렀나요?
+            {(name || personaName)}이(가) 나를 뭐라고 불렀나요?
             <Text style={styles.labelOptional}> (선택)</Text>
           </Text>
           <TextInput
@@ -160,7 +181,16 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
             maxLength={20}
             placeholderTextColor="rgba(255,255,255,0.25)"
           />
-          <Text style={styles.inputHint}>입력하면 대화에서 {personaName}이(가) 이 이름으로 불러줘요</Text>
+          <Text style={styles.inputHint}>입력하면 대화에서 {(name || personaName)}이(가) 이 이름으로 불러줘요</Text>
+        </View>
+
+        {/* 수정 불가 항목 안내 — 기획 원칙: 관계·학습 데이터는 정체성이므로 수정 차단 */}
+        <View style={styles.lockedSection}>
+          <Text style={styles.lockedTitle}>여기서는 바꿀 수 없어요</Text>
+          <Text style={styles.lockedText}>
+            관계나 대화 학습 내용은 이 사람의 정체성이에요.{'\n'}
+            바꾸고 싶다면 새 기억을 만들어 주세요.
+          </Text>
         </View>
 
         <View style={{ height: 40 }} />
@@ -209,4 +239,13 @@ const styles = StyleSheet.create({
     ...(Platform.OS === 'web' ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } as any : {}),
   },
   inputHint: { fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 6 },
+
+  lockedSection: {
+    marginHorizontal: 24, marginTop: 8, marginBottom: 24,
+    padding: 16, borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+  },
+  lockedTitle: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: 6 },
+  lockedText: { fontSize: 12, color: 'rgba(255,255,255,0.4)', lineHeight: 18 },
 })

@@ -9,6 +9,8 @@ import RootNavigator, { RootStackParamList } from './navigation/RootNavigator'
 // URL 딥링크 설정 — 웹에서 /Login, /PersonaCreate 등 URL이 직접 작동하도록
 const linking: LinkingOptions<RootStackParamList> = {
   prefixes: [
+    'http://localhost:8081',
+    'https://localhost:8081',
     'http://localhost:8082',
     'https://localhost:8082',
     'https://dist-alpha-six-89.vercel.app',
@@ -19,7 +21,10 @@ const linking: LinkingOptions<RootStackParamList> = {
     screens: {
       Onboarding:      '',
       Login:           'Login',
-      EmailAuth:       'EmailAuth',
+      EmailAuth:       {
+        path: 'EmailAuth',
+        alias: ['auth/callback', 'auth/reset-password'],
+      },
       Main:            {
         path: 'Main',
         screens: { Home: '' },
@@ -51,10 +56,30 @@ function AppContent() {
     )
   }
 
-  const initialRoute: keyof RootStackParamList = session ? 'Main' : 'Onboarding'
+  const isAuthed = !!session
+  const initialRoute: keyof RootStackParamList = isAuthed ? 'Main' : 'Onboarding'
+
+  // 비인증 상태에서는 딥링크로 인증 필요 화면에 진입하지 않도록
+  // linking 설정을 비활성화 (URL이 /Main 등일 때 로그아웃 후에도 Main으로 이동하는 문제 방지)
+  const activeLinking = isAuthed ? linking : {
+    ...linking,
+    config: {
+      screens: {
+        Onboarding: '',
+        Login: 'Login',
+        EmailAuth: {
+          path: 'EmailAuth',
+          alias: ['auth/callback', 'auth/reset-password'],
+        },
+      },
+    },
+  }
 
   return (
-    <NavigationContainer linking={linking}>
+    <NavigationContainer
+      key={isAuthed ? 'authed' : 'guest'}
+      linking={activeLinking}
+    >
       <StatusBar style="dark" backgroundColor="#FAF8F5" />
       <RootNavigator initialRouteName={initialRoute} />
     </NavigationContainer>

@@ -4,12 +4,14 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
   ScrollView,
   Image,
   ActivityIndicator,
   Animated,
   Dimensions,
   Alert,
+  Platform,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation } from '@react-navigation/native'
@@ -18,6 +20,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../services/supabase'
+import { deletePersona } from '../../services/personaService'
 import { C, RADIUS } from '../theme'
 
 const { width } = Dimensions.get('window')
@@ -62,6 +65,7 @@ export default function HomeScreen() {
   const [filter, setFilter] = useState<StageFilter>('all')
   const [conversationCounts, setConversationCounts] = useState<Record<string, number>>({})
   const [error, setError] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const fadeAnim = useRef(new Animated.Value(0)).current
 
@@ -100,6 +104,20 @@ export default function HomeScreen() {
             await supabase.from('personas').update({ emotional_stage: 'stable' }).eq('id', p.id)
             setPersonas(prev => prev.map(pp => pp.id === p.id ? { ...pp, emotional_stage: 'stable' } : pp))
           }
+
+          // Auto stage transition: stable → closure at 20 stage-specific conversations
+          if (p.emotional_stage === 'stable') {
+            const { count: stableCount } = await supabase
+              .from('conversations')
+              .select('*', { count: 'exact', head: true })
+              .eq('persona_id', p.id)
+              .eq('role', 'user')
+              .eq('emotional_stage', 'stable')
+            if ((stableCount ?? 0) >= 20) {
+              await supabase.from('personas').update({ emotional_stage: 'closure' }).eq('id', p.id)
+              setPersonas(prev => prev.map(pp => pp.id === p.id ? { ...pp, emotional_stage: 'closure' } : pp))
+            }
+          }
         }
         setConversationCounts(counts)
       }
@@ -113,35 +131,52 @@ export default function HomeScreen() {
 
   useFocusEffect(useCallback(() => { fetchData() }, [fetchData]))
 
-  const handleLogout = async () => {
-    if (signOut) await signOut()
-    else await supabase.auth.signOut()
+  const handleEditPersona = (persona: Persona) => {
+    navigation.navigate('PersonaEdit', {
+      personaId: persona.id,
+      personaName: persona.name,
+      currentPhotoUrl: persona.photo_url ?? null,
+      currentNickname: (persona as any).user_nickname ?? null,
+    })
   }
 
-  const handleStartClosure = async (personaId: string, personaName: string) => {
-    Alert.alert(
-      '이별 단계 전환',
-      `"${personaName}"와의 대화를 마무리할 준비가 되셨나요?\n이별 단계로 전환됩니다.`,
-      [
+  const handleDeletePersona = (persona: Persona) => {
+    const title = '기억을 지울까요?'
+    const msg = `"${persona.name}"과(와)의 대화와 기록이 모두 사라져요.\n이 작업은 되돌릴 수 없어요.`
+    const doDelete = async () => {
+      try {
+        await deletePersona(persona.id)
+        setPersonas(prev => prev.filter(p => p.id !== persona.id))
+      } catch (err) {
+        const m = err instanceof Error ? err.message : '잠시 후 다시 시도해주세요.'
+        if (Platform.OS === 'web') window.alert(`삭제 실패: ${m}`)
+        else Alert.alert('삭제 실패', m)
+      }
+    }
+    if (Platform.OS === 'web') {
+      if (window.confirm(`${title}\n\n${msg}`)) doDelete()
+    } else {
+      Alert.alert(title, msg, [
         { text: '취소', style: 'cancel' },
-        {
-          text: '전환하기',
-          onPress: async () => {
-            try {
-              const { error: err } = await supabase
-                .from('personas')
-                .update({ emotional_stage: 'closure' })
-                .eq('id', personaId)
-              if (err) throw err
-              setPersonas(prev => prev.map(p => p.id === personaId ? { ...p, emotional_stage: 'closure' } : p))
-            } catch (e) {
-              console.error('Stage update error:', e)
-            }
-          },
-        },
-      ]
-    )
+        { text: '지우기', style: 'destructive', onPress: doDelete },
+      ])
+    }
   }
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return
+    setIsLoggingOut(true)
+    try {
+      await signOut()
+      // NavigationContainer의 key 변경으로 자동 Onboarding 이동
+      // (navigation.reset은 key 변경 후 stale reference라 무효)
+    } catch (e) {
+      console.error('[Logout] 실패:', e)
+    } finally {
+      setIsLoggingOut(false)
+    }
+  }
+
 
   const filteredPersonas = filter === 'all'
     ? personas
@@ -165,9 +200,17 @@ export default function HomeScreen() {
             <Text style={styles.headerTitle}>Still After</Text>
             <Text style={styles.headerEmail}>{user?.email}</Text>
           </View>
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-            <Text style={styles.logoutText}>🚪 로그아웃</Text>
-          </TouchableOpacity>
+          <Pressable
+            onPress={handleLogout}
+            disabled={isLoggingOut}
+            style={({ pressed }) => [
+              styles.logoutBtn,
+              pressed && styles.logoutBtnPressed,
+              isLoggingOut && styles.logoutBtnDisabled,
+            ]}
+          >
+            <Text style={styles.logoutText}>{isLoggingOut ? '로그아웃 중...' : '🚪 로그아웃'}</Text>
+          </Pressable>
         </View>
 
         {/* AI Disclosure Banner */}
@@ -312,6 +355,9 @@ export default function HomeScreen() {
                           {persona.emotional_stage === 'replay' && (
                             <Text style={styles.countSub}> / 안정 전환까지 {Math.max(0, 30 - count)}회</Text>
                           )}
+                          {persona.emotional_stage === 'stable' && (
+                            <Text style={styles.countSub}> / 20회 대화 후 이별 단계</Text>
+                          )}
                         </Text>
                       )}
 
@@ -320,21 +366,40 @@ export default function HomeScreen() {
                         {new Date(persona.created_at).toLocaleDateString('ko-KR')}
                       </Text>
 
-                      {/* Closure button for stable */}
-                      {persona.emotional_stage === 'stable' && (
+                      {/* Edit / Delete actions */}
+                      <View style={styles.actionsRow}>
+                        <TouchableOpacity
+                          onPress={(e) => { e.stopPropagation?.(); handleEditPersona(persona) }}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          style={styles.actionBtn}
+                        >
+                          <Text style={styles.actionBtnText}>수정</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.actionDivider}>·</Text>
+                        <TouchableOpacity
+                          onPress={(e) => { e.stopPropagation?.(); handleDeletePersona(persona) }}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          style={styles.actionBtn}
+                        >
+                          <Text style={[styles.actionBtnText, { color: '#FCA5A5' }]}>삭제</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* 이별 단계: 마지막 편지 쓰기 버튼 */}
+                      {persona.emotional_stage === 'closure' && (
                         <TouchableOpacity
                           onPress={(e) => {
                             e.stopPropagation?.()
-                            handleStartClosure(persona.id, persona.name)
+                            navigation.navigate('ClosureCeremony', { personaId: persona.id, personaName: persona.name, aiFarewell: '' })
                           }}
                           activeOpacity={0.85}
-                          style={styles.closureBtnWrap}
+                          style={styles.closureLetterBtnWrap}
                         >
                           <LinearGradient
-                            colors={['rgba(99, 102, 241, 0.3)', 'rgba(168, 85, 247, 0.3)']}
-                            style={styles.closureBtn}
+                            colors={['rgba(99, 102, 241, 0.4)', 'rgba(168, 85, 247, 0.4)']}
+                            style={styles.closureLetterBtn}
                           >
-                            <Text style={styles.closureBtnText}>🌸 이별 준비하기</Text>
+                            <Text style={styles.closureLetterBtnText}>🌸 마지막 편지 쓰기</Text>
                           </LinearGradient>
                         </TouchableOpacity>
                       )}
@@ -379,6 +444,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.MD,
   },
+  logoutBtnPressed: { opacity: 0.7 },
+  logoutBtnDisabled: { opacity: 0.6 },
   logoutText: { fontSize: 13, color: 'rgba(196, 181, 253, 0.8)' },
 
   // AI Banner
@@ -509,12 +576,23 @@ const styles = StyleSheet.create({
   countSub: { color: 'rgba(167, 139, 250, 0.4)' },
   dateText: { fontSize: 11, color: 'rgba(196, 181, 253, 0.5)', marginTop: 4 },
 
-  // Closure button
-  closureBtnWrap: { marginTop: 10, borderRadius: RADIUS.MD, overflow: 'hidden' },
-  closureBtn: {
-    paddingVertical: 8, paddingHorizontal: 12, borderRadius: RADIUS.MD,
+  actionsRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1, borderTopColor: 'rgba(167, 139, 250, 0.12)',
+  },
+  actionBtn: { paddingVertical: 4, paddingHorizontal: 8 },
+  actionBtnText: { fontSize: 12, color: 'rgba(196, 181, 253, 0.7)' },
+  actionDivider: { fontSize: 12, color: 'rgba(196, 181, 253, 0.3)' },
+
+
+  // Closure letter button (이별 단계)
+  closureLetterBtnWrap: { marginTop: 10, borderRadius: RADIUS.MD, overflow: 'hidden' },
+  closureLetterBtn: {
+    paddingVertical: 10, paddingHorizontal: 12, borderRadius: RADIUS.MD,
     borderWidth: 1, borderColor: 'rgba(129, 140, 248, 0.3)',
     alignItems: 'center',
   },
-  closureBtnText: { fontSize: 12, fontWeight: '500', color: '#A5B4FC' },
+  closureLetterBtnText: { fontSize: 13, fontWeight: '600', color: '#C4B5FD' },
 })

@@ -63,11 +63,11 @@ export default function PaymentScreen({ navigation, route }: Props) {
         <View style={styles.priceCard}>
           <View style={styles.priceTop}>
             <View>
-              <Text style={styles.planName}>스탠다드 플랜</Text>
-              <Text style={styles.planDesc}>30일 이용권 · 1회 결제</Text>
+              <Text style={styles.planName}>페르소나 이용권</Text>
+              <Text style={styles.planDesc}>무제한 대화 · 1회 결제</Text>
             </View>
             <View style={styles.priceRight}>
-              <Text style={styles.price}>9,900원</Text>
+              <Text style={styles.price}>19,900원</Text>
               <Text style={styles.priceSub}>부가세 포함</Text>
             </View>
           </View>
@@ -91,7 +91,7 @@ export default function PaymentScreen({ navigation, route }: Props) {
           <Text style={styles.noticeText}>
             • 이 서비스의 AI는 실제 {name}이(가) 아닙니다.{'\n'}
             • 정신건강 전문 치료를 대체하지 않습니다.{'\n'}
-            • 30일 후 자동 갱신되지 않으며, 데이터는 보관됩니다.{'\n'}
+            • 1회 결제로 해당 페르소나와 무제한 대화할 수 있어요.{'\n'}
             • 심리적 위기 상황 시 즉시 전문 기관을 연결합니다.
           </Text>
         </View>
@@ -100,7 +100,7 @@ export default function PaymentScreen({ navigation, route }: Props) {
       <View style={styles.footer}>
         <TouchableOpacity onPress={handlePayment} activeOpacity={0.85}>
           <LinearGradient colors={['#a855f7', '#db2777']} style={styles.payButton}>
-            <Text style={styles.payButtonText}>9,900원 결제하기</Text>
+            <Text style={styles.payButtonText}>19,900원 결제하기</Text>
             <Text style={styles.payButtonSub}>카드 · 카카오페이 · 토스페이</Text>
           </LinearGradient>
         </TouchableOpacity>
