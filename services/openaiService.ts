@@ -366,7 +366,20 @@ export async function getChatResponse(params: {
   const fullPrompt = buildSystemPrompt(systemPrompt, stage, phase, closurePhase, userNickname)
 
   // Supabase 세션에서 JWT 토큰 가져오기
-  const { data: { session } } = await supabase.auth.getSession()
+  // getSession()은 캐시된(만료 가능) 토큰을 반환하므로,
+  // refreshSession()으로 항상 유효한 토큰 확보
+  let session = (await supabase.auth.getSession()).data.session
+  if (session) {
+    // 토큰 만료 10초 전이면 갱신 시도
+    const expiresAt = session.expires_at ?? 0
+    const now = Math.floor(Date.now() / 1000)
+    if (expiresAt - now < 60) {
+      const { data, error } = await supabase.auth.refreshSession()
+      if (!error && data.session) {
+        session = data.session
+      }
+    }
+  }
   if (!session?.access_token) {
     throw new Error('로그인이 만료되었어요. 다시 로그인해주세요.')
   }
