@@ -28,6 +28,7 @@ export type RootStackParamList = {
     personaName: string
     currentPhotoUrl?: string | null
     currentNickname?: string | null
+    currentRelationship?: string | null
   }
   AIGenerating: { name: string; personaId: string }
   Paywall: { personaId: string; stage: string }

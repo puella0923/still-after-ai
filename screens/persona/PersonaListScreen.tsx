@@ -104,7 +104,13 @@ export default function PersonaListScreen({ navigation }: Props) {
     } catch { setModal({ type: 'none' }) }
     finally { setModalLoading(false) }
   }
-  const handleEdit = (persona: Persona) => navigation.navigate('PersonaEdit', { personaId: persona.id, personaName: persona.name, currentPhotoUrl: (persona as any).photo_url ?? null, currentNickname: (persona as any).user_nickname ?? null })
+  const handleEdit = (persona: Persona) => navigation.navigate('PersonaEdit', {
+    personaId: persona.id,
+    personaName: persona.name,
+    currentPhotoUrl: (persona as any).photo_url ?? null,
+    currentNickname: (persona as any).user_nickname ?? null,
+    currentRelationship: persona.relationship ?? null,
+  })
 
   if (loading) {
     return (

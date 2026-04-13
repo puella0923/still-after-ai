@@ -166,6 +166,7 @@ export async function updatePersona(id: string, data: {
   name?: string
   photoUrl?: string | null
   userNickname?: string | null
+  relationship?: string | null
 }): Promise<void> {
   const userId = await getCurrentUserId()
 
@@ -173,6 +174,7 @@ export async function updatePersona(id: string, data: {
   if ('name' in data && data.name !== undefined) payload.name = data.name
   if ('photoUrl' in data) payload.photo_url = data.photoUrl
   if ('userNickname' in data) payload.user_nickname = data.userNickname
+  if ('relationship' in data && data.relationship !== undefined && data.relationship !== null) payload.relationship = data.relationship
 
   if (Object.keys(payload).length === 0) return
 

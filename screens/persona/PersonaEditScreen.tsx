@@ -16,6 +16,8 @@ type Props = {
   route: RouteProp<RootStackParamList, 'PersonaEdit'>
 }
 
+const RELATIONS = ['부모님', '배우자', '자녀', '친구', '연인', '기타']
+
 const STAR_DOTS = Array.from({ length: 20 }, (_, i) => ({
   top: `${(i * 37 + 13) % 100}%`,
   left: `${(i * 53 + 7) % 100}%`,
@@ -26,7 +28,7 @@ const STAR_DOTS = Array.from({ length: 20 }, (_, i) => ({
 const glass = Platform.OS === 'web' ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } as any : {}
 
 export default function PersonaEditScreen({ navigation, route }: Props) {
-  const { personaId, personaName, currentPhotoUrl, currentNickname } = route.params
+  const { personaId, personaName, currentPhotoUrl, currentNickname, currentRelationship } = route.params
   const { user } = useAuth()
 
   const [photoUri, setPhotoUri] = useState<string | null>(currentPhotoUrl ?? null)
@@ -34,6 +36,7 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
   const [photoFileName, setPhotoFileName] = useState('')
   const [name, setName] = useState(personaName)
   const [nickname, setNickname] = useState(currentNickname ?? '')
+  const [relationship, setRelationship] = useState(currentRelationship ?? '')
   const [loading, setLoading] = useState(false)
   const [photoChanged, setPhotoChanged] = useState(false)
 
@@ -99,6 +102,7 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
         ...(trimmedName !== personaName ? { name: trimmedName } : {}),
         ...(photoChanged ? { photoUrl: newPhotoUrl } : {}),
         userNickname: nickname.trim() || null,
+        ...(relationship.trim() && relationship !== currentRelationship ? { relationship: relationship.trim() } : {}),
       })
       navigation.goBack()
     } catch (err) { Alert.alert('저장 실패', err instanceof Error ? err.message : '잠시 후 다시 시도해주세요.') }
@@ -167,6 +171,37 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
           <Text style={styles.inputHint}>대화 목록과 말풍선에 이 이름이 표시돼요</Text>
         </View>
 
+        {/* Relationship */}
+        <View style={styles.section}>
+          <Text style={styles.label}>{(name || personaName)}과의 관계</Text>
+          <View style={styles.chipRow}>
+            {RELATIONS.map(rel => {
+              const selected = relationship === rel
+              return (
+                <TouchableOpacity
+                  key={rel}
+                  style={[styles.chip, selected && styles.chipSelected]}
+                  onPress={() => setRelationship(rel)}
+                  activeOpacity={0.75}
+                >
+                  {selected ? (
+                    <LinearGradient
+                      colors={['#a855f7', '#db2777']}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                      style={styles.chipGrad}
+                    >
+                      <Text style={styles.chipTextSelected}>{rel}</Text>
+                    </LinearGradient>
+                  ) : (
+                    <Text style={styles.chipText}>{rel}</Text>
+                  )}
+                </TouchableOpacity>
+              )
+            })}
+          </View>
+          <Text style={styles.inputHint}>관계를 바꾸면 AI가 그에 맞는 어투로 대화해요</Text>
+        </View>
+
         {/* Nickname */}
         <View style={styles.section}>
           <Text style={styles.label}>
@@ -184,12 +219,12 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
           <Text style={styles.inputHint}>입력하면 대화에서 {(name || personaName)}이(가) 이 이름으로 불러줘요</Text>
         </View>
 
-        {/* 수정 불가 항목 안내 — 기획 원칙: 관계·학습 데이터는 정체성이므로 수정 차단 */}
+        {/* 학습 데이터 안내 */}
         <View style={styles.lockedSection}>
-          <Text style={styles.lockedTitle}>여기서는 바꿀 수 없어요</Text>
+          <Text style={styles.lockedTitle}>대화 학습 내용은 바꿀 수 없어요</Text>
           <Text style={styles.lockedText}>
-            관계나 대화 학습 내용은 이 사람의 정체성이에요.{'\n'}
-            바꾸고 싶다면 새 기억을 만들어 주세요.
+            카카오톡 대화나 작성한 설명은 이 사람의 말투 그 자체예요.{'\n'}
+            다시 만들고 싶다면 새 기억을 만들어 주세요.
           </Text>
         </View>
 
@@ -239,6 +274,17 @@ const styles = StyleSheet.create({
     ...(Platform.OS === 'web' ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } as any : {}),
   },
   inputHint: { fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 6 },
+
+  // Relationship chips
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 8 },
+  chip: {
+    borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.05)', overflow: 'hidden',
+  },
+  chipSelected: { borderColor: 'transparent' },
+  chipGrad: { paddingHorizontal: 16, paddingVertical: 8 },
+  chipText: { fontSize: 14, color: 'rgba(255,255,255,0.6)', paddingHorizontal: 16, paddingVertical: 8 },
+  chipTextSelected: { fontSize: 14, color: '#fff', fontWeight: '600' },
 
   lockedSection: {
     marginHorizontal: 24, marginTop: 8, marginBottom: 24,
