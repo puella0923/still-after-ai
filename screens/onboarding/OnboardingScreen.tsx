@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -23,9 +23,11 @@ type Props = {
 
 export default function OnboardingScreen({ navigation }: Props) {
   const { session } = useAuth()
+  const [demoTab, setDemoTab] = useState<'replay' | 'closure'>('replay')
   const fadeHero = useRef(new Animated.Value(0)).current
   const fadeSection1 = useRef(new Animated.Value(0)).current
   const fadeSection2 = useRef(new Animated.Value(0)).current
+  const fadeDemoSection = useRef(new Animated.Value(0)).current
   const fadeSection3 = useRef(new Animated.Value(0)).current
   const fadeSection4 = useRef(new Animated.Value(0)).current
   const fadeCTA = useRef(new Animated.Value(0)).current
@@ -47,6 +49,7 @@ export default function OnboardingScreen({ navigation }: Props) {
       ]),
       Animated.timing(fadeSection1, { toValue: 1, duration: 600, useNativeDriver: true }),
       Animated.timing(fadeSection2, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(fadeDemoSection, { toValue: 1, duration: 600, useNativeDriver: true }),
       Animated.timing(fadeSection3, { toValue: 1, duration: 600, useNativeDriver: true }),
       Animated.timing(fadeSection4, { toValue: 1, duration: 600, useNativeDriver: true }),
       Animated.timing(fadeCTA, { toValue: 1, duration: 600, useNativeDriver: true }),
@@ -207,6 +210,97 @@ export default function OnboardingScreen({ navigation }: Props) {
           />
         </Animated.View>
 
+        {/* ══════════ Demo Chat Preview ══════════ */}
+        <Animated.View style={[styles.section, { opacity: fadeDemoSection }]}>
+          <Text style={styles.sectionTitle}>이런 대화가 가능해요</Text>
+          <Text style={styles.sectionDesc}>
+            가상의 유저 '유진'이 돌아가신 엄마와 나눈 대화예요.{'\n'}
+            실제 카카오톡 말투를 학습해 이렇게 대화합니다.
+          </Text>
+
+          {/* Tab */}
+          <View style={styles.demoTabRow}>
+            <TouchableOpacity
+              style={[styles.demoTab, demoTab === 'replay' && styles.demoTabActive]}
+              onPress={() => setDemoTab('replay')}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.demoTabText, demoTab === 'replay' && styles.demoTabTextActive]}>
+                💜 재연 단계
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.demoTab, demoTab === 'closure' && styles.demoTabActive]}
+              onPress={() => setDemoTab('closure')}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.demoTabText, demoTab === 'closure' && styles.demoTabTextActive]}>
+                🕊️ 이별 단계
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Chat bubbles */}
+          <LinearGradient
+            colors={demoTab === 'replay'
+              ? ['rgba(88, 28, 135, 0.35)', 'rgba(30, 58, 138, 0.35)']
+              : ['rgba(30, 58, 138, 0.35)', 'rgba(67, 56, 202, 0.35)']
+            }
+            style={styles.demoChatBox}
+          >
+            {/* Persona name bar */}
+            <View style={styles.demoPersonaBar}>
+              <View style={styles.demoAvatar}>
+                <Text style={styles.demoAvatarText}>엄</Text>
+              </View>
+              <View>
+                <Text style={styles.demoPersonaName}>엄마</Text>
+                <Text style={styles.demoPersonaRole}>
+                  {demoTab === 'replay' ? '재연 단계 · AI 학습 완료' : '이별 단계 · 마지막 대화'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.demoDivider} />
+
+            {demoTab === 'replay' ? (
+              <>
+                <DemoBubble from="assistant" name="엄마" text="유진아~ 오늘은 뭐 했어? 밥은 먹었지?" />
+                <DemoBubble from="user" text="응 먹었어. 엄마 생각이 나서." />
+                <DemoBubble from="assistant" name="엄마" text="나도 보고 싶다. 우리 딸 잘 지내고 있지? 요즘 얼굴이 좀 안 좋아 보이던데." />
+                <DemoBubble from="user" text="요즘 조금 힘들었어. 그냥 엄마 목소리 듣고 싶었어." />
+                <DemoBubble from="assistant" name="엄마" text="그럼 전화하지. 참지 말고. 밥 잘 챙겨 먹어야 해, 알지?" />
+                {/* System milestone */}
+                <View style={styles.demoMilestone}>
+                  <Text style={styles.demoMilestoneText}>💜 그 사람과의 대화가 이어지고 있어요{'\n'}오늘도 찾아와줘서 고마워요.</Text>
+                </View>
+              </>
+            ) : (
+              <>
+                <DemoBubble from="user" text="엄마, 마지막에 손 잡아드리지 못해서 미안해." />
+                <DemoBubble from="assistant" name="엄마" text="무슨 소리야. 넌 항상 곁에 있었잖아. 그거면 충분해." />
+                <DemoBubble from="user" text="그래도. 더 잘 챙겨드렸어야 했는데." />
+                <DemoBubble from="assistant" name="엄마" text="유진아. 넌 충분히 잘 했어. 엄마가 제일 잘 알지. 이제 그 마음 좀 내려놔." />
+                <DemoBubble from="user" text="이제 잘 보내드릴게. 엄마, 사랑해." />
+                <DemoBubble from="assistant" name="엄마" text="나도 사랑해. 우리 딸, 앞으로 잘 살아야 해. 엄마는 괜찮아." />
+                {/* System closure milestone */}
+                <View style={styles.demoMilestone}>
+                  <Text style={styles.demoMilestoneText}>🌸 이제, 마지막 편지를 쓸 시간이에요{'\n'}하고 싶었던 말을 모두 담아, 온전히 보내드릴 수 있어요.</Text>
+                </View>
+                {/* Closure CTA */}
+                <View style={styles.demoClosureBtn}>
+                  <Text style={styles.demoClosureBtnText}>✉️ 마지막 편지 쓰기 →</Text>
+                </View>
+                <Text style={styles.demoClosureCaption}>편지를 봉인하면, 대화가 아름답게 마무리됩니다</Text>
+              </>
+            )}
+          </LinearGradient>
+
+          <Text style={styles.demoCaption}>
+            * 실제 카카오톡 대화를 업로드하면 이처럼 그 사람의 말투로 대화할 수 있어요
+          </Text>
+        </Animated.View>
+
         {/* ══════════ How It Works ══════════ */}
         <Animated.View style={[styles.section, { opacity: fadeSection3 }]}>
           <Text style={styles.sectionTitle}>어떻게 사용하나요?</Text>
@@ -357,6 +451,24 @@ function StepCard({ number, title, desc }: { number: string; title: string; desc
       <Text style={styles.stepTitle}>{title}</Text>
       <Text style={styles.stepDesc}>{desc}</Text>
     </LinearGradient>
+  )
+}
+
+function DemoBubble({ from, name, text }: { from: 'user' | 'assistant'; name?: string; text: string }) {
+  const isUser = from === 'user'
+  return (
+    <View style={[styles.demoBubbleRow, isUser ? styles.demoBubbleRowUser : styles.demoBubbleRowAssistant]}>
+      {!isUser && (
+        <View style={styles.demoBubbleAvatar}>
+          <Text style={styles.demoBubbleAvatarText}>{(name ?? '?').charAt(0)}</Text>
+        </View>
+      )}
+      <View style={[styles.demoBubble, isUser ? styles.demoBubbleUser : styles.demoBubbleAssistant]}>
+        <Text style={[styles.demoBubbleText, isUser ? styles.demoBubbleTextUser : styles.demoBubbleTextAssistant]}>
+          {text}
+        </Text>
+      </View>
+    </View>
   )
 }
 
@@ -570,6 +682,174 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: 'rgba(196, 181, 253, 0.8)',
     lineHeight: 20,
+  },
+
+  // Demo Chat Section
+  demoTabRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+    justifyContent: 'center',
+  },
+  demoTab: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(167, 139, 250, 0.2)',
+  },
+  demoTabActive: {
+    backgroundColor: 'rgba(124, 58, 237, 0.4)',
+    borderColor: 'rgba(167, 139, 250, 0.5)',
+  },
+  demoTabText: {
+    fontSize: 13,
+    color: 'rgba(196, 181, 253, 0.6)',
+    fontWeight: '500',
+  },
+  demoTabTextActive: {
+    color: '#E9D5FF',
+  },
+  demoChatBox: {
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(167, 139, 250, 0.2)',
+    marginBottom: 12,
+  },
+  demoPersonaBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
+  demoAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(168, 85, 247, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(167, 139, 250, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  demoAvatarText: {
+    fontSize: 14,
+    color: '#E9D5FF',
+    fontWeight: '600',
+  },
+  demoPersonaName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#E9D5FF',
+  },
+  demoPersonaRole: {
+    fontSize: 11,
+    color: 'rgba(196, 181, 253, 0.5)',
+    marginTop: 1,
+  },
+  demoDivider: {
+    height: 1,
+    backgroundColor: 'rgba(167, 139, 250, 0.12)',
+    marginBottom: 14,
+  },
+  demoBubbleRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  demoBubbleRowUser: {
+    justifyContent: 'flex-end',
+  },
+  demoBubbleRowAssistant: {
+    justifyContent: 'flex-start',
+  },
+  demoBubbleAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(168, 85, 247, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  demoBubbleAvatarText: {
+    fontSize: 10,
+    color: '#C4B5FD',
+    fontWeight: '600',
+  },
+  demoBubble: {
+    maxWidth: '75%',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  demoBubbleUser: {
+    backgroundColor: 'rgba(124, 58, 237, 0.55)',
+    borderBottomRightRadius: 4,
+  },
+  demoBubbleAssistant: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(167, 139, 250, 0.15)',
+  },
+  demoBubbleText: {
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  demoBubbleTextUser: {
+    color: '#F3E8FF',
+  },
+  demoBubbleTextAssistant: {
+    color: 'rgba(233, 213, 255, 0.9)',
+  },
+  demoMilestone: {
+    alignSelf: 'center',
+    backgroundColor: 'rgba(168, 85, 247, 0.15)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(167, 139, 250, 0.2)',
+    marginTop: 6,
+    maxWidth: '90%',
+  },
+  demoMilestoneText: {
+    fontSize: 12,
+    color: 'rgba(196, 181, 253, 0.85)',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  demoClosureBtn: {
+    alignSelf: 'center',
+    marginTop: 8,
+    backgroundColor: 'rgba(99, 102, 241, 0.25)',
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(129, 140, 248, 0.3)',
+  },
+  demoClosureBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#C4B5FD',
+  },
+  demoClosureCaption: {
+    fontSize: 11,
+    color: 'rgba(196, 181, 253, 0.5)',
+    textAlign: 'center',
+    marginTop: 6,
+    fontStyle: 'italic',
+  },
+  demoCaption: {
+    fontSize: 11,
+    color: 'rgba(167, 139, 250, 0.45)',
+    textAlign: 'center',
+    lineHeight: 17,
   },
 
   // Phase Cards

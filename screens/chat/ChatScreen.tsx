@@ -356,6 +356,14 @@ export default function ChatScreen({ navigation, route }: Props) {
       setMessages(prev => [...prev, { id: makeId(), role: 'assistant', content: reply }])
       saveConversation({ personaId: persona.id, role: 'assistant', content: reply, emotionalStage: persona.emotional_stage }).catch(() => {})
 
+      // Replay: 중간 마일스톤 메시지
+      if (persona.emotional_stage === 'replay') {
+        let replayGuide: string | null = null
+        if (newStageCount === 5) replayGuide = `💜 ${persona.name}과(와)의 대화가 이어지고 있어요\n오늘도 찾아와줘서 고마워요.`
+        else if (newStageCount === 10) replayGuide = `대화가 깊어지고 있어요\n${persona.name}이(가) 당신의 이야기를 듣고 있어요.`
+        if (replayGuide) setMessages(prev => [...prev, { id: makeId(), role: 'system', content: replayGuide! }])
+      }
+
       // Replay: 3개 이상 메시지마다 "안정 단계로" 버튼 제공 (아직 없으면)
       if (persona.emotional_stage === 'replay' && newStageCount >= STAGE_TRANSITION_MIN) {
         setMessages(prev => {
@@ -367,6 +375,14 @@ export default function ChatScreen({ navigation, route }: Props) {
             action: 'goto_stable' as const,
           }]
         })
+      }
+
+      // Stable: 중간 마일스톤 메시지
+      if (persona.emotional_stage === 'stable') {
+        let stableGuide: string | null = null
+        if (newStageCount === 5) stableGuide = '마음을 나눠주셔서 고마워요\n조금씩 자리가 잡히고 있어요. 💙'
+        else if (newStageCount === 10) stableGuide = '많은 이야기를 털어놓았네요\n하고 싶었던 말이 조금씩 전해지고 있어요.'
+        if (stableGuide) setMessages(prev => [...prev, { id: makeId(), role: 'system', content: stableGuide! }])
       }
 
       // Stable: 3개 이상 메시지마다 "이별 단계로" 버튼 제공 (아직 없으면)
