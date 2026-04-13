@@ -138,9 +138,6 @@ export default function OnboardingScreen({ navigation }: Props) {
               </LinearGradient>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.7}>
-              <Text style={styles.secondaryButtonText}>더 알아보기</Text>
-            </TouchableOpacity>
           </View>
         </Animated.View>
 
