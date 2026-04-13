@@ -16,7 +16,7 @@ type Props = {
   route: RouteProp<RootStackParamList, 'PersonaEdit'>
 }
 
-const RELATIONS = ['부모님', '배우자', '자녀', '친구', '연인', '기타']
+const RELATIONS = ['부모님', '배우자', '연인', '친구', '형제/자매', '자녀', '기타']
 
 const STAR_DOTS = Array.from({ length: 20 }, (_, i) => ({
   top: `${(i * 37 + 13) % 100}%`,

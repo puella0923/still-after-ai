@@ -66,6 +66,7 @@ export default function HomeScreen() {
   const [conversationCounts, setConversationCounts] = useState<Record<string, number>>({})
   const [error, setError] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   const fadeAnim = useRef(new Animated.Value(0)).current
 
@@ -98,26 +99,6 @@ export default function HomeScreen() {
             .eq('persona_id', p.id)
             .eq('role', 'user')
           counts[p.id] = count ?? 0
-
-          // Auto stage transition: replay → stable at 30 conversations
-          if (p.emotional_stage === 'replay' && (count ?? 0) >= 30) {
-            await supabase.from('personas').update({ emotional_stage: 'stable' }).eq('id', p.id)
-            setPersonas(prev => prev.map(pp => pp.id === p.id ? { ...pp, emotional_stage: 'stable' } : pp))
-          }
-
-          // Auto stage transition: stable → closure at 20 stage-specific conversations
-          if (p.emotional_stage === 'stable') {
-            const { count: stableCount } = await supabase
-              .from('conversations')
-              .select('*', { count: 'exact', head: true })
-              .eq('persona_id', p.id)
-              .eq('role', 'user')
-              .eq('emotional_stage', 'stable')
-            if ((stableCount ?? 0) >= 20) {
-              await supabase.from('personas').update({ emotional_stage: 'closure' }).eq('id', p.id)
-              setPersonas(prev => prev.map(pp => pp.id === p.id ? { ...pp, emotional_stage: 'closure' } : pp))
-            }
-          }
         }
         setConversationCounts(counts)
       }
@@ -132,15 +113,18 @@ export default function HomeScreen() {
   useFocusEffect(useCallback(() => { fetchData() }, [fetchData]))
 
   const handleEditPersona = (persona: Persona) => {
+    setOpenMenuId(null)
     navigation.navigate('PersonaEdit', {
       personaId: persona.id,
       personaName: persona.name,
       currentPhotoUrl: persona.photo_url ?? null,
       currentNickname: (persona as any).user_nickname ?? null,
+      currentRelationship: persona.relationship ?? null,
     })
   }
 
   const handleDeletePersona = (persona: Persona) => {
+    setOpenMenuId(null)
     const title = '기억을 지울까요?'
     const msg = `"${persona.name}"과(와)의 대화와 기록이 모두 사라져요.\n이 작업은 되돌릴 수 없어요.`
     const doDelete = async () => {
@@ -192,6 +176,11 @@ export default function HomeScreen() {
       {STARS.map((star, i) => (
         <View key={i} style={[styles.star, { left: `${star.left}%` as any, top: `${star.top}%` as any, width: star.size, height: star.size, opacity: star.opacity, borderRadius: star.size }]} />
       ))}
+
+      {/* 메뉴 외부 탭 시 닫기 */}
+      {openMenuId !== null && (
+        <Pressable style={StyleSheet.absoluteFillObject} onPress={() => setOpenMenuId(null)} />
+      )}
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
@@ -350,15 +339,7 @@ export default function HomeScreen() {
 
                       {/* Conversation count */}
                       {count !== undefined && (
-                        <Text style={styles.countText}>
-                          대화 {count}회
-                          {persona.emotional_stage === 'replay' && (
-                            <Text style={styles.countSub}> / 안정 전환까지 {Math.max(0, 30 - count)}회</Text>
-                          )}
-                          {persona.emotional_stage === 'stable' && (
-                            <Text style={styles.countSub}> / 20회 대화 후 이별 단계</Text>
-                          )}
-                        </Text>
+                        <Text style={styles.countText}>대화 {count}회</Text>
                       )}
 
                       {/* Date */}
@@ -366,23 +347,35 @@ export default function HomeScreen() {
                         {new Date(persona.created_at).toLocaleDateString('ko-KR')}
                       </Text>
 
-                      {/* Edit / Delete actions */}
-                      <View style={styles.actionsRow}>
+                      {/* ⋯ 메뉴 버튼 */}
+                      <View style={styles.menuWrap}>
                         <TouchableOpacity
-                          onPress={(e) => { e.stopPropagation?.(); handleEditPersona(persona) }}
-                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                          style={styles.actionBtn}
+                          onPress={(e) => {
+                            e.stopPropagation?.()
+                            setOpenMenuId(openMenuId === persona.id ? null : persona.id)
+                          }}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          style={styles.menuDotBtn}
                         >
-                          <Text style={styles.actionBtnText}>수정</Text>
+                          <Text style={styles.menuDotText}>⋯</Text>
                         </TouchableOpacity>
-                        <Text style={styles.actionDivider}>·</Text>
-                        <TouchableOpacity
-                          onPress={(e) => { e.stopPropagation?.(); handleDeletePersona(persona) }}
-                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                          style={styles.actionBtn}
-                        >
-                          <Text style={[styles.actionBtnText, { color: '#FCA5A5' }]}>삭제</Text>
-                        </TouchableOpacity>
+                        {openMenuId === persona.id && (
+                          <View style={styles.dropdown}>
+                            <TouchableOpacity
+                              style={styles.dropdownItem}
+                              onPress={(e) => { e.stopPropagation?.(); handleEditPersona(persona) }}
+                            >
+                              <Text style={styles.dropdownItemText}>✎ 수정</Text>
+                            </TouchableOpacity>
+                            <View style={styles.dropdownDivider} />
+                            <TouchableOpacity
+                              style={styles.dropdownItem}
+                              onPress={(e) => { e.stopPropagation?.(); handleDeletePersona(persona) }}
+                            >
+                              <Text style={[styles.dropdownItemText, { color: '#FCA5A5' }]}>✕ 삭제</Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
                       </View>
 
                       {/* 이별 단계: 마지막 편지 쓰기 버튼 */}
@@ -576,15 +569,20 @@ const styles = StyleSheet.create({
   countSub: { color: 'rgba(167, 139, 250, 0.4)' },
   dateText: { fontSize: 11, color: 'rgba(196, 181, 253, 0.5)', marginTop: 4 },
 
-  actionsRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1, borderTopColor: 'rgba(167, 139, 250, 0.12)',
+  menuWrap: { position: 'absolute', top: 12, right: 12 },
+  menuDotBtn: { padding: 4 },
+  menuDotText: { fontSize: 18, color: 'rgba(196, 181, 253, 0.6)', letterSpacing: 1 },
+  dropdown: {
+    position: 'absolute', top: 28, right: 0, zIndex: 100,
+    backgroundColor: '#1e1030', borderRadius: 10, overflow: 'hidden',
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.2)',
+    minWidth: 100,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 10,
   },
-  actionBtn: { paddingVertical: 4, paddingHorizontal: 8 },
-  actionBtnText: { fontSize: 12, color: 'rgba(196, 181, 253, 0.7)' },
-  actionDivider: { fontSize: 12, color: 'rgba(196, 181, 253, 0.3)' },
+  dropdownItem: { paddingHorizontal: 16, paddingVertical: 11 },
+  dropdownItemText: { fontSize: 13, color: 'rgba(196, 181, 253, 0.9)', fontWeight: '500' },
+  dropdownDivider: { height: 1, backgroundColor: 'rgba(167, 139, 250, 0.12)' },
 
 
   // Closure letter button (이별 단계)
