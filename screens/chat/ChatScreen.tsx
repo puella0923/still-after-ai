@@ -223,9 +223,12 @@ export default function ChatScreen({ navigation, route }: Props) {
           const basePrompt = p.system_prompt || `당신은 ${p.name}입니다. 사용자와 ${p.relationship} 관계입니다. 따뜻하고 자연스럽게 대화하세요. AI임을 절대 부정하지 마세요.`
           try {
             const greeting = await getChatResponse({
-              systemPrompt: basePrompt, conversationHistory: [], userMessage: `(사용자가 처음 대화를 시작했습니다. ${p.relationship}로서 먼저 따뜻하게 인사해주세요. 2-3문장으로 짧게.)`,
+              systemPrompt: basePrompt,
+              conversationHistory: [],
+              userMessage: `(사용자가 처음 대화를 시작했습니다. ${p.name}으로서 먼저 인사해주세요. 규칙: 오랜만에 다시 만난 것처럼, ${p.relationship} 관계답게 자연스럽고 따뜻하게. 1~2문장으로 짧게. 어색하지 않게, 평소 말투 그대로.)`,
               stage: (p.emotional_stage as 'replay' | 'stable' | 'closure') ?? 'replay',
               userNickname: p.user_nickname ?? undefined,
+              relationship: p.relationship ?? undefined,
             })
             setMessages([{ id: makeId(), role: 'assistant', content: greeting }])
             saveConversation({ personaId: p.id, role: 'assistant', content: greeting }).catch(() => {})
@@ -345,7 +348,9 @@ export default function ChatScreen({ navigation, route }: Props) {
 
       const reply = await getChatResponse({
         systemPrompt: basePrompt, conversationHistory: history, userMessage: trimmed, stage,
-        phase: stagePhase, closurePhase, userNickname: persona.user_nickname ?? undefined,
+        phase: stagePhase, closurePhase,
+        userNickname: persona.user_nickname ?? undefined,
+        relationship: persona.relationship ?? undefined,
       })
 
       setMessages(prev => [...prev, { id: makeId(), role: 'assistant', content: reply }])

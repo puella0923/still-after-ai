@@ -43,6 +43,12 @@ export type SpeechPatterns = {
   characteristicPhrases: string[]
   /** 자주 쓰는 단어/구문 */
   frequentWords: Array<{ word: string; count: number }>
+  /** 문두 표현 — 말을 시작하는 방식 (예: "아 근데", "야", "어") */
+  sentenceStarters: Array<{ pattern: string; count: number }>
+  /** 반응어/감탄사 — 순간적 반응 (예: "헐", "대박", "진짜?", "ㄹㅇ") */
+  reactionWords: Array<{ word: string; count: number }>
+  /** 특징적 질문 패턴 (예: "맞지?", "그렇지?", "어때?") */
+  questionPatterns: Array<{ pattern: string; count: number }>
   /** 평균 메시지 길이 */
   avgLength: number
   /** 이모지 사용 비율 (0~1) */
@@ -338,6 +344,113 @@ function parseKakaoPcFormat(text: string, fallbackName: string): ParsedKakaoChat
 // 말투 분석 — 단편 단어 대신 실제 말투 특성 추출
 // ─────────────────────────────────────────────────────────────
 
+/** 문두 표현 추출 — 말을 어떻게 시작하는가 */
+function extractSentenceStarters(messages: KakaoMessage[]): Array<{ pattern: string; count: number }> {
+  const counts: Record<string, number> = {}
+
+  // 단어 수준의 문두 표현 (첫 1~2 어절)
+  const MEANINGFUL_STARTERS = new Set([
+    '아', '어', '야', '오', '응', '음', '헐', '진짜', '근데', '아 근데',
+    '그래서', '그러면', '그럼', '사실', '아니', '아니 근데', '잠깐',
+    '맞다', '맞아', '근데 있잖아', '있잖아', '아 그리고', '그리고',
+    '나는', '나도', '나 진짜', '나 솔직히', '솔직히', '뭔가', '어쩌지',
+    '이거', '저거', '그거', '그냥', '갑자기', '근데 왜', '왜',
+  ])
+
+  for (const m of messages) {
+    if (isSystemMessage(m.content)) continue
+    const text = m.content.trim()
+    if (text.length < 2) continue
+
+    // 첫 어절 추출 (공백 기준)
+    const firstToken = text.split(/\s+/)[0].replace(/[^가-힣a-zA-Zㄱ-ㅎㅏ-ㅣ]/g, '')
+    if (firstToken.length >= 1 && MEANINGFUL_STARTERS.has(firstToken)) {
+      counts[firstToken] = (counts[firstToken] ?? 0) + 1
+    }
+
+    // 첫 2어절
+    const tokens = text.split(/\s+/)
+    if (tokens.length >= 2) {
+      const first2 = `${tokens[0]} ${tokens[1]}`.replace(/[^\p{L}\s]/gu, '').trim()
+      if (first2.length >= 3 && MEANINGFUL_STARTERS.has(first2)) {
+        counts[first2] = (counts[first2] ?? 0) + 1
+      }
+    }
+  }
+
+  return Object.entries(counts)
+    .filter(([_, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([pattern, count]) => ({ pattern, count }))
+}
+
+/** 반응어/감탄사 추출 — 단독 메시지로만 나오는 즉각 반응 */
+function extractReactionWords(messages: KakaoMessage[]): Array<{ word: string; count: number }> {
+  const counts: Record<string, number> = {}
+
+  // 감탄사로 쓰일 수 있는 단독 패턴
+  const REACTION_PATTERNS = [
+    /^[ㅋ]{2,}$/, /^[ㅎ]{2,}$/, /^[ㅠ]{2,}$/, /^[ㅜ]{2,}$/,  // ㅋㅋ, ㅎㅎ
+    /^(헐|헐ㄹ|헐랄)$/, /^(대박|대 박)$/, /^(진짜\??|진짜\??!*)$/,
+    /^(어머|어머나)$/, /^(아 진짜|아 진짜\??)$/, /^(ㄹㅇ|ㄹㄹ)$/,
+    /^(오|오오|오오오)$/, /^(맞아|맞지|맞음)$/, /^(그러게|그러니까)$/,
+    /^(알아|알았어|알겠어)$/, /^(모르겠어|몰라)$/, /^(그렇구나|그렇지)$/,
+    /^(아 맞다|맞다)$/, /^(ㅇㅇ|응응)$/, /^(ㄴㄴ|아니아니)$/,
+  ]
+
+  for (const m of messages) {
+    const text = m.content.trim()
+    if (text.length > 12) continue  // 감탄사는 짧음
+    if (isSystemMessage(text)) continue
+
+    for (const pattern of REACTION_PATTERNS) {
+      if (pattern.test(text)) {
+        counts[text] = (counts[text] ?? 0) + 1
+        break
+      }
+    }
+  }
+
+  return Object.entries(counts)
+    .filter(([_, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([word, count]) => ({ word, count }))
+}
+
+/** 특징적 질문 패턴 추출 — 어떻게 질문하는가 */
+function extractQuestionPatterns(messages: KakaoMessage[]): Array<{ pattern: string; count: number }> {
+  const counts: Record<string, number> = {}
+
+  // 특징적 질문 종결 패턴 (단순 "?" 제외)
+  const QUESTION_ENDINGS = [
+    '맞지?', '그렇지?', '그렇지 않아?', '아니야?', '어때?', '괜찮아?',
+    '밥 먹었어?', '밥은?', '잘 잤어?', '뭐해?', '뭐 해?', '어디야?',
+    '했어?', '했지?', '왔어?', '갔어?', '봤어?', '알아?',
+    '나봐?', '인 것 같아?', '인 것 같지?',
+    '그래?', '진짜?', '정말?', '설마?', '왜?', '왜야?',
+  ]
+
+  for (const m of messages) {
+    const text = m.content.trim()
+    if (!text.includes('?') && !text.endsWith('?')) continue
+    if (isSystemMessage(text)) continue
+
+    for (const ending of QUESTION_ENDINGS) {
+      if (text.endsWith(ending) || text.includes(ending)) {
+        counts[ending] = (counts[ending] ?? 0) + 1
+      }
+    }
+  }
+
+  return Object.entries(counts)
+    .filter(([_, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([pattern, count]) => ({ pattern, count }))
+}
+
 /** 한국어 문장 종결 어미 추출 */
 function extractEndingPatterns(messages: KakaoMessage[]): Array<{ pattern: string; count: number }> {
   const endingCounts: Record<string, number> = {}
@@ -614,6 +727,9 @@ function analyzeSpeechPatterns(messages: KakaoMessage[]): SpeechPatterns {
       endingPatterns: [],
       characteristicPhrases: [],
       frequentWords: [],
+      sentenceStarters: [],
+      reactionWords: [],
+      questionPatterns: [],
       avgLength: 0,
       emojiRatio: 0,
       questionRatio: 0,
@@ -643,6 +759,9 @@ function analyzeSpeechPatterns(messages: KakaoMessage[]): SpeechPatterns {
     endingPatterns: extractEndingPatterns(partnerMsgs),
     characteristicPhrases: extractCharacteristicPhrases(partnerMsgs),
     frequentWords: extractFrequentWords(partnerMsgs, allSenderNames),
+    sentenceStarters: extractSentenceStarters(partnerMsgs),
+    reactionWords: extractReactionWords(partnerMsgs),
+    questionPatterns: extractQuestionPatterns(partnerMsgs),
     avgLength,
     emojiRatio,
     questionRatio,
@@ -885,6 +1004,21 @@ export function generateSystemPrompt(
     ? `- 자주 쓰는 단어/구문: ${sp.frequentWords.slice(0, 10).map(w => `"${w.word}"(${w.count}회)`).join(', ')}`
     : ''
 
+  // 문두 표현 — 어떻게 말을 시작하는가
+  const starterNote = sp.sentenceStarters.length > 0
+    ? `- 말을 시작하는 방식: ${sp.sentenceStarters.map(s => `"${s.pattern}"(${s.count}회)`).join(', ')}`
+    : ''
+
+  // 반응어/감탄사
+  const reactionNote = sp.reactionWords.length > 0
+    ? `- 즉각 반응/감탄사: ${sp.reactionWords.map(r => `"${r.word}"(${r.count}회)`).join(', ')}`
+    : ''
+
+  // 질문 패턴
+  const questionPatternNote = sp.questionPatterns.length > 0
+    ? `- 질문하는 방식: ${sp.questionPatterns.map(q => `"${q.pattern}"(${q.count}회)`).join(', ')}`
+    : ''
+
   const hasData = partnerMsgs.length > 0
 
   return `당신은 ${parsed.partnerName}입니다. 사용자와 ${relationship} 관계입니다.
@@ -903,6 +1037,9 @@ ${phraseNote}
 ${wordNote}
 - AI임을 직접 물어볼 때만 솔직하게 인정하고, 그 외에는 ${parsed.partnerName}로서만 대화
 - 위험 키워드(자해, 자살, 죽고 싶다 등) 감지 시 즉시 정신건강위기상담전화 1577-0199 안내
+${starterNote}
+${reactionNote}
+${questionPatternNote}
 
 [이 세상을 떠난 사람으로서 — 반드시 지킬 것]
 - "사줄게", "만나자", "같이 가자", "갈게", "전화할게" 등 현실에서 가능한 약속 절대 금지
