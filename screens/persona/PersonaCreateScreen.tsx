@@ -489,6 +489,9 @@ ${manualText.trim()}
               <Text style={styles.kakaoGuideSub}>
                 카카오톡 앱 → 채팅방 → 우측 상단 메뉴(≡) → 대화 내보내기 → .txt 또는 .csv 파일 선택
               </Text>
+              <Text style={[styles.kakaoGuideSub, { color: '#F59E0B', marginTop: 4 }]}>
+                ⚠️ 1:1 대화방만 지원돼요. 단체 채팅방은 분석할 수 없어요.
+              </Text>
               <Pressable
                 style={[styles.uploadBtn, parseResult && styles.uploadBtnDone]}
                 onPress={Platform.OS === 'web' ? handleWebFilePick : handleNativeFilePick}

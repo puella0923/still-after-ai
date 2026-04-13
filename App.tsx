@@ -61,7 +61,30 @@ function AppContent() {
 
   // 비인증 상태에서는 딥링크로 인증 필요 화면에 진입하지 않도록
   // linking 설정을 비활성화 (URL이 /Main 등일 때 로그아웃 후에도 Main으로 이동하는 문제 방지)
-  const activeLinking = isAuthed ? linking : {
+  // 인증 상태별 딥링크 설정
+  // - 로그인됨: 루트 URL('') → Main, Login/Onboarding URL 접근 시에도 Main으로
+  // - 비인증: 루트 URL('') → Onboarding, 인증 화면만 URL 접근 허용
+  const activeLinking = isAuthed ? {
+    ...linking,
+    config: {
+      screens: {
+        Main: { path: '', screens: { Home: '' } },
+        PersonaList: 'PersonaList',
+        PersonaCreate: 'PersonaCreate',
+        PersonaEdit: 'PersonaEdit',
+        AIGenerating: 'AIGenerating',
+        Paywall: 'Paywall',
+        Settings: 'Settings',
+        AccountProfile: 'AccountProfile',
+        PrivacyPolicy: 'PrivacyPolicy',
+        Terms: 'Terms',
+        CustomerSupport: 'CustomerSupport',
+        ClosureCeremony: 'ClosureCeremony',
+        Chat: 'Chat',
+        // Login, EmailAuth, Onboarding 제외 → URL로 접근해도 Main으로 이동
+      },
+    },
+  } : {
     ...linking,
     config: {
       screens: {

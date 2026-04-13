@@ -342,8 +342,22 @@ function parseKakaoPcFormat(text: string, fallbackName: string): ParsedKakaoChat
 function extractEndingPatterns(messages: KakaoMessage[]): Array<{ pattern: string; count: number }> {
   const endingCounts: Record<string, number> = {}
 
-  // 한국어 주요 종결 어미 패턴 (2~4글자)
-  const endingRegex = /(.{2,4})[\.\?!~ㅋㅎㅠㅜ]*$/
+  // 한국어 실제 종결 어미 목록 — 명시적으로 매칭
+  const KNOWN_ENDINGS = [
+    // 반말 종결
+    '해', '해요', '했어', '했지', '하지', '한다', '한데', '할게', '할까',
+    '거든', '거야', '잖아', '인데', '는데', '던데', '더라', '더라고',
+    '지', '지요', '죠', '네', '네요', '구나', '구나요',
+    '어', '아', '야', '여', '야?', '아?',
+    'ㅋ', 'ㅎ', 'ㅠ', 'ㅜ',
+    // 존댓말 종결
+    '요', '습니다', '입니다', '세요', '까요', '나요', '군요', '네요',
+    '을게요', '할게요', '줄게요', '볼게요',
+    // 특수
+    '음', '냐', '니', '냥', '셈', '듯', '겠지', '겠어', '겠다',
+    '래', '라고', '다고', '냐고',
+    '라', '려고', '으려고', '볼까', '갈까', '해볼까',
+  ]
 
   for (const m of messages) {
     if (isSystemMessage(m.content)) continue
@@ -351,20 +365,25 @@ function extractEndingPatterns(messages: KakaoMessage[]): Array<{ pattern: strin
     const text = m.content.replace(/[ㅋㅎㅠㅜ~.!?\s]+$/g, '').trim()
     if (text.length < 2) continue
 
-    // 마지막 2~4글자를 어미로 추출
-    for (const len of [2, 3, 4]) {
-      if (text.length >= len) {
-        const ending = text.slice(-len)
-        // 한글만 포함된 어미
-        if (/^[\uAC00-\uD7AF]+$/.test(ending)) {
-          endingCounts[ending] = (endingCounts[ending] ?? 0) + 1
-        }
+    // 방법 1: 알려진 종결 어미 매칭
+    for (const ending of KNOWN_ENDINGS) {
+      if (text.endsWith(ending)) {
+        endingCounts[ending] = (endingCounts[ending] ?? 0) + 1
+        break  // 가장 먼저 매칭된 것만 (긴 어미 우선이 아니므로 한 번만)
+      }
+    }
+
+    // 방법 2: 마지막 2글자 패턴도 보조적으로 수집 (한글만)
+    if (text.length >= 2) {
+      const last2 = text.slice(-2)
+      if (/^[\uAC00-\uD7AF]{2}$/.test(last2)) {
+        endingCounts[last2] = (endingCounts[last2] ?? 0) + 1
       }
     }
   }
 
   return Object.entries(endingCounts)
-    .filter(([_, count]) => count >= 2)
+    .filter(([_, count]) => count >= 3)  // 3회 이상만 (노이즈 감소)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 15)
     .map(([pattern, count]) => ({ pattern, count }))
@@ -396,30 +415,23 @@ function extractCharacteristicPhrases(messages: KakaoMessage[]): string[] {
 
 /** 자주 쓰는 의미 있는 단어/구문 추출 */
 function extractFrequentWords(messages: KakaoMessage[], allSenderNames?: string[]): Array<{ word: string; count: number }> {
-  // 불용어 확장 — 의미 없는 단어, 감탄사, 대명사, 접속사, 조사/어미, 시스템 토큰 제거
+  // 불용어 — 순수하게 의미 없는 토큰만 제거
+  // ⚠️ "진짜", "그냥", "완전" 등 부사/감탄사는 말투 특징이므로 제거하지 않음!
   const stopTokens = new Set([
-    // 감탄사/반응
+    // 순수 감탄사/반응 (단독으로 의미 없음)
     '응', '네', '어', '음', '야', '요', '엉', '으', '오', '아', '헉', '흠', '웅',
     '아아', '어어', '오오', '에이', '아이', '예',
     'ㅋㅋ', 'ㅋㅋㅋ', 'ㅎㅎ', 'ㅎㅎㅎ', 'ㅠㅠ', 'ㅜㅜ', 'ㅋ', 'ㅎ', 'ㅠ', 'ㅜ',
-    // 대명사
+    // 대명사 (누구나 쓰므로 말투 특징이 아님)
     '나', '너', '내', '네', '제', '저', '우리', '얘', '걔', '이거', '그거', '저거',
-    '여기', '거기', '저기', '이런', '그런', '저런', '뭐', '누구', '언제', '어디',
-    // 부사/접속사
-    '그냥', '진짜', '근데', '그리고', '그래서', '왜냐하면', '아니', '맞아',
-    '좀', '되게', '엄청', '완전', '약간', '그때', '이제', '지금', '오늘', '내일', '어제',
-    '일단', '아직', '또', '다시', '이미', '아까', '나중', '잠깐', '바로', '많이',
-    '아직', '벌써', '정말', '매우', '너무', '항상', '자꾸', '계속', '아마',
-    // 조사/어미/접미사 (독립으로 나오는 경우)
-    '에서', '에게', '한테', '까지', '부터', '처럼', '같이', '때문', '대로',
-    '니까', '니깐', '거든', '잖아', '라고', '라서', '인데', '은데', '는데',
+    '여기', '거기', '저기', '뭐', '누구', '언제', '어디',
+    // 조사/어미 (독립 토큰일 때)
+    '에서', '에게', '한테', '까지', '부터', '대로',
+    '니까', '니깐', '라고', '라서', '인데', '은데', '는데',
     '어서', '아서', '으니', '으면', '지만', '더니', '다가', '면서',
-    // 일반 동사/형용사/서술어
-    '있어', '없어', '했어', '해서', '하고', '하면', '해도', '해야', '할게',
-    '알겠어', '알았어', '모르겠어', '그래', '그럼', '그러면',
-    '해줘', '할게', '됐어', '했다', '한다', '해봐', '하자', '하지',
-    '싶어', '같아', '봐봐', '볼게', '갈게', '올게', '줄게',
-    '거야', '건데', '거든', '거지', '거잖아', '건가', '거기',
+    // 범용 서술어 (특징 없는 동사)
+    '있어', '없어', '했어', '해서', '하고', '하면', '해도', '해야',
+    '그래', '그럼', '그러면',
     // 카카오톡 시스템 메시지 잔여 토큰
     '사진', '동영상', '이모티콘', '파일', '삭제된', '메시지입니다', '보냈습니다',
     '보이스톡', '페이스톡', '라이브톡',

@@ -423,17 +423,24 @@ export default function EmailAuthScreen({ navigation }: Props) {
                       </TouchableOpacity>
                       <View style={styles.agreeDivider} />
                       {[
-                        { key: 'terms', val: agreeTerms, set: setAgreeTerms, label: '[필수] 서비스 이용약관 동의' },
-                        { key: 'privacy', val: agreePrivacy, set: setAgreePrivacy, label: '[필수] 개인정보 처리방침 동의' },
-                        { key: 'age', val: agreeAge, set: setAgreeAge, label: '[필수] 만 14세 이상입니다' },
-                      ].map(({ key, val, set, label }) => (
+                        { key: 'terms', val: agreeTerms, set: setAgreeTerms, label: '[필수] 서비스 이용약관 동의', screen: 'Terms' as const },
+                        { key: 'privacy', val: agreePrivacy, set: setAgreePrivacy, label: '[필수] 개인정보 처리방침 동의', screen: 'PrivacyPolicy' as const },
+                        { key: 'age', val: agreeAge, set: setAgreeAge, label: '[필수] 만 14세 이상입니다', screen: null },
+                      ].map(({ key, val, set, label, screen }) => (
                         <React.Fragment key={key}>
-                          <TouchableOpacity style={styles.agreeRow} onPress={() => set((v: boolean) => !v)}>
-                            <View style={[styles.checkbox, val && styles.checkboxChecked]}>
-                              {val && <Text style={styles.checkmark}>✓</Text>}
-                            </View>
-                            <Text style={styles.agreeText}>{label}</Text>
-                          </TouchableOpacity>
+                          <View style={styles.agreeRowWrap}>
+                            <TouchableOpacity style={styles.agreeRow} onPress={() => set((v: boolean) => !v)}>
+                              <View style={[styles.checkbox, val && styles.checkboxChecked]}>
+                                {val && <Text style={styles.checkmark}>✓</Text>}
+                              </View>
+                              <Text style={styles.agreeText}>{label}</Text>
+                            </TouchableOpacity>
+                            {screen && (
+                              <TouchableOpacity onPress={() => navigation.navigate(screen)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                                <Text style={styles.viewFullText}>전문보기</Text>
+                              </TouchableOpacity>
+                            )}
+                          </View>
                           {errors[key] ? <Text style={styles.fieldError}>{errors[key]}</Text> : null}
                         </React.Fragment>
                       ))}
@@ -596,7 +603,7 @@ const styles = StyleSheet.create({
 
   // Agree
   agreeSection: { marginTop: 20, marginBottom: 4 },
-  agreeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  agreeRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   agreeAllText: { fontSize: 15, fontWeight: '600', color: C.TEXT, flex: 1 },
   agreeDivider: { height: 1, backgroundColor: 'rgba(167, 139, 250, 0.15)', marginBottom: 12 },
   checkbox: {
@@ -606,6 +613,8 @@ const styles = StyleSheet.create({
   checkboxChecked: { backgroundColor: '#7C3AED', borderColor: '#7C3AED' },
   checkmark: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
   agreeText: { fontSize: 14, color: 'rgba(167, 139, 250, 0.8)', flex: 1 },
+  agreeRowWrap: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  viewFullText: { fontSize: 12, color: 'rgba(167, 139, 250, 0.6)', textDecorationLine: 'underline', paddingLeft: 4 },
 
   // Submit
   submitBtn: {
