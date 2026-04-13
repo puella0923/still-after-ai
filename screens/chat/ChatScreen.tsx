@@ -323,31 +323,30 @@ export default function ChatScreen({ navigation, route }: Props) {
       setMessages(prev => [...prev, { id: makeId(), role: 'assistant', content: reply }])
       saveConversation({ personaId: persona.id, role: 'assistant', content: reply, emotionalStage: persona.emotional_stage }).catch(() => {})
 
-      // Replay: 3개 이상 메시지 후 "안정 단계로" 버튼 제공 (1회만)
-      if (persona.emotional_stage === 'replay') {
-        if (newStageCount === STAGE_TRANSITION_MIN) {
-          setMessages(prev => [...prev, {
+      // Replay: 3개 이상 메시지마다 "안정 단계로" 버튼 제공 (아직 없으면)
+      if (persona.emotional_stage === 'replay' && newStageCount >= STAGE_TRANSITION_MIN) {
+        setMessages(prev => {
+          const alreadyHasBtn = prev.some(m => m.action === 'goto_stable')
+          if (alreadyHasBtn) return prev
+          return [...prev, {
             id: makeId(), role: 'system',
             content: '대화가 조금씩 이어지고 있어요.\n\n준비가 되면 다음 단계로 넘어갈 수 있어요.\n아직 더 이야기하고 싶다면, 천천히 해도 괜찮아요.',
-            action: 'goto_stable',
-          }])
-        }
-        // 추가 마일스톤 (선택적 안내)
-        const milestoneContent: Record<number, string> = { 10: '익숙한 대화를 이어가고 있어요', 20: '이 대화는 점점 깊어지고 있어요' }
-        if (milestoneContent[newStageCount]) setMessages(prev => [...prev, { id: makeId(), role: 'system', content: milestoneContent[newStageCount] }])
+            action: 'goto_stable' as const,
+          }]
+        })
       }
 
-      // Stable: 3개 이상 메시지 후 "이별 단계로" 버튼 제공 (1회만)
-      if (persona.emotional_stage === 'stable') {
-        if (newStageCount === STABLE_TRANSITION_MIN) {
-          setMessages(prev => [...prev, {
+      // Stable: 3개 이상 메시지마다 "이별 단계로" 버튼 제공 (아직 없으면)
+      if (persona.emotional_stage === 'stable' && newStageCount >= STABLE_TRANSITION_MIN) {
+        setMessages(prev => {
+          const alreadyHasBtn = prev.some(m => m.action === 'goto_closure')
+          if (alreadyHasBtn) return prev
+          return [...prev, {
             id: makeId(), role: 'system',
             content: '감정을 정리하는 시간을 보내고 있어요.\n\n준비가 되면 마지막 단계로 넘어갈 수 있어요.\n아직 더 이야기하고 싶다면, 서두르지 않아도 돼요.',
-            action: 'goto_closure',
-          }])
-        }
-        const stableMilestones: Record<number, string> = { 10: '지금 느끼는 감정을 말해도 괜찮아요', 20: '당신의 마음을 조금씩 이해하고 있어요' }
-        if (stableMilestones[newStageCount]) setMessages(prev => [...prev, { id: makeId(), role: 'system', content: stableMilestones[newStageCount] }])
+            action: 'goto_closure' as const,
+          }]
+        })
       }
 
       // Closure milestones
