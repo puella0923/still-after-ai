@@ -163,22 +163,6 @@ export default function LoginScreen({ navigation }: Props) {
                 </LinearGradient>
               </TouchableOpacity>
 
-              {/* Service feature mini cards */}
-              <View style={styles.featureRow}>
-                <View style={styles.featureCard}>
-                  <Text style={styles.featureEmoji}>💬</Text>
-                  <Text style={styles.featureLabel}>그 사람의{'\n'}말투 그대로</Text>
-                </View>
-                <View style={styles.featureCard}>
-                  <Text style={styles.featureEmoji}>🌱</Text>
-                  <Text style={styles.featureLabel}>감정을{'\n'}천천히 정리</Text>
-                </View>
-                <View style={styles.featureCard}>
-                  <Text style={styles.featureEmoji}>🕊️</Text>
-                  <Text style={styles.featureLabel}>마음속으로{'\n'}보내드려요</Text>
-                </View>
-              </View>
-
               {/* Free trial notice */}
               <View style={styles.infoBox}>
                 <Text style={styles.infoText}>
@@ -191,17 +175,6 @@ export default function LoginScreen({ navigation }: Props) {
               <Text style={styles.aiNotice}>
                 Still After는 실제 인물을 복원하지 않아요.{'\n'}감정이 자연스럽게 자리 잡을 수 있도록{'\n'}조심스럽게 함께하는 공간이에요.
               </Text>
-
-              {/* Footer links */}
-              <View style={styles.footerLinksRow}>
-                <Pressable onPress={() => Linking.openURL('https://stillafter.com/terms')}>
-                  <Text style={styles.footerLink}>서비스 이용약관</Text>
-                </Pressable>
-                <Text style={styles.footerDot}> · </Text>
-                <Pressable onPress={() => Linking.openURL('https://stillafter.com/privacy')}>
-                  <Text style={styles.footerLink}>개인정보처리방침</Text>
-                </Pressable>
-              </View>
 
               {/* Back */}
               <TouchableOpacity
