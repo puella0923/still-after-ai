@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
   FlatList,
   SafeAreaView,
   ActivityIndicator,
@@ -53,6 +54,7 @@ export default function PersonaListScreen({ navigation }: Props) {
   const [usageCounts, setUsageCounts] = useState<Record<string, { count: number; isPaid: boolean }>>({})
   const [modal, setModal] = useState<ModalState>({ type: 'none' })
   const [modalLoading, setModalLoading] = useState(false)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   const loadPersonas = useCallback(async () => {
     setLoading(true)
@@ -121,13 +123,55 @@ export default function PersonaListScreen({ navigation }: Props) {
     const usedCount = usage?.count ?? 0
     const isStable = item.emotional_stage === 'stable'
 
+    const isMenuOpen = openMenuId === item.id
+
     return (
-      <TouchableOpacity onPress={() => handleStartChat(item)} activeOpacity={0.85} style={styles.cardWrap}>
+      <TouchableOpacity
+        onPress={() => { setOpenMenuId(null); handleStartChat(item) }}
+        activeOpacity={0.85}
+        style={styles.cardWrap}
+      >
         <LinearGradient
           colors={stage.colors as [string, string]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={[styles.card, { borderColor: stage.borderColor }]}
         >
+          {/* ⋯ 메뉴 버튼 — 카드 우상단 */}
+          <View style={styles.menuWrap}>
+            <TouchableOpacity
+              style={styles.menuBtn}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              onPress={(e) => {
+                e.stopPropagation()
+                setOpenMenuId(isMenuOpen ? null : item.id)
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.menuBtnText}>⋯</Text>
+            </TouchableOpacity>
+
+            {/* 드롭다운 */}
+            {isMenuOpen && (
+              <View style={styles.dropdown}>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={(e) => { e.stopPropagation(); setOpenMenuId(null); handleEdit(item) }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.dropdownItemText}>✎ 수정</Text>
+                </TouchableOpacity>
+                <View style={styles.dropdownDivider} />
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={(e) => { e.stopPropagation(); setOpenMenuId(null); handleDelete(item) }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.dropdownItemText, { color: '#FCA5A5' }]}>✕ 삭제</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
           {/* Avatar */}
           <View style={styles.avatarWrap}>
             {(item as any).photo_url ? (
@@ -156,18 +200,6 @@ export default function PersonaListScreen({ navigation }: Props) {
           ) : usedCount > 0 ? (
             <Text style={styles.statusText}>대화 {usedCount}회 / {FREE_MESSAGE_LIMIT}회</Text>
           ) : null}
-
-          {/* Actions row */}
-          <View style={styles.actionsRow}>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => handleEdit(item)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Text style={styles.actionBtnText}>수정</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => handleDelete(item)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Text style={[styles.actionBtnText, { color: '#FCA5A5' }]}>삭제</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* 이별 전환은 안정 단계 20회 대화 후 자동 전환 */}
         </LinearGradient>
       </TouchableOpacity>
     )
@@ -183,6 +215,11 @@ export default function PersonaListScreen({ navigation }: Props) {
       {STARS.map((star, i) => (
         <View key={i} style={[styles.star, { left: `${star.left}%` as any, top: `${star.top}%` as any, width: star.size, height: star.size, opacity: star.opacity, borderRadius: star.size }]} />
       ))}
+
+      {/* 메뉴 열려있을 때 외부 탭 → 닫기 */}
+      {openMenuId !== null && (
+        <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpenMenuId(null)} />
+      )}
 
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
@@ -368,10 +405,25 @@ const styles = StyleSheet.create({
   stageBadgeText: { fontSize: 11, fontWeight: '500' },
   statusText: { fontSize: 11, color: 'rgba(196, 181, 253, 0.5)', marginTop: 4 },
 
-  // Actions
-  actionsRow: { flexDirection: 'row', gap: 12, marginTop: 10 },
-  actionBtn: { paddingVertical: 4 },
-  actionBtnText: { fontSize: 12, color: 'rgba(196, 181, 253, 0.6)' },
+  // ⋯ Menu
+  menuWrap: { position: 'absolute', top: 12, right: 12, zIndex: 10 },
+  menuBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  menuBtnText: { fontSize: 18, color: 'rgba(196, 181, 253, 0.7)', letterSpacing: 1, lineHeight: 20 },
+  dropdown: {
+    position: 'absolute', top: 36, right: 0,
+    backgroundColor: 'rgba(30, 12, 60, 0.96)',
+    borderRadius: 12, borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.25)',
+    minWidth: 120, overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 10,
+    ...(({ backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }) as any),
+  },
+  dropdownItem: { paddingVertical: 12, paddingHorizontal: 16 },
+  dropdownItemText: { fontSize: 14, color: '#E9D5FF', fontWeight: '500' },
+  dropdownDivider: { height: 1, backgroundColor: 'rgba(167, 139, 250, 0.15)', marginHorizontal: 8 },
 
   // Closure
   closureBtnWrap: { marginTop: 10, borderRadius: RADIUS.MD, overflow: 'hidden' },
