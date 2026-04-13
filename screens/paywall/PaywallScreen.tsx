@@ -145,11 +145,16 @@ export default function PaywallScreen({ navigation, route }: Props) {
           <View style={styles.dividerLine} />
         </View>
 
-        <TouchableOpacity onPress={handlePayment} activeOpacity={0.85}>
-          <LinearGradient colors={['#a855f7', '#db2777']} style={styles.payButton}>
-            <Text style={styles.payButtonText}>결제하고 무제한 대화하기</Text>
-            <Text style={styles.payButtonSub}>페르소나당 19,900원 (1회 결제)</Text>
-          </LinearGradient>
+        <TouchableOpacity onPress={handlePayment} activeOpacity={0.85} disabled={loading} style={styles.payButtonWrap}>
+          <LinearGradient colors={['#a855f7', '#db2777']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+          <View style={styles.payButtonContent} pointerEvents="none">
+            {loading ? <ActivityIndicator color="#fff" /> : (
+              <>
+                <Text style={styles.payButtonText}>결제하고 무제한 대화하기</Text>
+                <Text style={styles.payButtonSub}>페르소나당 19,900원 (1회 결제)</Text>
+              </>
+            )}
+          </View>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -196,7 +201,8 @@ const styles = StyleSheet.create({
   divider: { flexDirection: 'row', alignItems: 'center', width: '100%', marginVertical: 20 },
   dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
   dividerText: { marginHorizontal: 12, color: 'rgba(255,255,255,0.4)', fontSize: 13 },
-  payButton: { width: '100%', borderRadius: 14, padding: 20, alignItems: 'center', marginBottom: 16 },
+  payButtonWrap: { width: '100%', borderRadius: 14, overflow: 'hidden', marginBottom: 16, position: 'relative' as const },
+  payButtonContent: { padding: 20, alignItems: 'center' as const },
   payButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
   payButtonSub: { fontSize: 13, color: 'rgba(255,255,255,0.65)', marginTop: 4 },
   backButton: { padding: 12 },
