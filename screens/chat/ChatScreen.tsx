@@ -29,14 +29,14 @@ import { C, RADIUS } from '../theme'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const FREE_MESSAGE_LIMIT = 10
-const STAGE_TRANSITION_THRESHOLD = 30
+const STAGE_TRANSITION_MIN = 3  // 이 이후부터 "다음 단계" 버튼 노출
 
 // 테스트/개발 계정은 Paywall 우회 — 프로덕션 빌드에서는 환경변수로 비활성화
 const TEST_EMAILS_RAW = process.env.EXPO_PUBLIC_TEST_EMAILS || ''
 const TEST_EMAILS = TEST_EMAILS_RAW ? TEST_EMAILS_RAW.split(',').map(e => e.trim().toLowerCase()) : []
 const isTestAccount = (email?: string | null) => !!email && TEST_EMAILS.includes(email.toLowerCase())
 const CLOSURE_MESSAGE_LIMIT = 20
-const STABLE_TRANSITION_THRESHOLD = 20
+const STABLE_TRANSITION_MIN = 3  // stable→closure 버튼 노출 최소 메시지
 
 function getStagePhase(count: number): 1 | 2 | 3 | 4 {
   if (count <= 5) return 1
@@ -52,8 +52,7 @@ function getClosurePhase(count: number): ClosurePhase {
   return 4
 }
 function getReplayProgressMessage(count: number): string | null {
-  const remaining = STAGE_TRANSITION_THRESHOLD - count
-  if (remaining > 10) return null
+  if (count <= 2) return null
   if (count <= 5) return '그때처럼, 이야기를 시작해보세요'
   if (count <= 10) return '익숙했던 대화를 이어가고 있어요'
   if (count <= 15) return '그 사람과 함께 있는 시간입니다'
@@ -124,7 +123,7 @@ type Message = {
   id: string
   role: 'user' | 'assistant' | 'system'
   content: string
-  action?: 'goto_closure'
+  action?: 'goto_stable' | 'goto_closure'
 }
 
 let msgCounter = 0
@@ -254,6 +253,18 @@ export default function ChatScreen({ navigation, route }: Props) {
     }
   }, [personaId, persona])
 
+  const handleStableTransition = useCallback(async () => {
+    if (!persona) return
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('personas').update({ emotional_stage: 'stable' }).eq('id', persona.id).eq('user_id', user.id)
+      setPersona(prev => prev ? { ...prev, emotional_stage: 'stable' } : prev)
+      setStageMessageCount(0)
+      setMessages(prev => [...prev, { id: makeId(), role: 'system', content: '🌙 안정 단계로 접어들었어요\n\n이제, 당신의 이야기를 해도 괜찮아요.\n있는 그대로의 마음을 꺼내보세요.' }])
+    } catch { showToast('잠시 후 다시 시도해주세요.') }
+  }, [persona, showToast])
+
   const handleClosureTransition = useCallback(async () => {
     if (!persona) return
     try {
@@ -262,7 +273,7 @@ export default function ChatScreen({ navigation, route }: Props) {
       await supabase.from('personas').update({ emotional_stage: 'closure' }).eq('id', persona.id).eq('user_id', user.id)
       setPersona(prev => prev ? { ...prev, emotional_stage: 'closure' } : prev)
       setStageMessageCount(0)
-      setMessages(prev => [...prev, { id: makeId(), role: 'system', content: '이제, 마지막 이야기를 나눌 시간이에요\n\n서두르지 않아도 돼요.\n하고 싶은 말만 꺼내도 괜찮아요.' }])
+      setMessages(prev => [...prev, { id: makeId(), role: 'system', content: '🌸 이별 단계로 접어들었어요\n\n이제, 마지막 이야기를 나눌 시간이에요.\n서두르지 않아도 돼요. 하고 싶은 말만 꺼내도 괜찮아요.' }])
     } catch { showToast('잠시 후 다시 시도해주세요.') }
   }, [persona, showToast])
 
@@ -312,45 +323,31 @@ export default function ChatScreen({ navigation, route }: Props) {
       setMessages(prev => [...prev, { id: makeId(), role: 'assistant', content: reply }])
       saveConversation({ personaId: persona.id, role: 'assistant', content: reply, emotionalStage: persona.emotional_stage }).catch(() => {})
 
-      // Milestone cards
-      if (persona.emotional_stage === 'replay' && newStageCount < STAGE_TRANSITION_THRESHOLD) {
-        const milestoneContent: Record<number, string> = { 5: '그때처럼, 자연스럽게 이어가고 있어요', 10: '익숙한 대화를 이어가고 있어요', 15: '이 대화는 점점 깊어지고 있어요', 18: '조금 더 있으면, 감정을 정리하는 시간이 다가올 거예요' }
+      // Replay: 3개 이상 메시지 후 "안정 단계로" 버튼 제공 (1회만)
+      if (persona.emotional_stage === 'replay') {
+        if (newStageCount === STAGE_TRANSITION_MIN) {
+          setMessages(prev => [...prev, {
+            id: makeId(), role: 'system',
+            content: '대화가 조금씩 이어지고 있어요.\n\n준비가 되면 다음 단계로 넘어갈 수 있어요.\n아직 더 이야기하고 싶다면, 천천히 해도 괜찮아요.',
+            action: 'goto_stable',
+          }])
+        }
+        // 추가 마일스톤 (선택적 안내)
+        const milestoneContent: Record<number, string> = { 10: '익숙한 대화를 이어가고 있어요', 20: '이 대화는 점점 깊어지고 있어요' }
         if (milestoneContent[newStageCount]) setMessages(prev => [...prev, { id: makeId(), role: 'system', content: milestoneContent[newStageCount] }])
       }
 
-      // Auto stage transition: replay → stable
-      if (persona.emotional_stage === 'replay' && newStageCount >= STAGE_TRANSITION_THRESHOLD) {
-        try {
-          const { data: { user } } = await supabase.auth.getUser()
-          if (user) {
-            await supabase.from('personas').update({ emotional_stage: 'stable' }).eq('id', persona.id).eq('user_id', user.id)
-            setPersona(prev => prev ? { ...prev, emotional_stage: 'stable' } : prev)
-            setStageMessageCount(0)
-            setMessages(prev => [...prev, { id: makeId(), role: 'system', content: '🌙 안정 단계로 접어들었어요\n\n이제, 당신의 이야기를 해도 괜찮아요.\n있는 그대로의 마음을 꺼내보세요.' }])
-          }
-        } catch { /* ignore */ }
-      }
-
-      // Stable milestones + auto transition to closure at 20
+      // Stable: 3개 이상 메시지 후 "이별 단계로" 버튼 제공 (1회만)
       if (persona.emotional_stage === 'stable') {
-        if (newStageCount < STABLE_TRANSITION_THRESHOLD) {
-          const stableMilestones: Record<number, string> = { 5: '이제, 당신의 이야기를 해도 괜찮아요', 10: '지금 느끼는 감정을 말해도 괜찮습니다', 15: '당신의 마음을 조금씩 이해하고 있어요', 18: '이제, 천천히 준비하고 있어요' }
-          if (stableMilestones[newStageCount]) {
-            setMessages(prev => [...prev, { id: makeId(), role: 'system', content: stableMilestones[newStageCount] }])
-          }
+        if (newStageCount === STABLE_TRANSITION_MIN) {
+          setMessages(prev => [...prev, {
+            id: makeId(), role: 'system',
+            content: '감정을 정리하는 시간을 보내고 있어요.\n\n준비가 되면 마지막 단계로 넘어갈 수 있어요.\n아직 더 이야기하고 싶다면, 서두르지 않아도 돼요.',
+            action: 'goto_closure',
+          }])
         }
-        // Auto stage transition: stable → closure
-        if (newStageCount >= STABLE_TRANSITION_THRESHOLD) {
-          try {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (user) {
-              await supabase.from('personas').update({ emotional_stage: 'closure' }).eq('id', persona.id).eq('user_id', user.id)
-              setPersona(prev => prev ? { ...prev, emotional_stage: 'closure' } : prev)
-              setStageMessageCount(0)
-              setMessages(prev => [...prev, { id: makeId(), role: 'system', content: '🌸 이별 단계로 접어들었어요\n\n이제, 마지막 이야기를 나눌 시간이에요.\n서두르지 않아도 돼요. 하고 싶은 말만 꺼내도 괜찮아요.' }])
-            }
-          } catch { /* ignore */ }
-        }
+        const stableMilestones: Record<number, string> = { 10: '지금 느끼는 감정을 말해도 괜찮아요', 20: '당신의 마음을 조금씩 이해하고 있어요' }
+        if (stableMilestones[newStageCount]) setMessages(prev => [...prev, { id: makeId(), role: 'system', content: stableMilestones[newStageCount] }])
       }
 
       // Closure milestones
@@ -570,16 +567,18 @@ export default function ChatScreen({ navigation, route }: Props) {
             }
             renderItem={({ item }) => {
               if (item.role === 'system') {
-                const hasCta = item.action === 'goto_closure'
+                const hasCta = item.action === 'goto_stable' || item.action === 'goto_closure'
+                const ctaLabel = item.action === 'goto_stable' ? '안정 단계로 넘어가기 →' : '이별 단계 시작하기 →'
+                const ctaHandler = item.action === 'goto_stable' ? handleStableTransition : handleClosureTransition
                 return (
                   <View style={styles.systemCardWrap}>
                     <View style={styles.systemAvatar}><Text style={styles.systemAvatarText}>✦</Text></View>
                     <View style={[styles.systemBubble, hasCta && styles.systemBubbleCta]}>
                       <Text style={styles.systemBubbleText}>{item.content}</Text>
                       {hasCta && (
-                        <TouchableOpacity style={styles.systemCtaBtn} onPress={handleClosureTransition} activeOpacity={0.8}>
+                        <TouchableOpacity style={styles.systemCtaBtn} onPress={ctaHandler} activeOpacity={0.8}>
                           <LinearGradient colors={['#7C3AED', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.systemCtaBtnGradient}>
-                            <Text style={styles.systemCtaBtnText}>이별 단계 시작하기 →</Text>
+                            <Text style={styles.systemCtaBtnText}>{ctaLabel}</Text>
                           </LinearGradient>
                         </TouchableOpacity>
                       )}
