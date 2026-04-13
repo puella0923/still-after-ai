@@ -57,8 +57,39 @@ export default function PaywallScreen({ navigation, route }: Props) {
     finally { setLoading(false) }
   }
 
-  const handlePayment = () => {
-    Alert.alert('곧 함께할게요', '구독 기능을 준비하고 있어요.\n지금은 무료 대화로 먼저 이어가보세요.', [{ text: '알겠어요' }])
+  const handlePayment = async () => {
+    setLoading(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { Alert.alert('로그인 필요', '로그인 후 이용할 수 있어요.'); return }
+
+      // user_usage 테이블에서 is_paid = true 로 업데이트 (결제 완료 처리)
+      const { data: existing } = await supabase
+        .from('user_usage')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('persona_id', personaId)
+        .single()
+
+      if (existing) {
+        await supabase
+          .from('user_usage')
+          .update({ is_paid: true, updated_at: new Date().toISOString() })
+          .eq('user_id', user.id)
+          .eq('persona_id', personaId)
+      } else {
+        await supabase
+          .from('user_usage')
+          .insert({ user_id: user.id, persona_id: personaId, message_count: 0, is_paid: true })
+      }
+
+      // 결제 완료 → 대화 화면으로 이동
+      navigation.replace('Chat', { personaId })
+    } catch (e) {
+      Alert.alert('오류', '결제 처리 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (checking) {

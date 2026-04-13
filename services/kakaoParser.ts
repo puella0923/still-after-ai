@@ -413,54 +413,127 @@ function extractCharacteristicPhrases(messages: KakaoMessage[]): string[] {
     .map(([phrase]) => phrase)
 }
 
-/** 자주 쓰는 의미 있는 단어/구문 추출 */
+/** 자주 쓰는 의미 있는 단어/구문 추출 — 말투 특징만 남기기 */
 function extractFrequentWords(messages: KakaoMessage[], allSenderNames?: string[]): Array<{ word: string; count: number }> {
-  // 불용어 — 순수하게 의미 없는 토큰만 제거
-  // ⚠️ "진짜", "그냥", "완전" 등 부사/감탄사는 말투 특징이므로 제거하지 않음!
+  // ────────────────────────────────────────────────────────
+  // 불용어: 누구나 쓰는 일반 한국어 단어 (말투 특징이 아닌 것)
+  // ────────────────────────────────────────────────────────
   const stopTokens = new Set([
-    // 순수 감탄사/반응 (단독으로 의미 없음)
+    // ── 감탄사/반응 ──
     '응', '네', '어', '음', '야', '요', '엉', '으', '오', '아', '헉', '흠', '웅',
-    '아아', '어어', '오오', '에이', '아이', '예',
+    '아아', '어어', '오오', '에이', '아이', '예', '글쎄', '뭐야',
     'ㅋㅋ', 'ㅋㅋㅋ', 'ㅎㅎ', 'ㅎㅎㅎ', 'ㅠㅠ', 'ㅜㅜ', 'ㅋ', 'ㅎ', 'ㅠ', 'ㅜ',
-    // 대명사 (누구나 쓰므로 말투 특징이 아님)
-    '나', '너', '내', '네', '제', '저', '우리', '얘', '걔', '이거', '그거', '저거',
-    '여기', '거기', '저기', '뭐', '누구', '언제', '어디',
-    // 조사/어미 (독립 토큰일 때)
-    '에서', '에게', '한테', '까지', '부터', '대로',
+
+    // ── 대명사/지시사 ──
+    '나', '너', '내', '네', '제', '저', '우리', '얘', '걔', '쟤',
+    '이거', '그거', '저거', '이것', '그것', '저것', '이건', '그건', '저건',
+    '여기', '거기', '저기', '이쪽', '그쪽', '저쪽',
+    '뭐', '누구', '언제', '어디', '왜', '어떻게', '얼마', '몇',
+
+    // ── 시간/날짜 (대화 주제이지 말투가 아님) ──
+    '오늘', '내일', '어제', '모레', '글피', '지금', '이따', '나중',
+    '아까', '방금', '금방', '오전', '오후', '저녁', '아침', '점심',
+    '밤', '새벽', '낮', '주말', '평일', '이번', '다음', '지난',
+    '올해', '작년', '내년', '이번주', '다음주', '지난주',
+    '월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일',
+    '시간', '분', '초', '시', '일', '월', '년',
+
+    // ── 접속사/부사 (누구나 쓰는 연결어) ──
+    '근데', '그런데', '그래서', '그리고', '그래도', '그러면', '그럼',
+    '그래', '그러니까', '그러면서', '그렇지만', '그러나', '그런',
+    '아직', '벌써', '이미', '다시', '또', '더', '덜', '좀', '잘', '못',
+    '그냥', '진짜', '정말', '완전', '약간', '되게', '엄청', '너무',
+    '사실', '근데', '일단', '우선', '아마', '혹시', '만약', '제발',
+
+    // ── 조사/어미 (독립 토큰일 때) ──
+    '에서', '에게', '한테', '까지', '부터', '대로', '처럼', '만큼',
     '니까', '니깐', '라고', '라서', '인데', '은데', '는데',
     '어서', '아서', '으니', '으면', '지만', '더니', '다가', '면서',
-    // 범용 서술어 (특징 없는 동사)
+
+    // ── 범용 동사/형용사 활용형 (누구나 쓰는 기본 동사) ──
     '있어', '없어', '했어', '해서', '하고', '하면', '해도', '해야',
-    '그래', '그럼', '그러면',
-    // 카카오톡 시스템 메시지 잔여 토큰
+    '같아', '같은', '같이', '같아서', '같은데',
+    '되고', '되면', '되서', '됐어', '돼서', '되는',
+    '하는', '하는데', '했는데', '할', '해', '한',
+    '가서', '가고', '가면', '갈', '갈게', '간다', '가는',
+    '오면', '오고', '와서', '올', '올게', '온다', '오는',
+    '먹고', '먹어', '먹으면', '먹는', '먹자',
+    '보고', '봐서', '보면', '보는', '보자',
+    '알겠어', '알았어', '모르겠어', '몰라',
+    '줄게', '줘서', '줬어', '줄까',
+    '싶어', '싶은', '싶다', '싶은데',
+    '해줘', '할게', '됐어', '건데', '거든', '거지', '거잖아', '거야',
+    '끝내고', '끝나고', '끝나면', '시작', '시작해',
+    '나가', '나가서', '나가고', '들어', '들어가',
+
+    // ── 일반 명사 (대화 주제에 불과한 보통명사) ──
+    '거', '것', '때', '데', '수', '말', '사람', '곳', '정도', '생각',
+    '집', '학교', '회사', '카페', '식당', '가게', '병원', '역',
+    '일', '일이', '일해', '일하고', '회의', '수업', '과제', '시험',
+    '밥', '물', '커피', '치킨', '피자', '라면',
+    '전화', '문자', '연락', '약속', '계획',
+    '엄마', '아빠', '언니', '오빠', '형', '누나', '동생', '친구',
+
+    // ── 숫자/단위 ──
+    '하나', '둘', '셋', '넷', '한', '두', '세', '네',
+
+    // ── 영어 일상어 (카톡에서 자주 쓰이지만 특징이 아닌 것) ──
+    'ok', 'ㅇㅋ', 'ㅇㅇ', 'ㄴㄴ', 'ㄱㄱ', 'ㅎㅇ',
+
+    // ── 카카오톡 시스템 메시지 잔여 토큰 ──
     '사진', '동영상', '이모티콘', '파일', '삭제된', '메시지입니다', '보냈습니다',
     '보이스톡', '페이스톡', '라이브톡',
   ])
 
-  // 대화에 등장하는 사람 이름도 불용어에 추가 (호칭은 말투가 아님)
+  // 대화에 등장하는 사람 이름도 불용어에 추가
   if (allSenderNames) {
     for (const name of allSenderNames) {
       stopTokens.add(name)
-      // "연아", "연수야" 등 호칭 변형도 추가
-      if (name.length >= 2) {
-        stopTokens.add(name + '야')
-        stopTokens.add(name + '아')
-        stopTokens.add(name + '이')
-        stopTokens.add(name.slice(-2)) // 이름 끝 2글자 (예: "연수" → "연수")
-        if (name.length >= 3) {
-          stopTokens.add(name.slice(-2) + '야') // "수야"
-          stopTokens.add(name.slice(-2) + '아') // "수아"
+      if (name.length >= 1) {
+        // 이름 + 조사/어미 변형 (파트너가 자기 이름을 3인칭으로 쓰는 경우)
+        const suffixes = ['야', '아', '이', '가', '는', '도', '를', '을', '의', '한테', '에게', '이가', '이는', '이도']
+        for (const suf of suffixes) {
+          stopTokens.add(name + suf)
+        }
+        if (name.length >= 2) {
+          stopTokens.add(name.slice(-2))
+          if (name.length >= 3) {
+            stopTokens.add(name.slice(-2) + '야')
+            stopTokens.add(name.slice(-2) + '아')
+          }
         }
       }
     }
   }
 
-  const wordCounts: Record<string, number> = {}
+  // ────────────────────────────────────────────────────────
+  // 단일 단어가 "말투 특징"인지 판별하는 heuristic
+  // ────────────────────────────────────────────────────────
+  const SPEECH_CHARACTERISTIC_PATTERNS = [
+    /야$/, /이야$/, /쓰$/, /냥$/, /용$/, /욤$/, /숑$/, /링$/,   // 애교/특이 어미
+    /자기/, /오빠/, /언니/, /형/, /누나/,                         // 호칭 (일반 명사와 겹치지만 맥락상 허용)
+    /ㅋ/, /ㅎ/, /ㅠ/,                                            // 이모티콘 포함 단어
+  ]
+
+  /** 단일 토큰이 말투 특징으로 의미있는지 판별 */
+  function isSpeechCharacteristic(token: string): boolean {
+    // 3글자 이상의 한글 단어는 통과 (좀 더 관대하게)
+    if (token.length >= 3 && /^[\uAC00-\uD7AF]+$/.test(token)) return true
+    // 특수 패턴 매칭 (애교, 호칭 등)
+    if (SPEECH_CHARACTERISTIC_PATTERNS.some(p => p.test(token))) return true
+    // 영어 3글자 이상은 통과 (OMG, lol 등 — 말투 특징일 수 있음)
+    if (/^[a-zA-Z]{3,}$/.test(token)) return true
+    return false
+  }
+
+  // ────────────────────────────────────────────────────────
+  // 단어/구문 수집 (n-gram 우선)
+  // ────────────────────────────────────────────────────────
+  const singleWordCounts: Record<string, number> = {}
+  const phraseCounts: Record<string, number> = {}   // 2-gram, 3-gram
 
   for (const m of messages) {
-    // 시스템 메시지 제외
     if (isSystemMessage(m.content)) continue
-    // ㅋㅋ, ㅎㅎ 등 단순 반응만 있는 메시지 제외
     if (/^[ㅋㅎㅠㅜㅡ.!?~\s]+$/.test(m.content.trim())) continue
 
     const normalized = m.content
@@ -472,46 +545,62 @@ function extractFrequentWords(messages: KakaoMessage[], allSenderNames?: string[
     const tokens = normalized.split(' ').filter(t =>
       t.length >= 2 &&
       !stopTokens.has(t) &&
-      !/^[ㅋㅎㅠㅜㅡ]+$/.test(t) &&    // ㅋㅋㅋㅋ 등 변형
-      !/^[a-zA-Z]{1,2}$/.test(t)         // 영어 1~2글자 무의미
+      !/^[ㅋㅎㅠㅜㅡ]+$/.test(t) &&
+      !/^[a-zA-Z]{1,2}$/.test(t) &&
+      !/^\d+$/.test(t)               // 순수 숫자 제외
     )
 
-    // 단일 단어 수집: 한글 2글자 이상 허용 (stopTokens로 조사·감탄사는 이미 차단)
-    // - 예: "오늘", "밥", "나도" 같은 의미 있는 짧은 단어를 포함해 노출 개수 확보
+    // 단일 단어: isSpeechCharacteristic 통과한 것만
     for (const token of tokens) {
-      if (token.length >= 2) {
-        wordCounts[token] = (wordCounts[token] ?? 0) + 1
+      if (isSpeechCharacteristic(token)) {
+        singleWordCounts[token] = (singleWordCounts[token] ?? 0) + 1
       }
     }
 
-    // 2-gram 구문 (더 의미 있는 표현)
+    // 2-gram (더 의미 있는 표현)
     for (let i = 0; i < tokens.length - 1; i++) {
       const bigram = `${tokens[i]} ${tokens[i + 1]}`
-      wordCounts[bigram] = (wordCounts[bigram] ?? 0) + 1
+      phraseCounts[bigram] = (phraseCounts[bigram] ?? 0) + 1
     }
 
-    // 3-gram 구문 (특징적 표현)
+    // 3-gram (특징적 표현)
     for (let i = 0; i < tokens.length - 2; i++) {
       const trigram = `${tokens[i]} ${tokens[i + 1]} ${tokens[i + 2]}`
-      wordCounts[trigram] = (wordCounts[trigram] ?? 0) + 1
+      phraseCounts[trigram] = (phraseCounts[trigram] ?? 0) + 1
     }
   }
 
-  // 적응형 최소 빈도: 메시지 수가 적으면 기준 완화
-  // - 100개 미만: 2회 이상, 100개 이상: 3회 이상
+  // 적응형 최소 빈도
   const minCount = messages.length < 100 ? 2 : 3
 
-  return Object.entries(wordCounts)
-    .filter(([word, count]) => count >= minCount && word.length >= 2)
+  // 구문(2-gram, 3-gram) 먼저, 그 다음 단일 단어
+  const phraseResults = Object.entries(phraseCounts)
+    .filter(([_, count]) => count >= minCount)
     .sort((a, b) => {
-      // 빈도 우선, 동률 시 긴 구문 우선
       if (b[1] !== a[1]) return b[1] - a[1]
+      return b[0].split(' ').length - a[0].split(' ').length
+    })
+    .slice(0, 20)
+
+  const singleResults = Object.entries(singleWordCounts)
+    .filter(([_, count]) => count >= minCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 20)
+
+  // 구문 우선, 단일 단어 후순위로 결합
+  const combined = [...phraseResults, ...singleResults]
+    .sort((a, b) => {
+      // n-gram 길이 우선 (구문이 더 가치 있음)
       const aWords = a[0].split(' ').length
       const bWords = b[0].split(' ').length
-      return bWords - aWords
+      if (aWords !== bWords) return bWords - aWords
+      // 같은 길이면 빈도 순
+      return b[1] - a[1]
     })
     .slice(0, 40)
     .map(([word, count]) => ({ word, count }))
+
+  return combined
 }
 
 /** 종합 말투 분석 */
@@ -576,22 +665,40 @@ function buildResult(partnerName: string, messages: KakaoMessage[]): ParsedKakao
 
   const speechPatterns = analyzeSpeechPatterns(messages)
 
-  // commonPhrases: 빈도 높은 의미 있는 구문 (하위 호환용 + 개선된 버전)
-  // 사용자가 "제대로 추출되었다"고 느끼려면 최소 10개 이상 노출이 필요
-  // 특징 문장(실제 반복된 말) + 자주 쓴 단어/구문을 중복 제거하여 결합
-  const combinedRaw = [
-    ...speechPatterns.characteristicPhrases.slice(0, 8),
-    ...speechPatterns.frequentWords.slice(0, 25).map(w => w.word),
-    ...speechPatterns.endingPatterns.slice(0, 10).map(e => `~${e.pattern}`),
-  ]
+  // commonPhrases: "그 사람다운" 표현만 보여주기
+  // 우선순위: ① 반복된 특징 문장 → ② n-gram 구문 → ③ 특징 단일 단어 → ④ 어미 패턴
+  const combinedRaw: string[] = []
+
+  // ① 특징 문장 (실제 반복된 전체 메시지) — 가장 가치 있음
+  combinedRaw.push(...speechPatterns.characteristicPhrases.slice(0, 8))
+
+  // ② 2-gram, 3-gram 구문 우선 (단일 단어보다 맥락이 있어 특징적)
+  const multiWordPhrases = speechPatterns.frequentWords
+    .filter(w => w.word.includes(' '))
+    .slice(0, 10)
+    .map(w => w.word)
+  combinedRaw.push(...multiWordPhrases)
+
+  // ③ 단일 단어 (isSpeechCharacteristic을 통과한 것만 들어있음)
+  const singleWords = speechPatterns.frequentWords
+    .filter(w => !w.word.includes(' '))
+    .slice(0, 8)
+    .map(w => w.word)
+  combinedRaw.push(...singleWords)
+
+  // ④ 어미 패턴 (보조)
+  combinedRaw.push(...speechPatterns.endingPatterns.slice(0, 5).map(e => `~${e.pattern}`))
+
   const seen = new Set<string>()
   const commonPhrases: string[] = []
   for (const p of combinedRaw) {
     const key = p.trim()
     if (!key || seen.has(key)) continue
+    // 중복 부분 문자열 제거: 이미 추가된 구문에 포함되면 건너뜀
+    if ([...seen].some(s => s.includes(key) || key.includes(s) && s.length > key.length)) continue
     seen.add(key)
     commonPhrases.push(key)
-    if (commonPhrases.length >= 20) break
+    if (commonPhrases.length >= 15) break
   }
 
   return { partnerName, messages, partnerMessageCount, totalMessages, commonPhrases, speechPatterns, avgMessageLength }
