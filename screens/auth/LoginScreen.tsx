@@ -4,10 +4,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
   SafeAreaView,
   Animated,
   Dimensions,
   Alert,
+  Linking,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -125,7 +127,7 @@ export default function LoginScreen({ navigation }: Props) {
                     colors={['rgba(168, 85, 247, 0.3)', 'rgba(59, 130, 246, 0.3)']}
                     style={styles.iconGradient}
                   >
-                    <Text style={styles.iconText}>🔒</Text>
+                    <Text style={styles.iconText}>💜</Text>
                   </LinearGradient>
                 </Animated.View>
                 <Text style={styles.title}>Still After</Text>
@@ -161,29 +163,52 @@ export default function LoginScreen({ navigation }: Props) {
                 </LinearGradient>
               </TouchableOpacity>
 
-              {/* Info box */}
+              {/* Service feature mini cards */}
+              <View style={styles.featureRow}>
+                <View style={styles.featureCard}>
+                  <Text style={styles.featureEmoji}>💬</Text>
+                  <Text style={styles.featureLabel}>그 사람의{'\n'}말투 그대로</Text>
+                </View>
+                <View style={styles.featureCard}>
+                  <Text style={styles.featureEmoji}>🌱</Text>
+                  <Text style={styles.featureLabel}>감정을{'\n'}천천히 정리</Text>
+                </View>
+                <View style={styles.featureCard}>
+                  <Text style={styles.featureEmoji}>🕊️</Text>
+                  <Text style={styles.featureLabel}>마음속으로{'\n'}보내드려요</Text>
+                </View>
+              </View>
+
+              {/* Free trial notice */}
               <View style={styles.infoBox}>
                 <Text style={styles.infoText}>
-                  💳 카드 등록 없이 바로 시작할 수 있습니다.{'\n'}
-                  10회 이후 결제 화면으로 이동합니다.
+                  💳 카드 등록 없이 바로 시작할 수 있어요{'\n'}
+                  <Text style={styles.infoTextHighlight}>첫 10번의 대화는 무료예요</Text>
                 </Text>
               </View>
 
               {/* AI Notice */}
               <Text style={styles.aiNotice}>
-                Still After는 실제 인물을 대체하지 않아요.{'\n'}
-                감정을 조심스럽게 이어가고{'\n'}
-                천천히 보내드리기 위한 공간이에요.
+                Still After는 실제 인물을 복원하지 않아요.{'\n'}감정이 자연스럽게 자리 잡을 수 있도록{'\n'}조심스럽게 함께하는 공간이에요.
               </Text>
 
               {/* Footer links */}
-              <Text style={styles.footerLinks}>
-                서비스 이용약관 · 개인정보처리방침
-              </Text>
+              <View style={styles.footerLinksRow}>
+                <Pressable onPress={() => Linking.openURL('https://stillafter.com/terms')}>
+                  <Text style={styles.footerLink}>서비스 이용약관</Text>
+                </Pressable>
+                <Text style={styles.footerDot}> · </Text>
+                <Pressable onPress={() => Linking.openURL('https://stillafter.com/privacy')}>
+                  <Text style={styles.footerLink}>개인정보처리방침</Text>
+                </Pressable>
+              </View>
 
               {/* Back */}
               <TouchableOpacity
-                onPress={() => navigation.goBack()}
+                onPress={() => {
+                  if (navigation.canGoBack()) navigation.goBack()
+                  else navigation.navigate('Onboarding')
+                }}
                 style={styles.backButton}
               >
                 <Text style={styles.backText}>← 돌아가기</Text>
@@ -347,14 +372,37 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
+  // Feature mini cards
+  featureRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  featureCard: {
+    flex: 1,
+    backgroundColor: 'rgba(88, 28, 135, 0.25)',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(167, 139, 250, 0.15)',
+  },
+  featureEmoji: { fontSize: 20, marginBottom: 6 },
+  featureLabel: {
+    fontSize: 10,
+    color: 'rgba(196, 181, 253, 0.8)',
+    textAlign: 'center',
+    lineHeight: 15,
+  },
+
   // Info box
   infoBox: {
     backgroundColor: 'rgba(88, 28, 135, 0.3)',
     borderRadius: RADIUS.MD,
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
     borderColor: 'rgba(167, 139, 250, 0.2)',
-    marginBottom: 20,
+    marginBottom: 16,
     ...(({ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }) as any),
   },
   infoText: {
@@ -363,6 +411,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  infoTextHighlight: {
+    color: 'rgba(196, 181, 253, 1)',
+    fontWeight: '600',
+  },
 
   // AI notice
   aiNotice: {
@@ -370,16 +422,26 @@ const styles = StyleSheet.create({
     color: C.TEXT_MUTED,
     textAlign: 'center',
     lineHeight: 18,
-    marginBottom: 12,
+    marginBottom: 14,
   },
 
-  // Footer
-  footerLinks: {
-    fontSize: 11,
-    color: 'rgba(167, 139, 250, 0.5)',
-    textAlign: 'center',
-    textDecorationLine: 'underline',
+  // Footer links
+  footerLinksRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 16,
+  },
+  footerLink: {
+    fontSize: 11,
+    color: 'rgba(167, 139, 250, 0.6)',
+    textDecorationLine: 'underline',
+    paddingVertical: 6,
+    paddingHorizontal: 2,
+  },
+  footerDot: {
+    fontSize: 11,
+    color: 'rgba(167, 139, 250, 0.3)',
   },
 
   // Back
