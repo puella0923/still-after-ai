@@ -23,6 +23,7 @@ import {
   resendConfirmationEmail,
   sendPasswordReset,
 } from '../../services/authService'
+import { useAuth } from '../../context/AuthContext'
 import { C, RADIUS } from '../theme'
 
 const { width } = Dimensions.get('window')
@@ -46,6 +47,15 @@ const STARS = Array.from({ length: 35 }, (_, i) => ({
 }))
 
 export default function EmailAuthScreen({ navigation }: Props) {
+  const { session } = useAuth()
+
+  // OAuth 콜백으로 돌아왔을 때 세션이 있으면 바로 Main으로 이동
+  useEffect(() => {
+    if (session) {
+      navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
+    }
+  }, [session, navigation])
+
   const [tab, setTab] = useState<Tab>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
