@@ -243,6 +243,34 @@ export default function ChatScreen({ navigation, route }: Props) {
     load()
   }, [personaId])
 
+  // 초기 로드 후 stage transition 버튼 노출 체크
+  useEffect(() => {
+    if (loading || !persona) return
+    const stage = persona.emotional_stage ?? 'replay'
+
+    if (stage === 'replay' && stageMessageCount >= STAGE_TRANSITION_MIN) {
+      setMessages(prev => {
+        if (prev.some(m => m.action === 'goto_stable')) return prev
+        return [...prev, {
+          id: makeId(), role: 'system',
+          content: '대화가 조금씩 이어지고 있어요.\n\n준비가 되면 다음 단계로 넘어갈 수 있어요.\n아직 더 이야기하고 싶다면, 천천히 해도 괜찮아요.',
+          action: 'goto_stable' as const,
+        }]
+      })
+    }
+
+    if (stage === 'stable' && stageMessageCount >= STABLE_TRANSITION_MIN) {
+      setMessages(prev => {
+        if (prev.some(m => m.action === 'goto_closure')) return prev
+        return [...prev, {
+          id: makeId(), role: 'system',
+          content: '감정을 정리하는 시간을 보내고 있어요.\n\n준비가 되면 마지막 단계로 넘어갈 수 있어요.\n아직 더 이야기하고 싶다면, 서두르지 않아도 돼요.',
+          action: 'goto_closure' as const,
+        }]
+      })
+    }
+  }, [loading, persona?.emotional_stage, stageMessageCount])
+
   const showDangerAlert = useCallback((userMessage: string) => {
     setShowDangerModal(true)
     if (personaId) {

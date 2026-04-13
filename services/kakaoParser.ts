@@ -686,8 +686,17 @@ function buildResult(partnerName: string, messages: KakaoMessage[]): ParsedKakao
     .map(w => w.word)
   combinedRaw.push(...singleWords)
 
-  // ④ 어미 패턴 (보조)
-  combinedRaw.push(...speechPatterns.endingPatterns.slice(0, 5).map(e => `~${e.pattern}`))
+  // ④ 어미 패턴 (보조) — 범용적 어미는 제외하고 특징적인 것만
+  const GENERIC_ENDINGS = new Set([
+    '해', '어', '아', '야', '지', '는데', '인데', '한데', '거든', '있어',
+    '없어', '했어', '하지', '네', '요', '죠', '구나', '음', '냐', '니',
+    'ㅋ', 'ㅎ', 'ㅠ', 'ㅜ', '한다', '여', '래', '라',
+  ])
+  const filteredEndings = speechPatterns.endingPatterns
+    .filter(e => !GENERIC_ENDINGS.has(e.pattern))
+    .slice(0, 5)
+    .map(e => `~${e.pattern}`)
+  combinedRaw.push(...filteredEndings)
 
   const seen = new Set<string>()
   const commonPhrases: string[] = []
@@ -855,9 +864,15 @@ export function generateSystemPrompt(
     ? '- 가끔 질문을 합니다. 자연스러운 빈도로 질문하세요.'
     : '- 질문보다 진술을 많이 합니다. 질문은 최소한으로 하세요.'
 
-  // 종결 어미 패턴
-  const endingNote = sp.endingPatterns.length > 0
-    ? `- 자주 쓰는 문장 끝 패턴: ${sp.endingPatterns.slice(0, 8).map(e => `"~${e.pattern}"(${e.count}회)`).join(', ')}`
+  // 종결 어미 패턴 — 범용적 어미는 GPT 프롬프트에서도 제외
+  const GENERIC_ENDINGS_FOR_PROMPT = new Set([
+    '해', '어', '아', '야', '지', '는데', '인데', '한데', '거든', '있어',
+    '없어', '했어', '하지', '네', '요', '죠', '구나', '음', '냐', '니',
+    'ㅋ', 'ㅎ', 'ㅠ', 'ㅜ', '한다', '여', '래', '라',
+  ])
+  const characteristicEndings = sp.endingPatterns.filter(e => !GENERIC_ENDINGS_FOR_PROMPT.has(e.pattern))
+  const endingNote = characteristicEndings.length > 0
+    ? `- 자주 쓰는 문장 끝 패턴: ${characteristicEndings.slice(0, 8).map(e => `"~${e.pattern}"(${e.count}회)`).join(', ')}`
     : ''
 
   // 특징적 표현
