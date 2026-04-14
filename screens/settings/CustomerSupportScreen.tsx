@@ -35,8 +35,8 @@ export default function CustomerSupportScreen({ navigation }: Props) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
 
   const openEmail = () => {
-    Linking.openURL('mailto:support@stillafter.app?subject=Still After 고객 지원 문의').catch(() => {
-      Alert.alert('이메일 앱을 열 수 없어요', 'support@stillafter.app으로 직접 이메일을 보내주세요.')
+    Linking.openURL('mailto:ysk@soomukstudio.com?subject=Still After 고객 지원 문의').catch(() => {
+      Alert.alert('이메일 앱을 열 수 없어요', 'ysk@soomukstudio.com으로 직접 이메일을 보내주세요.')
     })
   }
 
@@ -119,7 +119,7 @@ export default function CustomerSupportScreen({ navigation }: Props) {
             <View style={styles.contactInfo}>
               <Text style={styles.contactInfoTitle}>이메일 문의</Text>
               <Text style={styles.contactInfoDesc}>평일 오전 10시 ~ 오후 6시 운영{'\n'}문의 후 1-2 영업일 내 답변드립니다.</Text>
-              <Text style={styles.contactEmail}>support@stillafter.app</Text>
+              <Text style={styles.contactEmail}>ysk@soomukstudio.com</Text>
             </View>
             <TouchableOpacity onPress={openEmail} activeOpacity={0.85}>
               <LinearGradient colors={['#a855f7', '#db2777']} style={styles.emailBtn}>
