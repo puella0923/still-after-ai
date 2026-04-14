@@ -114,7 +114,7 @@ export default function OnboardingScreen({ navigation }: Props) {
 
           <View style={styles.empathyList}>
             {[
-              '전화하면 받을 것 같아서, 번호를 누르다 멈춘 적 있나요.',
+              '문자를 쓰다가, 받을 사람이 없다는 걸 깨닫고 멈춘 적 있나요.',
               '그때 그 말을 했더라면, 하고 후회가 남아 있나요.',
               '상실은 시간이 해결한다지만, 어떤 감정은 그냥 두면 더 깊어집니다.',
             ].map((text, i) => (
@@ -141,24 +141,38 @@ export default function OnboardingScreen({ navigation }: Props) {
           </Text>
 
           <View style={styles.howGrid}>
-            {/* 카카오톡 업로드 */}
+            {/* 채팅 업로드 */}
             <LinearGradient
               colors={['rgba(124, 58, 237, 0.25)', 'rgba(59, 130, 246, 0.15)']}
               style={[styles.howMethod, styles.howMethodPrimary]}
             >
               <View style={styles.howBadgePrimary}>
-                <Text style={styles.howBadgeTextPrimary}>카카오톡 업로드</Text>
+                <Text style={styles.howBadgeTextPrimary}>채팅 업로드</Text>
               </View>
               <Text style={styles.howMethodTitle}>대화를 업로드하면{'\n'}말투를 그대로 담습니다</Text>
               <Text style={styles.howMethodDesc}>
-                카카오톡 대화 내보내기 파일(.txt, .csv)을 올리면,{'\n'}자주 쓰는 표현과 말투를 자동으로 분석합니다.
+                대화 내보내기 파일(.txt, .csv)을 올리면,{'\n'}자주 쓰는 표현과 말투를 자동으로 분석합니다.
               </Text>
+
+              {/* 지원 앱 */}
+              <View style={styles.supportedApps}>
+                {[
+                  { emoji: '💬', name: '카카오톡' },
+                  { emoji: '📱', name: 'WhatsApp' },
+                  { emoji: '🟢', name: 'LINE' },
+                ].map((app, i) => (
+                  <View key={i} style={styles.supportedAppTag}>
+                    <Text style={styles.supportedAppEmoji}>{app.emoji}</Text>
+                    <Text style={styles.supportedAppName}>{app.name}</Text>
+                  </View>
+                ))}
+              </View>
 
               <View style={styles.parseFlow}>
                 {[
-                  { icon: '📄', label: '카카오톡 대화 업로드' },
+                  { icon: '📄', label: '대화 내보내기 파일 업로드' },
                   { icon: '🔍', label: '자주 쓰는 표현 · 말투 · 호칭 추출' },
-                  { icon: '💜', label: 'AI 페르소나 생성 완료' },
+                  { icon: '💜', label: '페르소나 생성 완료' },
                 ].map((step, i, arr) => (
                   <View key={i}>
                     <View style={styles.parseStep}>
@@ -190,7 +204,7 @@ export default function OnboardingScreen({ navigation }: Props) {
               <View style={styles.howBadgeAlt}>
                 <Text style={styles.howBadgeTextAlt}>직접 작성</Text>
               </View>
-              <Text style={styles.howMethodTitle}>카카오톡이 없어도{'\n'}괜찮아요</Text>
+              <Text style={styles.howMethodTitle}>채팅 기록이 없어도{'\n'}괜찮아요</Text>
               <Text style={styles.howMethodDesc}>
                 그 사람의 평소 말투, 자주 하던 말,{'\n'}
                 습관이나 기억을 직접 작성하면{'\n'}
@@ -652,6 +666,16 @@ const styles = StyleSheet.create({
     fontSize: 13, color: 'rgba(196, 181, 253, 0.65)',
     lineHeight: 22, marginBottom: 18,
   },
+  supportedApps: { flexDirection: 'row', gap: 8, marginBottom: 16, flexWrap: 'wrap' },
+  supportedAppTag: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.2)',
+    borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5,
+  },
+  supportedAppEmoji: { fontSize: 12 },
+  supportedAppName: { fontSize: 11, color: 'rgba(196, 181, 253, 0.8)', fontWeight: '500' },
+
   parseFlow: { gap: 6, marginBottom: 16 },
   parseStep: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   parseIcon: {
