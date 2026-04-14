@@ -1,21 +1,13 @@
 /**
  * inject-seo.js
- * Expo export 후 두 가지 역할을 수행:
- *   1. dist/index.html (Expo SPA) → SEO 태그 주입 후 dist/app.html 로 저장
- *   2. 프로젝트 루트 index.html (마케팅 랜딩페이지) → dist/index.html 로 복사
- *
- * 결과:
- *   dist/index.html  = 마케팅 랜딩페이지 (stillafter.com 루트에서 제공)
- *   dist/app.html    = Expo SPA         (vercel rewrite로 /Login 등에서 제공)
+ * Expo export 후 dist/index.html에 SEO 태그를 자동 주입하는 스크립트
+ * vercel.json buildCommand에서 호출됨
  */
-const fs   = require('fs');
+const fs = require('fs');
 const path = require('path');
 
-const distIndex   = path.join(__dirname, '..', 'dist', 'index.html');
-const distApp     = path.join(__dirname, '..', 'dist', 'app.html');
-const landingPage = path.join(__dirname, '..', 'index.html'); // 마케팅 랜딩페이지
+const distIndex = path.join(__dirname, '..', 'dist', 'index.html');
 
-// ── SEO 태그 블록 (Expo SPA 용) ──────────────────────────────────────────────
 const seoTags = `
     <!-- ① Search Console 소유권 인증 -->
     <meta name="google-site-verification" content="42HCXffGpWRJRMDEoND2Qnu_9lqmGdbwBZygPF_jCvE" />
@@ -61,20 +53,17 @@ const seoTags = `
       })(window, document, "clarity", "script", "wbn3kcnrth");
     </script>`;
 
-// ── Step 1: Expo SPA에 SEO 태그 주입 후 app.html로 저장 ──────────────────────
-let spaHtml = fs.readFileSync(distIndex, 'utf-8');
+let html = fs.readFileSync(distIndex, 'utf-8');
 
-if (spaHtml.includes('google-site-verification')) {
-  console.log('⚠️  dist/index.html already has SEO tags (may already be landing page). Skipping SPA injection.');
-} else {
-  // <title> 태그 제거 후 SEO 태그 블록을 <head> 바로 다음에 삽입
-  spaHtml = spaHtml.replace(/<title>[^<]*<\/title>/, '');
-  spaHtml = spaHtml.replace('<head>', '<head>' + seoTags);
-  fs.writeFileSync(distApp, spaHtml, 'utf-8');
-  console.log('✅ SEO tags injected → dist/app.html (Expo SPA)');
+// 이미 주입된 경우 스킵
+if (html.includes('google-site-verification')) {
+  console.log('✅ SEO tags already present, skipping injection.');
+  process.exit(0);
 }
 
-// ── Step 2: 마케팅 랜딩페이지를 dist/index.html로 복사 ───────────────────────
-const landingHtml = fs.readFileSync(landingPage, 'utf-8');
-fs.writeFileSync(distIndex, landingHtml, 'utf-8');
-console.log('✅ Marketing landing page deployed → dist/index.html');
+// <title> 태그 제거 후 SEO 태그 블록을 <head> 바로 다음에 삽입
+html = html.replace(/<title>[^<]*<\/title>/, '');
+html = html.replace('<head>', '<head>' + seoTags);
+
+fs.writeFileSync(distIndex, html, 'utf-8');
+console.log('✅ SEO tags injected into dist/index.html');

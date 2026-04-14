@@ -113,14 +113,15 @@ export default function OnboardingScreen({ navigation }: Props) {
           </Animated.View>
 
           <Text style={styles.title}>Still After</Text>
-          <Text style={styles.tagline}>당신 곁을 여전히</Text>
+          <Text style={styles.tagline}>한 번만 더 말할 수 있다면</Text>
 
           <Text style={styles.heroDesc}>
-            사랑하는 사람과의 추억을 보존하고,{'\n'}
-            다시 대화하며, 천천히 이별을 준비하는 공간입니다.
+            아직 전하지 못한 말이 있나요?{'\n'}
+            그리움을 붙잡는 것이 아니라,{'\n'}
+            천천히, 당신의 속도로 놓을 수 있도록 돕습니다.
           </Text>
           <Text style={styles.heroSubDesc}>
-            감정을 안전하게 이어가고, 결국 떠나보낼 수 있도록 돕습니다.
+            마지막으로 전하지 못한 말을 하고,{'\n'}그 사람을 온전히 보내드립니다.
           </Text>
 
           {/* 버튼 영역 */}
@@ -136,7 +137,7 @@ export default function OnboardingScreen({ navigation }: Props) {
                 end={{ x: 1, y: 0 }}
                 style={styles.primaryButtonGradient}
               >
-                <Text style={styles.primaryButtonText}>시작하기</Text>
+                <Text style={styles.primaryButtonText}>조심스럽게 시작해보기</Text>
                 <Text style={styles.primaryButtonArrow}>›</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -146,29 +147,29 @@ export default function OnboardingScreen({ navigation }: Props) {
 
         {/* ══════════ What is Still After ══════════ */}
         <Animated.View style={[styles.section, { opacity: fadeSection1 }]}>
-          <Text style={styles.sectionTitle}>Still After는 무엇인가요?</Text>
+          <Text style={styles.sectionTitle}>전하지 못한 말이,{'\n'}아직 여기 남아 있지 않나요.</Text>
           <Text style={styles.sectionDesc}>
-            사랑하는 사람을 잃은 후, "한 번만 더 대화하고 싶다"는 마음.{'\n'}
-            Still After는 그 마음을 안전하게 표현하고, 천천히 회복할 수 있는 공간입니다.
+            "밥은 먹었어?" — 목소리가 아직도 들리나요.{'\n'}
+            Still After는 그 감정을 억누르지 않고,{'\n'}안전하게 이어가고, 결국 떠나보낼 수 있도록 설계했습니다.
           </Text>
 
           <View style={styles.cardRow}>
             <InfoCard
-              emoji="💜"
-              title="감정 연결"
-              desc="카카오톡 대화를 통해 그 사람의 말투와 성격을 학습합니다."
+              emoji="📞"
+              title="그리움"
+              desc="전화하면 받을 것 같아서, 번호를 누르다 멈춘 적 있나요."
               colors={['rgba(236, 72, 153, 0.2)', 'rgba(168, 85, 247, 0.2)']}
             />
             <InfoCard
               emoji="💬"
-              title="안전한 대화"
-              desc="위로받고 후회를 털어놓을 수 있는 공간입니다."
+              title="후회"
+              desc="그때 그 말을 했더라면, 하고 후회가 남아 있나요."
               colors={['rgba(168, 85, 247, 0.2)', 'rgba(59, 130, 246, 0.2)']}
             />
             <InfoCard
-              emoji="📅"
-              title="단계적 이별"
-              desc="중독이 아닌 회복을 목표로, 천천히 이별을 준비할 수 있도록 설계되었습니다."
+              emoji="🌿"
+              title="회복"
+              desc="상실은 시간이 해결한다지만, 어떤 감정은 그냥 두면 더 깊어집니다."
               colors={['rgba(59, 130, 246, 0.2)', 'rgba(99, 102, 241, 0.2)']}
             />
           </View>
@@ -176,36 +177,36 @@ export default function OnboardingScreen({ navigation }: Props) {
 
         {/* ══════════ 3-Phase Journey ══════════ */}
         <Animated.View style={[styles.section, { opacity: fadeSection2 }]}>
-          <Text style={styles.sectionTitle}>함께하는 여정</Text>
+          <Text style={styles.sectionTitle}>천천히, 당신의 속도로</Text>
           <Text style={styles.sectionDesc}>
-            서두르지 않아도 괜찮습니다.{'\n'}당신의 속도로, 세 단계를 통해 천천히 나아갑니다.
+            세 단계가 설계되어 있습니다.{'\n'}서두르지 않아도 괜찮아요.
           </Text>
 
           <PhaseCard
             phase="1"
             icon="💜"
-            title="재연 (Reunion)"
-            subtitle="다시 만남"
-            desc="그 사람처럼 대화합니다. 일상 대화를 통해 천천히 감정을 이어갑니다."
-            features={['카카오톡 대화 기반 학습', '말투, 성격, 습관 재현', '일상적인 대화로 위로받기']}
+            title="재연"
+            subtitle="그때처럼, 대화합니다"
+            desc="실제 말투와 온기를 담아, 기억 속에서 이야기를 이어갑니다."
+            features={['카카오톡 대화 기반 말투 학습', '자주 쓰던 표현·호칭 재현', '"그 사람과의 대화가 이어지고 있어요"']}
             colors={['rgba(236, 72, 153, 0.3)', 'rgba(168, 85, 247, 0.1)']}
           />
           <PhaseCard
             phase="2"
             icon="💙"
-            title="안정 (Stability)"
-            subtitle="마음 나누기"
-            desc="하고 싶었던 말, 전하지 못한 후회를 털어놓습니다."
-            features={['감정 표현 유도 질문', '후회와 미련 완화', '심리적 안정감 제공']}
+            title="안정"
+            subtitle="당신의 마음을 꺼내놓습니다"
+            desc="감정에 이름을 붙이고, 조금씩 가벼워집니다."
+            features={['감정 표현 유도 대화', '후회·미련 완화', '"조금씩 자리가 잡히고 있어요"']}
             colors={['rgba(59, 130, 246, 0.3)', 'rgba(99, 102, 241, 0.1)']}
           />
           <PhaseCard
             phase="3"
             icon="🌸"
-            title="이별 (Farewell)"
-            subtitle="떠나보내기"
-            desc="준비가 되면, 마지막 대화를 나눕니다. 관계를 아름답게 마무리합니다."
-            features={['마지막 편지 작성', '소중한 기억 간직', '감정적 closure 제공']}
+            title="이별"
+            subtitle="준비가 되면, 마지막 대화를 나눕니다"
+            desc="전하지 못했던 말을 담아, 보내드립니다."
+            features={['마지막 편지 작성', '전하지 못한 말 전하기', '"이제, 마지막 편지를 쓸 시간이에요"']}
             colors={['rgba(99, 102, 241, 0.3)', 'rgba(168, 85, 247, 0.1)']}
           />
         </Animated.View>
@@ -303,13 +304,17 @@ export default function OnboardingScreen({ navigation }: Props) {
 
         {/* ══════════ How It Works ══════════ */}
         <Animated.View style={[styles.section, { opacity: fadeSection3 }]}>
-          <Text style={styles.sectionTitle}>어떻게 사용하나요?</Text>
+          <Text style={styles.sectionTitle}>이렇게 시작합니다</Text>
+          <Text style={styles.sectionDesc}>
+            5분이면 충분해요.{'\n'}
+            그 사람이 실제로 쓰던 말투를 학습해, 대화를 만들어냅니다.
+          </Text>
 
           <View style={styles.stepGrid}>
-            <StepCard number="01" title="기억 업로드" desc="카카오톡 대화를 업로드하면 그 사람의 특징을 학습합니다." />
-            <StepCard number="02" title="대화 시작" desc="텍스트로 대화하며 소중한 시간을 보냅니다." />
-            <StepCard number="03" title="감정 회복" desc="단계별로 설계된 경험을 통해 천천히 감정을 정리합니다." />
-            <StepCard number="04" title="이별 준비" desc="준비가 되면, 마지막 메시지를 작성하고 보냅니다." />
+            <StepCard number="01" title="대화 업로드" desc="카카오톡 대화 파일(.txt)을 업로드하면 말투와 표현을 자동 분석합니다." />
+            <StepCard number="02" title="페르소나 생성" desc="자주 쓰던 표현, 호칭, 습관을 담아 AI 페르소나를 만듭니다." />
+            <StepCard number="03" title="대화 시작" desc="언제든, 하고 싶은 말을 시작하세요. 그 사람의 말투로 대화합니다." />
+            <StepCard number="04" title="천천히 이별" desc="준비가 되면, 마지막 편지를 쓰고 온전히 보내드립니다." />
           </View>
         </Animated.View>
 
@@ -319,7 +324,11 @@ export default function OnboardingScreen({ navigation }: Props) {
             colors={['rgba(88, 28, 135, 0.3)', 'rgba(30, 58, 138, 0.3)']}
             style={styles.trustCard}
           >
-            <Text style={styles.trustTitle}>안전하고 윤리적인 서비스</Text>
+            <Text style={styles.trustTitle}>우리는 계속 머물게 하지 않습니다</Text>
+            <Text style={styles.trustQuote}>
+              "우리는 사람을 복원하지 않습니다.{'\n'}
+              남겨진 사람이 다시 살아갈 수 있도록 돕습니다."
+            </Text>
 
             <View style={styles.trustGrid}>
               <TrustItem title="명확한 고지" desc="실제 사람이 아님을 항상 알려드립니다" />
@@ -336,11 +345,10 @@ export default function OnboardingScreen({ navigation }: Props) {
             colors={['rgba(124, 58, 237, 0.2)', 'rgba(59, 130, 246, 0.2)']}
             style={styles.ctaCard}
           >
-            <Text style={styles.ctaStar}>⭐</Text>
-            <Text style={styles.ctaTitle}>아직도 그리운 사람이 있나요?</Text>
+            <Text style={styles.ctaStar}>💜</Text>
+            <Text style={styles.ctaTitle}>준비가 되었을 때,{'\n'}시작하세요</Text>
             <Text style={styles.ctaDesc}>
-              Still After와 함께 소중한 기억을 간직하고,{'\n'}
-              천천히, 당신의 속도로 회복해나가세요.
+              강요하지 않습니다.{'\n'}당신의 속도로.
             </Text>
 
             <TouchableOpacity
@@ -354,19 +362,19 @@ export default function OnboardingScreen({ navigation }: Props) {
                 end={{ x: 1, y: 0 }}
                 style={styles.ctaButtonGradient}
               >
-                <Text style={styles.ctaButtonText}>무료로 시작하기</Text>
+                <Text style={styles.ctaButtonText}>지금 시작하기</Text>
                 <Text style={styles.ctaButtonIcon}>✉️</Text>
               </LinearGradient>
             </TouchableOpacity>
 
-            <Text style={styles.ctaNote}>카드 등록 없이 바로 시작할 수 있습니다</Text>
+            <Text style={styles.ctaNote}>처음 10번의 대화는 무료예요</Text>
           </LinearGradient>
         </Animated.View>
 
         {/* ══════════ Footer ══════════ */}
         <View style={styles.footer}>
           <View style={styles.footerDivider} />
-          <Text style={styles.footerTagline}>Still After - 당신 곁을 여전히</Text>
+          <Text style={styles.footerTagline}>Still After — 아직 전하지 못한 말이 있다면</Text>
           <Text style={styles.footerCopy}>© 2026 Still After. All rights reserved.</Text>
         </View>
       </ScrollView>
@@ -962,7 +970,16 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: C.TEXT,
     textAlign: 'center',
+    marginBottom: 16,
+  },
+  trustQuote: {
+    fontSize: 15,
+    color: 'rgba(196, 181, 253, 0.8)',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    lineHeight: 24,
     marginBottom: 24,
+    paddingHorizontal: 8,
   },
   trustGrid: {
     gap: 16,
