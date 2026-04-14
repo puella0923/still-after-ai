@@ -467,7 +467,7 @@ export default function OnboardingScreen({ navigation }: Props) {
             style={styles.ctaCard}
           >
             <Text style={styles.ctaTitle}>준비가 되었을 때,{'\n'}시작하세요</Text>
-            <Text style={styles.ctaDesc}>서두르지 않아도 괜찮아요. 당신의 속도로.</Text>
+            <Text style={styles.ctaDesc}>당신의 속도로, 천천히 시작해도 괜찮아요.</Text>
 
             <TouchableOpacity
               style={styles.ctaButton}
@@ -483,7 +483,7 @@ export default function OnboardingScreen({ navigation }: Props) {
               </LinearGradient>
             </TouchableOpacity>
 
-            <Text style={styles.ctaNote}>10번의 무료 대화로 천천히 시작해보세요</Text>
+            <Text style={styles.ctaNote}>10번의 무료 대화를 통해 천천히 시작해보세요</Text>
           </LinearGradient>
         </View>
 
