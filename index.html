@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ① Search Console 소유권 인증 -->
+  <meta name="google-site-verification" content="42HCXffGpWRJRMDEoND2Qnu_9lqmGdbwBZygPF_jCvE" />
+
+  <!-- ② 기본 메타태그 -->
+  <meta name="description" content="사랑하는 사람을 떠나보낸 후, 못 다한 말을 전하는 공간. 천천히, 당신의 속도로." />
+
+  <!-- ③ OG 태그 (카카오톡 / SNS 공유 미리보기) -->
+  <meta property="og:title" content="stillafter — 아직 하고 싶은 말이 있다면" />
+  <meta property="og:description" content="사랑하는 사람을 떠나보낸 후, 못 다한 말을 전하는 공간." />
+  <meta property="og:image" content="https://stillafter.com/og-image.jpg" />
+  <meta property="og:url" content="https://stillafter.com" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="ko_KR" />
+
+  <!-- ④ 트위터 카드 -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="stillafter — 아직 하고 싶은 말이 있다면" />
+  <meta name="twitter:description" content="사랑하는 사람을 떠나보낸 후, 못 다한 말을 전하는 공간." />
+  <meta name="twitter:image" content="https://stillafter.com/og-image.jpg" />
+
+  <!-- ⑤ GA4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q4KY5HKLRK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-Q4KY5HKLRK');
+  </script>
+
+  <!-- ⑥ Microsoft Clarity -->
+  <script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+      c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+      t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+      y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "wbn3kcnrth");
+  </script>
+
+  <title>Still After — 아직 전하지 못한 말이 있다면</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet" />
+
+  <style>
+    /* ── 디자인 시스템 ── */
+    :root {
+      --bg:      #0F1115;
+      --bg-sub:  #181A20;
+      --text:    #F5F6F7;
+      --muted:   #A8ABB2;
+      --dim:     #555A66;
+      --accent:  #E6CBA8;
+      --line:    #2A2D35;
+      --line-soft: rgba(42,45,53,0.5);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Pretendard', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container { max-width: 680px; margin: 0 auto; padding: 0 28px; }
+    section { padding: 120px 0; }
+
+    /* ── 페이드인 ── */
+    .fade-up {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.9s cubic-bezier(0.16,1,0.3,1),
+                  transform 0.9s cubic-bezier(0.16,1,0.3,1);
+    }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+    .fade-up.d1 { transition-delay: 0.1s; }
+    .fade-up.d2 { transition-delay: 0.22s; }
+    .fade-up.d3 { transition-delay: 0.34s; }
+    .fade-up.d4 { transition-delay: 0.46s; }
+
+    /* ── 타이포 ── */
+    h1 { font-size: 52px; font-weight: 300; line-height: 1.15; letter-spacing: -1px; }
+    h2 { font-size: 30px; font-weight: 400; line-height: 1.4; letter-spacing: -0.4px; }
+    h3 { font-size: 18px; font-weight: 500; }
+    p  { color: var(--muted); line-height: 1.85; }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 36px; }
+      h2 { font-size: 24px; }
+      section { padding: 80px 0; }
+    }
+
+    /* ── 버튼 ── */
+    .btn {
+      display: inline-block;
+      background: var(--accent); color: #0F1115;
+      font-family: inherit; font-size: 15px; font-weight: 500;
+      padding: 14px 30px; border-radius: 8px; border: none;
+      cursor: pointer; text-decoration: none;
+      transition: opacity 0.2s, transform 0.2s;
+      letter-spacing: 0.1px;
+    }
+    .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    .btn-ghost {
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--line); font-size: 14px; padding: 12px 24px;
+    }
+    .btn-ghost:hover { color: var(--text); border-color: #444; }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 32px;
+      background: rgba(15,17,21,0.85);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .nav-logo { font-size: 15px; font-weight: 500; letter-spacing: 0.5px; }
+
+    /* ════════════════════════════════
+       ① HERO
+    ════════════════════════════════ */
+    #hero {
+      min-height: 100vh; display: flex; align-items: center; padding: 0;
+    }
+    #hero .container { padding-top: 100px; padding-bottom: 80px; }
+
+    .hero-eyebrow {
+      display: inline-block; font-size: 12px; color: var(--accent);
+      letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 28px; font-weight: 400;
+    }
+    .hero-h1 { color: var(--text); margin-bottom: 16px; }
+    .hero-sub {
+      font-size: 22px; color: var(--accent); font-weight: 300;
+      margin-bottom: 28px; letter-spacing: -0.2px;
+    }
+    .hero-desc {
+      font-size: 17px; color: var(--muted);
+      line-height: 1.9; max-width: 440px; margin-bottom: 44px;
+    }
+    .hero-mission {
+      font-size: 15px; color: var(--accent); font-weight: 400;
+      line-height: 1.75; margin-bottom: 40px; letter-spacing: 0.1px;
+      border-left: 2px solid var(--accent); padding-left: 16px;
+    }
+    .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+
+    .hero-scroll {
+      margin-top: 80px; display: flex; align-items: center; gap: 10px;
+    }
+    .scroll-line { width: 32px; height: 1px; background: var(--line); }
+    .scroll-txt { font-size: 11px; color: var(--dim); letter-spacing: 1.5px; text-transform: uppercase; }
+
+    /* ════════════════════════════════
+       ② 공감 — 날카롭게
+    ════════════════════════════════ */
+    #empathy { background: var(--bg-sub); }
+
+    .empathy-quote {
+      font-size: 28px; font-weight: 300; color: var(--text);
+      line-height: 1.5; margin-bottom: 32px; letter-spacing: -0.3px;
+    }
+    .empathy-quote em { color: var(--accent); font-style: normal; }
+
+    .empathy-list {
+      display: flex; flex-direction: column; gap: 14px;
+      margin-top: 36px;
+    }
+    .empathy-item {
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .empathy-dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: var(--accent); margin-top: 10px; flex-shrink: 0;
+    }
+    .empathy-item p {
+      font-size: 16px; color: var(--muted); line-height: 1.8; margin: 0;
+    }
+
+    .empathy-close {
+      margin-top: 48px; padding: 24px 28px;
+      border-left: 2px solid var(--accent);
+      background: rgba(230,203,168,0.04);
+      border-radius: 0 10px 10px 0;
+    }
+    .empathy-close p {
+      font-size: 17px; color: var(--text);
+      font-weight: 300; line-height: 1.85;
+    }
+
+    /* ════════════════════════════════
+       ②-b 학습 과정
+    ════════════════════════════════ */
+    #how { }
+    #how h2 { margin-bottom: 10px; }
+    .how-sub { color: var(--muted); margin-bottom: 48px; font-size: 16px; }
+
+    .how-methods {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; margin-bottom: 40px;
+    }
+    @media (max-width: 600px) { .how-methods { grid-template-columns: 1fr; } }
+
+    .how-method {
+      background: var(--bg-sub); border: 1px solid var(--line);
+      border-radius: 14px; padding: 28px 24px;
+    }
+    .how-method.primary { border-color: rgba(230,203,168,0.3); }
+
+    .how-method-badge {
+      display: inline-block; font-size: 11px; font-weight: 500;
+      padding: 3px 10px; border-radius: 20px; margin-bottom: 14px;
+      letter-spacing: 0.3px;
+    }
+    .badge-primary { background: rgba(230,203,168,0.12); color: var(--accent); }
+    .badge-alt { background: rgba(255,255,255,0.06); color: var(--muted); }
+
+    .how-method h3 { color: var(--text); margin-bottom: 8px; font-size: 17px; }
+    .how-method p { font-size: 14px; line-height: 1.75; margin-bottom: 20px; }
+
+    /* 카카오톡 파싱 흐름 */
+    .parse-flow {
+      display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;
+    }
+    .parse-step {
+      display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted);
+    }
+    .parse-icon {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(230,203,168,0.08); border: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; color: var(--accent); flex-shrink: 0;
+    }
+    .parse-arrow { color: var(--dim); font-size: 12px; margin-left: 14px; }
+
+    /* 추출된 표현 태그 */
+    .phrase-tags {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px;
+    }
+    .phrase-tag {
+      background: rgba(230,203,168,0.07);
+      border: 1px solid rgba(230,203,168,0.18);
+      border-radius: 99px; padding: 5px 12px;
+      font-size: 12px; color: var(--accent);
+    }
+    .phrase-label {
+      font-size: 11px; color: var(--dim); margin-bottom: 8px; letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .how-divider {
+      display: flex; align-items: center; gap: 16px;
+      margin: 4px 0; color: var(--dim); font-size: 12px;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .how-divider::before, .how-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--line);
+    }
+
+    /* ════════════════════════════════
+       ③ 대화 예시 — 욕구 최고점에서
+    ════════════════════════════════ */
+    #demo h2 { margin-bottom: 10px; }
+    .demo-eyebrow {
+      font-size: 12px; color: var(--accent); letter-spacing: 2px;
+      text-transform: uppercase; margin-bottom: 16px; display: block;
+    }
+    .demo-sub { font-size: 16px; color: var(--muted); margin-bottom: 36px; }
+
+    /* 탭 */
+    .demo-tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+    .demo-tab {
+      background: transparent; border: 1px solid var(--line);
+      color: var(--muted); font-family: inherit; font-size: 13px;
+      padding: 9px 18px; border-radius: 99px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .demo-tab:hover { border-color: #444; color: var(--text); }
+    .demo-tab.active {
+      background: rgba(230,203,168,0.08);
+      border-color: var(--accent); color: var(--accent);
+    }
+
+    /* 채팅창 */
+    .demo-chat {
+      background: var(--bg-sub); border: 1px solid var(--line);
+      border-radius: 16px; padding: 24px; margin-bottom: 14px;
+    }
+    .demo-persona-bar {
+      display: flex; align-items: center; gap: 12px;
+      padding-bottom: 16px; border-bottom: 1px solid var(--line);
+      margin-bottom: 20px;
+    }
+    .demo-ava {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(230,203,168,0.1);
+      border: 1px solid rgba(230,203,168,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: var(--accent); font-weight: 600;
+    }
+    .demo-pname { font-size: 14px; font-weight: 500; color: var(--text); }
+    .demo-psub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+    .demo-messages { display: none; flex-direction: column; gap: 10px; }
+    .demo-messages.active { display: flex; }
+
+    .row { display: flex; gap: 8px; align-items: flex-end; }
+    .row.u { flex-direction: row-reverse; }
+    .mini-ava {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: rgba(230,203,168,0.08);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; color: var(--accent); flex-shrink: 0;
+    }
+    .bubble {
+      max-width: 72%; padding: 9px 13px; border-radius: 13px;
+      font-size: 14px; line-height: 1.65; color: var(--text);
+    }
+    .bubble.ai {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--line); border-bottom-left-radius: 4px;
+    }
+    .bubble.me {
+      background: rgba(230,203,168,0.1);
+      border: 1px solid rgba(230,203,168,0.18); border-bottom-right-radius: 4px;
+    }
+    .msg-guide {
+      align-self: center; max-width: 82%;
+      background: rgba(230,203,168,0.05);
+      border: 1px solid rgba(230,203,168,0.15);
+      border-radius: 10px; padding: 10px 16px;
+      font-size: 12px; color: var(--accent);
+      text-align: center; line-height: 1.7; margin: 4px 0;
+    }
+    .msg-hint {
+      align-self: center; max-width: 90%;
+      font-size: 13px; color: var(--dim);
+      text-align: center; font-style: italic;
+      border-top: 1px solid var(--line); padding-top: 14px; margin-top: 6px;
+    }
+
+    .demo-caption {
+      font-size: 12px; color: var(--dim); text-align: center;
+    }
+
+    /* ════════════════════════════════
+       ④ 3단계 — 앱 메시지 그대로
+    ════════════════════════════════ */
+    #journey { background: var(--bg-sub); }
+    #journey h2 { margin-bottom: 12px; }
+    .journey-sub { color: var(--muted); margin-bottom: 56px; font-size: 16px; }
+
+    .stage-list { display: flex; flex-direction: column; gap: 2px; }
+
+    .stage {
+      display: grid; grid-template-columns: 80px 1fr;
+      gap: 0 28px; padding: 32px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .stage:last-child { border-bottom: none; }
+
+    .stage-left { padding-top: 4px; }
+    .stage-num {
+      font-size: 11px; color: var(--accent); letter-spacing: 2px;
+      text-transform: uppercase; margin-bottom: 6px;
+    }
+    .stage-name { font-size: 20px; font-weight: 500; color: var(--text); }
+
+    .stage-right {}
+    .stage-desc { font-size: 15px; color: var(--muted); margin-bottom: 16px; line-height: 1.75; }
+
+    /* 실제 앱 마일스톤 메시지 */
+    .stage-msg {
+      display: inline-flex; align-items: flex-start; gap: 10px;
+      background: rgba(230,203,168,0.05);
+      border: 1px solid rgba(230,203,168,0.12);
+      border-radius: 10px; padding: 12px 16px;
+      font-size: 13px; color: var(--accent); line-height: 1.65;
+      max-width: 400px;
+    }
+    .stage-msg-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ════════════════════════════════
+       ⑤ 이별의 약속
+    ════════════════════════════════ */
+    #promise h2 { margin-bottom: 24px; }
+    .promise-desc { font-size: 17px; max-width: 480px; margin-bottom: 40px; line-height: 1.9; }
+
+    .promise-quote {
+      border-left: 2px solid var(--accent);
+      padding: 22px 28px;
+      background: rgba(230,203,168,0.04);
+      border-radius: 0 10px 10px 0;
+    }
+    .promise-quote p {
+      font-size: 18px; color: var(--text);
+      font-weight: 300; font-style: italic; line-height: 1.8;
+    }
+
+    /* ════════════════════════════════
+       ⑥ CTA
+    ════════════════════════════════ */
+    #cta {
+      text-align: center;
+      background: var(--bg-sub);
+    }
+    #cta h2 { font-size: 34px; font-weight: 300; margin-bottom: 16px; }
+    .cta-sub { margin-bottom: 40px; font-size: 17px; }
+    .cta-note { margin-top: 18px; font-size: 13px; color: var(--dim); }
+    .cta-free {
+      display: inline-block; margin-top: 12px;
+      font-size: 12px; color: var(--accent); letter-spacing: 0.3px;
+    }
+
+    /* ── 푸터 ── */
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 36px 32px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 14px;
+    }
+    .footer-logo { font-size: 14px; font-weight: 500; color: var(--muted); }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a {
+      font-size: 13px; color: var(--dim); text-decoration: none; transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--muted); }
+    .footer-copy { font-size: 12px; color: #3C404A; width: 100%; text-align: right; }
+
+    /* ── 구분선 ── */
+    .divider { height: 1px; background: var(--line); }
+  </style>
+</head>
+
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <span class="nav-logo">Still After</span>
+  <a href="#" class="btn btn-ghost" id="nav-cta">지금 시작하기</a>
+</nav>
+
+
+<!-- ════ ① HERO ════ -->
+<section id="hero">
+  <div class="container">
+    <span class="hero-eyebrow fade-up">Grief Care · AI</span>
+
+    <h1 class="hero-h1 fade-up d1">
+      한 번만 더<br>
+      말할 수 있다면
+    </h1>
+
+    <p class="hero-sub fade-up d2">아직 전하지 못한 말이 있나요?</p>
+
+    <p class="hero-desc fade-up d3">
+      그리움을 붙잡는 것이 아니라,<br>
+      천천히, 당신의 속도로 놓을 수 있도록 돕습니다.
+    </p>
+
+    <p class="hero-mission fade-up d3">
+      마지막으로 전하지 못한 말을 하고,<br>
+      그 사람을 온전히 보내드립니다.
+    </p>
+
+    <div class="hero-actions fade-up d4">
+      <a href="#" class="btn" id="hero-cta">조심스럽게 시작해보기</a>
+    </div>
+
+    <div class="hero-scroll fade-up d4">
+      <div class="scroll-line"></div>
+      <span class="scroll-txt">Scroll</span>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════ ② 공감 ════ -->
+<section id="empathy">
+  <div class="container">
+
+    <p class="empathy-quote fade-up">
+      <em>"밥은 먹었어?"</em><br>
+      목소리가 아직도 들리나요.
+    </p>
+
+    <p class="fade-up d1" style="font-size:17px; max-width:480px;">
+      전하지 못한 말이, 아직 여기 남아 있지 않나요.
+    </p>
+
+    <div class="empathy-list fade-up d2">
+      <div class="empathy-item">
+        <div class="empathy-dot"></div>
+        <p>전화하면 받을 것 같아서, 번호를 누르다 멈춘 적 있나요.</p>
+      </div>
+      <div class="empathy-item">
+        <div class="empathy-dot"></div>
+        <p>그때 그 말을 했더라면, 하고 후회가 남아 있나요.</p>
+      </div>
+      <div class="empathy-item">
+        <div class="empathy-dot"></div>
+        <p>상실은 시간이 해결한다지만, 어떤 감정은 그냥 두면 더 깊어집니다.</p>
+      </div>
+    </div>
+
+    <div class="empathy-close fade-up d3">
+      <p>
+        Still After는 그 감정을 억누르지 않고,<br>
+        안전하게 이어가고, 결국 떠나보낼 수 있도록 설계했습니다.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ════ ②-b 학습 과정 ════ -->
+<section id="how">
+  <div class="container">
+
+    <h2 class="fade-up">이렇게 시작합니다</h2>
+    <p class="how-sub fade-up d1">
+      그 사람이 실제로 쓰던 말투를 학습해, 대화를 만들어냅니다.
+    </p>
+
+    <div class="how-methods">
+
+      <!-- 방법 A: 카카오톡 -->
+      <div class="how-method primary fade-up d1">
+        <span class="how-method-badge badge-primary">카카오톡 업로드</span>
+        <h3>대화를 업로드하면<br>말투를 그대로 담습니다</h3>
+        <p>카카오톡 대화 내보내기 파일(.txt)을 올리면,<br>자주 쓰는 표현과 말투를 자동으로 분석합니다.</p>
+
+        <div class="parse-flow">
+          <div class="parse-step">
+            <div class="parse-icon">📄</div>
+            <span>카카오톡 대화 업로드</span>
+          </div>
+          <div class="parse-arrow">↓</div>
+          <div class="parse-step">
+            <div class="parse-icon">🔍</div>
+            <span>자주 쓰는 표현 · 말투 · 호칭 추출</span>
+          </div>
+          <div class="parse-arrow">↓</div>
+          <div class="parse-step">
+            <div class="parse-icon">💜</div>
+            <span>AI 페르소나 생성 완료</span>
+          </div>
+        </div>
+
+        <div class="phrase-label">추출된 표현 예시</div>
+        <div class="phrase-tags">
+          <span class="phrase-tag">밥은 먹었어?</span>
+          <span class="phrase-tag">걱정하지 마</span>
+          <span class="phrase-tag">우리 딸</span>
+          <span class="phrase-tag">얼른 자~</span>
+          <span class="phrase-tag">그래도 잘 했어</span>
+        </div>
+      </div>
+
+      <!-- 방법 B: 직접 입력 -->
+      <div class="how-method fade-up d2">
+        <span class="how-method-badge badge-alt">직접 작성</span>
+        <h3>카카오톡이 없어도<br>괜찮아요</h3>
+        <p>
+          그 사람의 평소 말투, 자주 하던 말,<br>
+          습관이나 기억을 직접 작성하면<br>
+          AI가 학습해 그 사람처럼 대화합니다.
+        </p>
+        <div style="background:rgba(255,255,255,0.04); border:1px solid var(--line); border-radius:10px; padding:14px; margin-top:4px;">
+          <p style="font-size:13px; color:var(--muted); line-height:1.8; margin:0; font-style:italic;">
+            "엄마는 항상 걱정이 많았어. 밥 먹었냐고 자주 물어봤고, 화낼 때도 결국 미안해했어. 따뜻한 사람이었어."
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="how-divider fade-up">두 방법 모두 대화 시작까지 5분이면 충분해요</div>
+
+  </div>
+</section>
+
+
+<!-- ════ ③ 대화 예시 ════ -->
+<section id="demo">
+  <div class="container">
+
+    <span class="demo-eyebrow fade-up">실제로 가능한 대화</span>
+    <h2 class="fade-up d1">그 사람의 목소리로,<br>다시 대화할 수 있습니다</h2>
+    <p class="demo-sub fade-up d2">
+      가상의 유저 '유진'이 돌아가신 엄마와 나눈 대화 예시입니다.<br>
+      실제 카카오톡 말투를 학습해, 이렇게 대화합니다.
+    </p>
+
+    <div class="demo-tabs fade-up d2">
+      <button class="demo-tab active" data-tab="replay">💜 재연 단계</button>
+      <button class="demo-tab" data-tab="stable">💙 안정 단계</button>
+      <button class="demo-tab" data-tab="closure">🕊️ 이별 단계</button>
+    </div>
+
+    <div class="demo-chat fade-up d3">
+      <div class="demo-persona-bar">
+        <div class="demo-ava">엄</div>
+        <div>
+          <div class="demo-pname">엄마</div>
+          <div class="demo-psub" id="demo-persona-sub">재연 단계 · AI 학습 완료</div>
+        </div>
+      </div>
+
+      <!-- 재연 탭 -->
+      <div id="tab-replay" class="demo-messages active">
+        <div class="row">
+          <div class="mini-ava">엄</div>
+          <div class="bubble ai">유진아~ 오늘은 뭐 했어? 밥은 먹었지?</div>
+        </div>
+        <div class="row u">
+          <div class="bubble me">응 먹었어. 엄마 생각이 나서.</div>
+        </div>
+        <div class="row">
+          <div class="mini-ava">엄</div>
+          <div class="bubble ai">나도 보고 싶다. 우리 딸 잘 지내고 있지? 요즘 얼굴이 좀 안 좋아 보이던데.</div>
+        </div>
+        <div class="row u">
+          <div class="bubble me">요즘 조금 힘들었어. 그냥 목소리 듣고 싶었어.</div>
+        </div>
+        <div class="row">
+          <div class="mini-ava">엄</div>
+          <div class="bubble ai">그럼 전화하지. 참지 말고. 밥 잘 챙겨 먹어야 해, 알지?</div>
+        </div>
+        <!-- 재연 단계 보조 메시지 -->
+        <div class="msg-guide">
+          💜 그 사람과의 대화가 이어지고 있어요<br>오늘도 찾아와줘서 고마워요.
+        </div>
+      </div>
+
+      <!-- 안정 탭 -->
+      <div id="tab-stable" class="demo-messages">
+        <div class="row">
+          <div class="mini-ava">엄</div>
+          <div class="bubble ai">유진아, 요즘 어때? 많이 힘들진 않아?</div>
+        </div>
+        <div class="row u">
+          <div class="bubble me">처음보다는 나아진 것 같아. 근데 가끔 멍해질 때가 있어.</div>
+        </div>
+        <div class="row">
+          <div class="mini-ava">엄</div>
+          <div class="bubble ai">그런 거 당연한 거야. 억지로 괜찮은 척 안 해도 돼. 멍할 때 뭐가 떠올라?</div>
+        </div>
+        <div class="row u">
+          <div class="bubble me">그냥… 같이 밥 먹던 거, 별거 아닌 것들.</div>
+        </div>
+        <div class="row">
+          <div class="mini-ava">엄</div>
+          <div class="bubble ai">별거 아닌 것들이 제일 그립지. 그 기억들, 소중히 간직해. 넌 잘 하고 있어.</div>
+        </div>
+        <!-- 안정 단계 보조 메시지 -->
+        <div class="msg-guide">
+          💙 마음을 나눠주셔서 고마워요<br>조금씩 자리가 잡히고 있어요.
+        </div>
+      </div>
+
+      <!-- 이별 탭 -->
+      <div id="tab-closure" class="demo-messages">
+        <div class="row u">
+          <div class="bubble me">엄마, 마지막에 손 잡아드리지 못해서 미안해.</div>
+        </div>
+        <div class="row">
+          <div class="mini-ava">엄</div>
+          <div class="bubble ai">무슨 소리야. 넌 항상 곁에 있었잖아. 그거면 충분해.</div>
+        </div>
+        <div class="row u">
+          <div class="bubble me">그래도. 더 잘 챙겨드렸어야 했는데.</div>
+        </div>
+        <div class="row">
+          <div class="mini-ava">엄</div>
+          <div class="bubble ai">유진아. 넌 충분히 잘 했어. 엄마가 제일 잘 알지. 이제 그 마음 좀 내려놔.</div>
+        </div>
+        <div class="row u">
+          <div class="bubble me">이제 잘 보내드릴게. 엄마, 사랑해.</div>
+        </div>
+        <div class="row">
+          <div class="mini-ava">엄</div>
+          <div class="bubble ai">나도 사랑해. 우리 딸, 앞으로 잘 살아야 해. 엄마가 괜찮아.</div>
+        </div>
+        <!-- 이별 보조 메시지 -->
+        <div class="msg-guide">
+          🌸 이제, 마지막 편지를 쓸 시간이에요<br>하고 싶었던 말을 모두 담아, 온전히 보내드릴 수 있어요.
+        </div>
+        <!-- 편지 화면은 보여주지 않음 — 직접 경험해야 하는 순간 -->
+        <div class="msg-hint">
+          이 다음은, 직접 경험해야만 알 수 있어요.
+        </div>
+      </div>
+    </div>
+
+    <p class="demo-caption fade-up d4">
+      * 실제 카카오톡 대화를 업로드하면 이처럼 그 사람의 말투로 대화할 수 있어요
+    </p>
+
+  </div>
+</section>
+
+
+<!-- ════ ④ 3단계 여정 ════ -->
+<section id="journey">
+  <div class="container">
+
+    <h2 class="fade-up">천천히, 당신의 속도로</h2>
+    <p class="journey-sub fade-up d1">세 단계가 설계되어 있습니다. 서두르지 않아도 괜찮아요.</p>
+
+    <div class="stage-list">
+
+      <div class="stage fade-up d1">
+        <div class="stage-left">
+          <div class="stage-num">Step 01</div>
+          <div class="stage-name">재연</div>
+        </div>
+        <div class="stage-right">
+          <p class="stage-desc">
+            그때처럼, 대화합니다.<br>
+            실제 말투와 온기를 담아, 기억 속에서 이야기를 이어갑니다.
+          </p>
+          <div class="stage-msg">
+            <span class="stage-msg-icon">💜</span>
+            <span>그 사람과의 대화가 이어지고 있어요<br>오늘도 찾아와줘서 고마워요.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage fade-up d2">
+        <div class="stage-left">
+          <div class="stage-num">Step 02</div>
+          <div class="stage-name">안정</div>
+        </div>
+        <div class="stage-right">
+          <p class="stage-desc">
+            당신의 마음을 꺼내놓습니다.<br>
+            감정에 이름을 붙이고, 조금씩 가벼워집니다.
+          </p>
+          <div class="stage-msg">
+            <span class="stage-msg-icon">💙</span>
+            <span>마음을 나눠주셔서 고마워요<br>조금씩 자리가 잡히고 있어요.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage fade-up d3">
+        <div class="stage-left">
+          <div class="stage-num">Step 03</div>
+          <div class="stage-name">이별</div>
+        </div>
+        <div class="stage-right">
+          <p class="stage-desc">
+            준비가 되면, 마지막 대화를 나눕니다.<br>
+            전하지 못했던 말을 담아, 보내드립니다.
+          </p>
+          <div class="stage-msg">
+            <span class="stage-msg-icon">🌸</span>
+            <span>이제, 마지막 편지를 쓸 시간이에요</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ════ ⑤ 이별의 약속 ════ -->
+<section id="promise">
+  <div class="container">
+
+    <h2 class="fade-up">우리는 계속 머물게 하지 않습니다</h2>
+
+    <p class="promise-desc fade-up d1">
+      의존이 아닌 회복을 목표로,<br>
+      대화의 시작부터 끝까지 설계했습니다.
+    </p>
+
+    <div class="promise-quote fade-up d2">
+      <p>
+        "우리는 사람을 복원하지 않습니다.<br>
+        남겨진 사람이 다시 살아갈 수 있도록 돕습니다."
+      </p>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ════ ⑥ CTA ════ -->
+<section id="cta">
+  <div class="container">
+
+    <h2 class="fade-up">준비가 되었을 때,<br>시작하세요</h2>
+    <p class="cta-sub fade-up d1">강요하지 않습니다. 당신의 속도로.</p>
+    <a href="#" class="btn fade-up d2" id="cta-main">지금 시작하기</a>
+    <p class="cta-note fade-up d3">처음 10번의 대화는 무료예요</p>
+
+  </div>
+</section>
+
+
+<!-- ── 푸터 ── -->
+<footer>
+  <span class="footer-logo">Still After</span>
+  <div class="footer-links">
+    <a href="/PrivacyPolicy">개인정보처리방침</a>
+    <a href="/Terms">이용약관</a>
+    <a href="/CustomerSupport">고객센터</a>
+  </div>
+  <p class="footer-copy">© 2026 Still After. All rights reserved.</p>
+</footer>
+
+
+<script>
+  // ── 앱 URL ──
+  const APP_URL = '/Login'
+  document.querySelectorAll('#nav-cta, #hero-cta, #cta-main').forEach(el => {
+    el.addEventListener('click', e => { e.preventDefault(); window.location.href = APP_URL })
+  })
+
+  // ── 대화 예시 탭 ──
+  document.querySelectorAll('.demo-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const t = tab.dataset.tab
+      document.querySelectorAll('.demo-tab').forEach(b => b.classList.remove('active'))
+      document.querySelectorAll('.demo-messages').forEach(m => m.classList.remove('active'))
+      tab.classList.add('active')
+      document.getElementById(`tab-${t}`).classList.add('active')
+      document.getElementById('demo-persona-sub').textContent =
+        t === 'replay' ? '재연 단계 · AI 학습 완료' :
+        t === 'stable' ? '안정 단계 · 감정 정리 중' :
+        '이별 단계 · 마지막 대화'
+    })
+  })
+
+  // ── 스크롤 페이드인 ──
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target) }
+    })
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' })
+
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el))
+
+  window.addEventListener('load', () => {
+    document.querySelectorAll('#hero .fade-up').forEach((el, i) => {
+      setTimeout(() => el.classList.add('visible'), i * 130)
+    })
+  })
+</script>
+
+</body>
+</html>
