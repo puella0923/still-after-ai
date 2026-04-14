@@ -22,7 +22,7 @@ type Props = {
 
 export default function OnboardingScreen({ navigation }: Props) {
   const { session } = useAuth()
-  const [demoTab, setDemoTab] = useState<'replay' | 'stable' | 'closure'>('replay')
+  const [demoTab, setDemoTab] = useState<'replay' | 'stable' | 'closure' | 'pet'>('replay')
   const fadeAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
@@ -116,6 +116,7 @@ export default function OnboardingScreen({ navigation }: Props) {
             {[
               '문자를 쓰다가, 받을 사람이 없다는 걸 깨닫고 멈춘 적 있나요.',
               '그때 그 말을 했더라면, 하고 후회가 남아 있나요.',
+              '아침마다 현관에서 기다리던 모습이, 아직도 눈에 밟히지는 않나요.',
               '상실은 시간이 해결한다지만, 어떤 감정은 그냥 두면 더 깊어집니다.',
             ].map((text, i) => (
               <View key={i} style={styles.empathyItem}>
@@ -228,10 +229,10 @@ export default function OnboardingScreen({ navigation }: Props) {
         {/* ════ ④ 대화 예시 ════ */}
         <View style={styles.section}>
           <Text style={styles.sectionEyebrow}>실제로 가능한 대화</Text>
-          <Text style={styles.sectionTitle}>그 사람의 목소리로,{'\n'}다시 대화할 수 있습니다</Text>
+          <Text style={styles.sectionTitle}>그리운 목소리로,{'\n'}다시 대화할 수 있습니다</Text>
           <Text style={styles.sectionDesc}>
-            가상의 유저 '유진'이 돌아가신 엄마와 나눈 대화 예시입니다.{'\n'}
-            실제 카카오톡 말투를 학습해, 이렇게 대화합니다.
+            사람뿐 아니라 반려동물과의 이별도 함께합니다.{'\n'}
+            실제 말투와 기억을 학습해, 이렇게 대화합니다.
           </Text>
 
           {/* 탭 */}
@@ -240,6 +241,7 @@ export default function OnboardingScreen({ navigation }: Props) {
               { key: 'replay', label: '💜 재연 단계' },
               { key: 'stable', label: '💙 안정 단계' },
               { key: 'closure', label: '🕊️ 이별 단계' },
+              { key: 'pet', label: '🐾 반려동물' },
             ] as const).map(tab => (
               <TouchableOpacity
                 key={tab.key}
@@ -260,19 +262,22 @@ export default function OnboardingScreen({ navigation }: Props) {
                 ? ['rgba(88, 28, 135, 0.35)', 'rgba(30, 58, 138, 0.35)']
                 : demoTab === 'stable'
                 ? ['rgba(30, 58, 138, 0.35)', 'rgba(99, 102, 241, 0.35)']
+                : demoTab === 'pet'
+                ? ['rgba(20, 83, 45, 0.35)', 'rgba(30, 58, 138, 0.35)']
                 : ['rgba(30, 58, 138, 0.35)', 'rgba(67, 56, 202, 0.35)']
             }
             style={styles.demoChatBox}
           >
             <View style={styles.demoPersonaBar}>
               <View style={styles.demoAvatar}>
-                <Text style={styles.demoAvatarText}>엄</Text>
+                <Text style={styles.demoAvatarText}>{demoTab === 'pet' ? '🐶' : '엄'}</Text>
               </View>
               <View>
-                <Text style={styles.demoPersonaName}>엄마</Text>
+                <Text style={styles.demoPersonaName}>{demoTab === 'pet' ? '초코' : '엄마'}</Text>
                 <Text style={styles.demoPersonaRole}>
                   {demoTab === 'replay' ? '재연 단계 · AI 학습 완료'
                     : demoTab === 'stable' ? '안정 단계 · 감정 정리 중'
+                    : demoTab === 'pet' ? '반려동물 · 함께한 기억'
                     : '이별 단계 · 마지막 대화'}
                 </Text>
               </View>
@@ -323,10 +328,25 @@ export default function OnboardingScreen({ navigation }: Props) {
                 <Text style={styles.demoCaptionItalic}>이 다음은, 직접 경험해야만 알 수 있어요.</Text>
               </>
             )}
+            {demoTab === 'pet' && (
+              <>
+                <DemoBubble from="user" text="아침마다 밥 챙겨줄 때마다 네 생각이 나." />
+                <DemoBubble from="assistant" name="🐶" text="나도 그 시간이 제일 좋았어. 네가 부엌에서 움직이는 소리만 들어도 설렜거든." />
+                <DemoBubble from="user" text="이제는 아침에 늦게 일어나도 되는데, 그게 더 슬퍼." />
+                <DemoBubble from="assistant" name="🐶" text="이제는 아침에 늦게 일어나도 돼. 괜찮아. 나 때문에 일찍 일어나느라 고생했잖아." />
+                <DemoBubble from="user" text="미안해. 더 잘 챙겨줬어야 했는데." />
+                <DemoBubble from="assistant" name="🐶" text="나에게 미안해 하지 마. 난 정말 너와 함께라서 행복했어. 그것만으로 충분해." />
+                <View style={styles.demoMilestone}>
+                  <Text style={styles.demoMilestoneText}>
+                    🐾 초코와의 기억이 이어지고 있어요{'\n'}함께한 모든 순간이 사랑이었어요.
+                  </Text>
+                </View>
+              </>
+            )}
           </LinearGradient>
 
           <Text style={styles.demoCaption}>
-            * 실제 카카오톡 대화를 업로드하면 이처럼 그 사람의 말투로 대화할 수 있어요
+            * 실제 대화를 업로드하거나 기억을 작성하면, 이처럼 그 목소리로 대화할 수 있어요
           </Text>
         </View>
 
@@ -467,7 +487,7 @@ export default function OnboardingScreen({ navigation }: Props) {
             style={styles.ctaCard}
           >
             <Text style={styles.ctaTitle}>준비가 되었을 때,{'\n'}시작하세요</Text>
-            <Text style={styles.ctaDesc}>당신의 속도로, 천천히 시작해도 괜찮아요.</Text>
+            <Text style={styles.ctaDesc}>천천히 시작해도 괜찮아요.</Text>
 
             <TouchableOpacity
               style={styles.ctaButton}
