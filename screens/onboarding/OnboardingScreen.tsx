@@ -58,6 +58,7 @@ export default function OnboardingScreen({ navigation }: Props) {
       })}
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.contentWrapper}>
 
         {/* ════ ① HERO ════ */}
         <Animated.View style={[styles.heroSection, { opacity: fadeAnim }]}>
@@ -416,6 +417,7 @@ export default function OnboardingScreen({ navigation }: Props) {
           </View>
           <Text style={styles.footerCopy}>© 2026 Still After. All rights reserved.</Text>
         </View>
+        </View>
       </ScrollView>
     </View>
   )
@@ -441,7 +443,8 @@ function DemoBubble({ from, name, text }: { from: 'user' | 'assistant'; name?: s
 /* ─── Styles ─── */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.BG },
-  scrollContent: { paddingBottom: 40 },
+  scrollContent: { paddingBottom: 40, alignItems: 'center' },
+  contentWrapper: { width: '100%', maxWidth: 680 },
 
   // 배경
   orbContainer: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
