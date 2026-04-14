@@ -30,7 +30,12 @@ const seoTags = `
     <meta name="twitter:description" content="사랑하는 사람을 떠나보낸 후, 못 다한 말을 전하는 공간." />
     <meta name="twitter:image" content="https://stillafter.com/og-image.jpg" />
 
-    <!-- ⑤ GA4 -->
+    <!-- ⑤ 파비콘 -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+
+    <!-- ⑥ GA4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q4KY5HKLRK"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -39,7 +44,7 @@ const seoTags = `
       gtag('config', 'G-Q4KY5HKLRK');
     </script>
 
-    <!-- ⑥ Microsoft Clarity -->
+    <!-- ⑦ Microsoft Clarity -->
     <script type="text/javascript">
       (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
