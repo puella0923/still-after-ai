@@ -70,7 +70,7 @@ AI 서비스 제공을 위해 OpenAI API를 활용하며, OpenAI의 개인정보
 • 삭제 요청 (단, 법령상 보존 의무가 있는 경우 제외)
 • 처리 정지 요청
 
-권리 행사는 앱 내 설정 화면 또는 이메일(support@stillafter.app)을 통해 할 수 있으며, 요청 후 10일 이내 처리합니다.
+권리 행사는 앱 내 설정 화면 또는 이메일(ysk@soomukstudio.com)을 통해 할 수 있으며, 요청 후 10일 이내 처리합니다.
 
 만 14세 미만 아동은 서비스를 이용할 수 없습니다.`,
   },
@@ -79,8 +79,8 @@ AI 서비스 제공을 위해 OpenAI API를 활용하며, OpenAI의 개인정보
     body: `개인정보 처리에 관한 업무를 총괄하는 담당자는 아래와 같습니다.
 
 • 성명: Still After 개인정보 보호팀
-• 이메일: privacy@stillafter.app
-• 연락처: support@stillafter.app
+• 이메일: ysk@soomukstudio.com
+• 연락처: ysk@soomukstudio.com
 
 개인정보 침해 관련 신고나 상담은 아래 기관에 문의하실 수 있습니다.
 • 개인정보침해 신고센터: privacy.kisa.or.kr (국번 없이 118)

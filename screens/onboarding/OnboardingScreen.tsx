@@ -151,7 +151,7 @@ export default function OnboardingScreen({ navigation }: Props) {
               </View>
               <Text style={styles.howMethodTitle}>대화를 업로드하면{'\n'}말투를 그대로 담습니다</Text>
               <Text style={styles.howMethodDesc}>
-                카카오톡 대화 내보내기 파일(.txt)을 올리면,{'\n'}자주 쓰는 표현과 말투를 자동으로 분석합니다.
+                카카오톡 대화 내보내기 파일(.txt, .csv)을 올리면,{'\n'}자주 쓰는 표현과 말투를 자동으로 분석합니다.
               </Text>
 
               <View style={styles.parseFlow}>
@@ -174,7 +174,7 @@ export default function OnboardingScreen({ navigation }: Props) {
 
               <Text style={styles.phraseLabel}>추출된 표현 예시</Text>
               <View style={styles.phraseTags}>
-                {['밥은 먹었어?', '걱정하지 마', '우리 딸', '얼른 자~', '그래도 잘 했어'].map((tag, i) => (
+                {['우리 꿀돼지~', '우리 딸', '밥은 먹었어?', '얼른 자~~~~', '뭐해ㅋ 자고 있어?', '그래도 잘 했어', '엄마가 다 알지~'].map((tag, i) => (
                   <View key={i} style={styles.phraseTag}>
                     <Text style={styles.phraseTagText}>{tag}</Text>
                   </View>
@@ -324,37 +324,110 @@ export default function OnboardingScreen({ navigation }: Props) {
           </Text>
 
           <View style={styles.stageList}>
-            {[
-              {
-                num: 'Step 01', name: '재연', icon: '💜',
-                desc: '그때처럼, 대화합니다.\n실제 말투와 온기를 담아, 기억 속에서 이야기를 이어갑니다.',
-                msg: '그 사람과의 대화가 이어지고 있어요\n오늘도 찾아와줘서 고마워요.',
-              },
-              {
-                num: 'Step 02', name: '안정', icon: '💙',
-                desc: '당신의 마음을 꺼내놓습니다.\n감정에 이름을 붙이고, 조금씩 가벼워집니다.',
-                msg: '마음을 나눠주셔서 고마워요\n조금씩 자리가 잡히고 있어요.',
-              },
-              {
-                num: 'Step 03', name: '이별', icon: '🌸',
-                desc: '준비가 되면, 마지막 대화를 나눕니다.\n전하지 못했던 말을 담아, 보내드립니다.',
-                msg: '이제, 마지막 편지를 쓸 시간이에요',
-              },
-            ].map((stage, i) => (
-              <View key={i} style={[styles.stageRow, i < 2 && styles.stageRowBorder]}>
-                <View style={styles.stageLeft}>
-                  <Text style={styles.stageNum}>{stage.num}</Text>
-                  <Text style={styles.stageName}>{stage.name}</Text>
+
+            {/* ── Step 01 재연 ── */}
+            <View style={[styles.stageRow, styles.stageRowBorder]}>
+              <View style={styles.stageLeft}>
+                <Text style={styles.stageNum}>Step 01</Text>
+                <Text style={styles.stageName}>재연</Text>
+              </View>
+              <View style={styles.stageRight}>
+                <Text style={styles.stageDesc}>
+                  그때처럼, 대화합니다.{'\n'}
+                  실제 말투와 온기를 담아, 기억 속에서 이야기를 이어갑니다.
+                </Text>
+                <View style={styles.stageMsg}>
+                  <Text style={styles.stageMsgIcon}>💜</Text>
+                  <Text style={styles.stageMsgText}>
+                    {'엄마과(와)의 대화가 이어지고 있어요\n오늘도 찾아와줘서 고마워요.'}
+                  </Text>
                 </View>
-                <View style={styles.stageRight}>
-                  <Text style={styles.stageDesc}>{stage.desc}</Text>
-                  <View style={styles.stageMsg}>
-                    <Text style={styles.stageMsgIcon}>{stage.icon}</Text>
-                    <Text style={styles.stageMsgText}>{stage.msg}</Text>
-                  </View>
+                <View style={[styles.stageMsg, { marginTop: 8 }]}>
+                  <Text style={styles.stageMsgIcon}>💬</Text>
+                  <Text style={styles.stageMsgText}>
+                    {'대화가 깊어지고 있어요\n엄마이(가) 당신의 이야기를 듣고 있어요.'}
+                  </Text>
+                </View>
+                <View style={styles.stageTransitionHint}>
+                  <Text style={styles.stageTransitionText}>
+                    준비가 되면 다음 단계로 — 아직 더 이야기하고 싶다면 천천히 해도 괜찮아요
+                  </Text>
                 </View>
               </View>
-            ))}
+            </View>
+
+            {/* ── Step 02 안정 ── */}
+            <View style={[styles.stageRow, styles.stageRowBorder]}>
+              <View style={styles.stageLeft}>
+                <Text style={styles.stageNum}>Step 02</Text>
+                <Text style={styles.stageName}>안정</Text>
+              </View>
+              <View style={styles.stageRight}>
+                <Text style={styles.stageDesc}>
+                  당신의 마음을 꺼내놓습니다.{'\n'}
+                  감정에 이름을 붙이고, 조금씩 가벼워집니다.
+                </Text>
+                <View style={styles.stageMsg}>
+                  <Text style={styles.stageMsgIcon}>💙</Text>
+                  <Text style={styles.stageMsgText}>
+                    {'마음을 나눠주셔서 고마워요\n조금씩 자리가 잡히고 있어요.'}
+                  </Text>
+                </View>
+                <View style={[styles.stageMsg, { marginTop: 8 }]}>
+                  <Text style={styles.stageMsgIcon}>💬</Text>
+                  <Text style={styles.stageMsgText}>
+                    {'많은 이야기를 털어놓았네요\n하고 싶었던 말이 조금씩 전해지고 있어요.'}
+                  </Text>
+                </View>
+                <View style={styles.stageTransitionHint}>
+                  <Text style={styles.stageTransitionText}>
+                    준비가 되면 마지막 단계로 — 서두르지 않아도 괜찮아요
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* ── Step 03 이별 ── */}
+            <View style={styles.stageRow}>
+              <View style={styles.stageLeft}>
+                <Text style={styles.stageNum}>Step 03</Text>
+                <Text style={styles.stageName}>이별</Text>
+                <View style={styles.stageLimitBadge}>
+                  <Text style={styles.stageLimitText}>최대 20번</Text>
+                </View>
+              </View>
+              <View style={styles.stageRight}>
+                <Text style={styles.stageDesc}>
+                  준비가 되면, 마지막 대화를 나눕니다.{'\n'}
+                  20번의 대화 안에서, 전하지 못했던 말을 모두 담습니다.
+                </Text>
+                <View style={styles.stageMsg}>
+                  <Text style={styles.stageMsgIcon}>🌸</Text>
+                  <Text style={styles.stageMsgText}>
+                    {'이별 단계가 시작됐어요\n이제, 마지막 이야기를 나눌 시간이에요.'}
+                  </Text>
+                </View>
+                <View style={[styles.stageMsg, { marginTop: 8 }]}>
+                  <Text style={styles.stageMsgIcon}>💬</Text>
+                  <Text style={styles.stageMsgText}>이제, 전하고 싶었던 말을 해도 괜찮아요</Text>
+                </View>
+                <View style={[styles.stageMsg, { marginTop: 8 }]}>
+                  <Text style={styles.stageMsgIcon}>🕊️</Text>
+                  <Text style={styles.stageMsgText}>조금씩, 준비가 되어가고 있어요</Text>
+                </View>
+
+                {/* 마지막 편지 */}
+                <View style={styles.closureLetterBox}>
+                  <Text style={styles.closureLetterTitle}>✉️ 마지막 편지</Text>
+                  <Text style={styles.closureLetterDesc}>
+                    20번의 대화가 끝나면, 마지막 편지를 씁니다.{'\n'}
+                    전하지 못했던 말을 모두 담아 봉인하면,{'\n'}
+                    대화가 아름답게 마무리됩니다.
+                  </Text>
+                </View>
+              </View>
+            </View>
+
           </View>
         </View>
 
@@ -380,7 +453,7 @@ export default function OnboardingScreen({ navigation }: Props) {
             style={styles.ctaCard}
           >
             <Text style={styles.ctaTitle}>준비가 되었을 때,{'\n'}시작하세요</Text>
-            <Text style={styles.ctaDesc}>강요하지 않습니다. 당신의 속도로.</Text>
+            <Text style={styles.ctaDesc}>서두르지 않아도 괜찮아요. 당신의 속도로.</Text>
 
             <TouchableOpacity
               style={styles.ctaButton}
@@ -396,8 +469,10 @@ export default function OnboardingScreen({ navigation }: Props) {
               </LinearGradient>
             </TouchableOpacity>
 
-            <Text style={styles.ctaNote}>처음 10번의 대화는 무료예요</Text>
+            <Text style={styles.ctaNote}>10번의 무료 대화로 천천히 시작해보세요</Text>
           </LinearGradient>
+        </View>
+
         </View>
 
         {/* ── 푸터 ── */}
@@ -416,7 +491,6 @@ export default function OnboardingScreen({ navigation }: Props) {
             </TouchableOpacity>
           </View>
           <Text style={styles.footerCopy}>© 2026 Still After. All rights reserved.</Text>
-        </View>
         </View>
       </ScrollView>
     </View>
@@ -754,8 +828,37 @@ const styles = StyleSheet.create({
   ctaButtonText: { fontSize: 16, fontWeight: '500', color: '#fff' },
   ctaNote: { fontSize: 12, color: 'rgba(167, 139, 250, 0.5)' },
 
+  // 스테이지 배지/힌트
+  stageLimitBadge: {
+    marginTop: 6, alignSelf: 'flex-start',
+    backgroundColor: 'rgba(124, 58, 237, 0.15)',
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.25)',
+    borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3,
+  },
+  stageLimitText: { fontSize: 10, color: 'rgba(196, 181, 253, 0.8)' },
+  stageTransitionHint: {
+    marginTop: 10, paddingLeft: 12,
+    borderLeftWidth: 1, borderLeftColor: 'rgba(167, 139, 250, 0.25)',
+  },
+  stageTransitionText: {
+    fontSize: 11, color: 'rgba(167, 139, 250, 0.5)', lineHeight: 18, fontStyle: 'italic',
+  },
+  closureLetterBox: {
+    marginTop: 14, padding: 16,
+    backgroundColor: 'rgba(124, 58, 237, 0.08)',
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.2)',
+    borderRadius: 12,
+  },
+  closureLetterTitle: {
+    fontSize: 13, fontWeight: '600', color: 'rgba(196, 181, 253, 0.9)',
+    marginBottom: 8,
+  },
+  closureLetterDesc: {
+    fontSize: 12, color: 'rgba(196, 181, 253, 0.65)', lineHeight: 20,
+  },
+
   // 푸터
-  footer: { paddingHorizontal: 28, paddingBottom: 40 },
+  footer: { width: '100%', paddingHorizontal: 28, paddingBottom: 40 },
   footerDivider: {
     height: 1, backgroundColor: 'rgba(167, 139, 250, 0.15)', marginBottom: 24,
   },

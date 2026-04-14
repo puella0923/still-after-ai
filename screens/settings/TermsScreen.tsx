@@ -67,7 +67,7 @@ export default function TermsScreen({ navigation }: Props) {
         ))}
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>문의사항이 있으시면 support@stillafter.app으로 연락해 주세요.</Text>
+          <Text style={styles.footerText}>문의사항이 있으시면 ysk@soomukstudio.com으로 연락해 주세요.</Text>
         </View>
       </ScrollView>
     </View>
