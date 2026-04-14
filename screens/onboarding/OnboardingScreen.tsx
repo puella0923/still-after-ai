@@ -7,7 +7,6 @@ import {
   ScrollView,
   Animated,
   Dimensions,
-  Platform,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -23,16 +22,8 @@ type Props = {
 
 export default function OnboardingScreen({ navigation }: Props) {
   const { session } = useAuth()
-  const [demoTab, setDemoTab] = useState<'replay' | 'closure'>('replay')
-  const fadeHero = useRef(new Animated.Value(0)).current
-  const fadeSection1 = useRef(new Animated.Value(0)).current
-  const fadeSection2 = useRef(new Animated.Value(0)).current
-  const fadeDemoSection = useRef(new Animated.Value(0)).current
-  const fadeSection3 = useRef(new Animated.Value(0)).current
-  const fadeSection4 = useRef(new Animated.Value(0)).current
-  const fadeCTA = useRef(new Animated.Value(0)).current
-  const slideHero = useRef(new Animated.Value(30)).current
-  const logoScale = useRef(new Animated.Value(0)).current
+  const [demoTab, setDemoTab] = useState<'replay' | 'stable' | 'closure'>('replay')
+  const fadeAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
     if (session) {
@@ -41,24 +32,12 @@ export default function OnboardingScreen({ navigation }: Props) {
   }, [session, navigation])
 
   useEffect(() => {
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(logoScale, { toValue: 1, duration: 800, useNativeDriver: true }),
-        Animated.timing(fadeHero, { toValue: 1, duration: 1000, useNativeDriver: true }),
-        Animated.timing(slideHero, { toValue: 0, duration: 1000, useNativeDriver: true }),
-      ]),
-      Animated.timing(fadeSection1, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(fadeSection2, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(fadeDemoSection, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(fadeSection3, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(fadeSection4, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(fadeCTA, { toValue: 1, duration: 600, useNativeDriver: true }),
-    ]).start()
+    Animated.timing(fadeAnim, { toValue: 1, duration: 900, useNativeDriver: true }).start()
   }, [])
 
   return (
     <View style={styles.container}>
-      {/* Cosmic gradient orbs with blur */}
+      {/* ── 배경 ── */}
       <View style={styles.orbContainer}>
         <View style={[styles.orbInner, styles.orb1]} />
         <View style={[styles.orbInner, styles.orb2]} />
@@ -66,190 +45,210 @@ export default function OnboardingScreen({ navigation }: Props) {
         <View style={[styles.orbInner, styles.orb4]} />
         <View style={[StyleSheet.absoluteFill, styles.blurOverlay]} />
       </View>
-
-      {/* 별 장식 — 더 촘촘하게 */}
       {Array.from({ length: 50 }).map((_, i) => {
         const size = (i * 7 + 3) % 4 + 1
         return (
-          <View
-            key={i}
-            style={[
-              styles.star,
-              {
-                top: (i * 137 + 23) % 2500,
-                left: (i * 89 + 11) % (width - 10),
-                width: size,
-                height: size,
-                opacity: ((i * 31 + 7) % 60 + 20) / 100,
-              },
-            ]}
-          />
+          <View key={i} style={[styles.star, {
+            top: (i * 137 + 23) % 2500,
+            left: (i * 89 + 11) % (width - 10),
+            width: size, height: size,
+            opacity: ((i * 31 + 7) % 60 + 20) / 100,
+          }]} />
         )
       })}
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* ══════════ Hero Section ══════════ */}
-        <Animated.View
-          style={[
-            styles.heroSection,
-            {
-              opacity: fadeHero,
-              transform: [{ translateY: slideHero }],
-            },
-          ]}
-        >
-          {/* 로고 아이콘 */}
-          <Animated.View style={[styles.logoWrapper, { transform: [{ scale: logoScale }] }]}>
-            <LinearGradient
-              colors={['rgba(168, 85, 247, 0.3)', 'rgba(59, 130, 246, 0.3)']}
-              style={styles.logoIcon}
-            >
-              <Text style={styles.logoEmoji}>🌙</Text>
-            </LinearGradient>
-            <Text style={styles.sparkle}>✨</Text>
-          </Animated.View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-          <Text style={styles.title}>Still After</Text>
-          <Text style={styles.tagline}>한 번만 더 말할 수 있다면</Text>
+        {/* ════ ① HERO ════ */}
+        <Animated.View style={[styles.heroSection, { opacity: fadeAnim }]}>
+          <LinearGradient
+            colors={['rgba(168, 85, 247, 0.3)', 'rgba(59, 130, 246, 0.3)']}
+            style={styles.logoIcon}
+          >
+            <Text style={styles.logoEmoji}>🌙</Text>
+          </LinearGradient>
 
+          <Text style={styles.heroEyebrow}>Grief Care · AI</Text>
+          <Text style={styles.heroTitle}>한 번만 더{'\n'}말할 수 있다면</Text>
+          <Text style={styles.heroSub}>아직 전하지 못한 말이 있나요?</Text>
           <Text style={styles.heroDesc}>
-            아직 전하지 못한 말이 있나요?{'\n'}
             그리움을 붙잡는 것이 아니라,{'\n'}
             천천히, 당신의 속도로 놓을 수 있도록 돕습니다.
           </Text>
-          <Text style={styles.heroSubDesc}>
-            마지막으로 전하지 못한 말을 하고,{'\n'}그 사람을 온전히 보내드립니다.
-          </Text>
 
-          {/* 버튼 영역 */}
-          <View style={styles.heroButtons}>
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={() => navigation.replace('Login')}
-              activeOpacity={0.85}
+          {/* 미션 인용 */}
+          <View style={styles.heroMission}>
+            <Text style={styles.heroMissionText}>
+              마지막으로 전하지 못한 말을 하고,{'\n'}
+              그 사람을 온전히 보내드립니다.
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => navigation.replace('Login')}
+            activeOpacity={0.85}
+          >
+            <LinearGradient
+              colors={['#7C3AED', '#3B82F6']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={styles.primaryButtonGradient}
             >
-              <LinearGradient
-                colors={['#7C3AED', '#3B82F6']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.primaryButtonGradient}
-              >
-                <Text style={styles.primaryButtonText}>조심스럽게 시작해보기</Text>
-                <Text style={styles.primaryButtonArrow}>›</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+              <Text style={styles.primaryButtonText}>조심스럽게 시작해보기</Text>
+              <Text style={styles.primaryButtonArrow}>›</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animated.View>
 
+        {/* ════ ② 공감 ════ */}
+        <View style={styles.section}>
+          <Text style={styles.empathyQuote}>
+            <Text style={styles.empathyQuoteAccent}>"밥은 먹었어?"</Text>{'\n'}
+            목소리가 아직도 들리나요.
+          </Text>
+
+          <Text style={styles.sectionDesc}>
+            전하지 못한 말이, 아직 여기 남아 있지 않나요.
+          </Text>
+
+          <View style={styles.empathyList}>
+            {[
+              '전화하면 받을 것 같아서, 번호를 누르다 멈춘 적 있나요.',
+              '그때 그 말을 했더라면, 하고 후회가 남아 있나요.',
+              '상실은 시간이 해결한다지만, 어떤 감정은 그냥 두면 더 깊어집니다.',
+            ].map((text, i) => (
+              <View key={i} style={styles.empathyItem}>
+                <View style={styles.empathyDot} />
+                <Text style={styles.empathyItemText}>{text}</Text>
+              </View>
+            ))}
           </View>
-        </Animated.View>
 
-        {/* ══════════ What is Still After ══════════ */}
-        <Animated.View style={[styles.section, { opacity: fadeSection1 }]}>
-          <Text style={styles.sectionTitle}>전하지 못한 말이,{'\n'}아직 여기 남아 있지 않나요.</Text>
-          <Text style={styles.sectionDesc}>
-            "밥은 먹었어?" — 목소리가 아직도 들리나요.{'\n'}
-            Still After는 그 감정을 억누르지 않고,{'\n'}안전하게 이어가고, 결국 떠나보낼 수 있도록 설계했습니다.
-          </Text>
-
-          <View style={styles.cardRow}>
-            <InfoCard
-              emoji="📞"
-              title="그리움"
-              desc="전화하면 받을 것 같아서, 번호를 누르다 멈춘 적 있나요."
-              colors={['rgba(236, 72, 153, 0.2)', 'rgba(168, 85, 247, 0.2)']}
-            />
-            <InfoCard
-              emoji="💬"
-              title="후회"
-              desc="그때 그 말을 했더라면, 하고 후회가 남아 있나요."
-              colors={['rgba(168, 85, 247, 0.2)', 'rgba(59, 130, 246, 0.2)']}
-            />
-            <InfoCard
-              emoji="🌿"
-              title="회복"
-              desc="상실은 시간이 해결한다지만, 어떤 감정은 그냥 두면 더 깊어집니다."
-              colors={['rgba(59, 130, 246, 0.2)', 'rgba(99, 102, 241, 0.2)']}
-            />
+          <View style={styles.empathyClose}>
+            <Text style={styles.empathyCloseText}>
+              Still After는 그 감정을 억누르지 않고,{'\n'}
+              안전하게 이어가고, 결국 떠나보낼 수 있도록 설계했습니다.
+            </Text>
           </View>
-        </Animated.View>
+        </View>
 
-        {/* ══════════ 3-Phase Journey ══════════ */}
-        <Animated.View style={[styles.section, { opacity: fadeSection2 }]}>
-          <Text style={styles.sectionTitle}>천천히, 당신의 속도로</Text>
+        {/* ════ ③ 이렇게 시작합니다 ════ */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>이렇게 시작합니다</Text>
           <Text style={styles.sectionDesc}>
-            세 단계가 설계되어 있습니다.{'\n'}서두르지 않아도 괜찮아요.
+            그 사람이 실제로 쓰던 말투를 학습해, 대화를 만들어냅니다.
           </Text>
 
-          <PhaseCard
-            phase="1"
-            icon="💜"
-            title="재연"
-            subtitle="그때처럼, 대화합니다"
-            desc="실제 말투와 온기를 담아, 기억 속에서 이야기를 이어갑니다."
-            features={['카카오톡 대화 기반 말투 학습', '자주 쓰던 표현·호칭 재현', '"그 사람과의 대화가 이어지고 있어요"']}
-            colors={['rgba(236, 72, 153, 0.3)', 'rgba(168, 85, 247, 0.1)']}
-          />
-          <PhaseCard
-            phase="2"
-            icon="💙"
-            title="안정"
-            subtitle="당신의 마음을 꺼내놓습니다"
-            desc="감정에 이름을 붙이고, 조금씩 가벼워집니다."
-            features={['감정 표현 유도 대화', '후회·미련 완화', '"조금씩 자리가 잡히고 있어요"']}
-            colors={['rgba(59, 130, 246, 0.3)', 'rgba(99, 102, 241, 0.1)']}
-          />
-          <PhaseCard
-            phase="3"
-            icon="🌸"
-            title="이별"
-            subtitle="준비가 되면, 마지막 대화를 나눕니다"
-            desc="전하지 못했던 말을 담아, 보내드립니다."
-            features={['마지막 편지 작성', '전하지 못한 말 전하기', '"이제, 마지막 편지를 쓸 시간이에요"']}
-            colors={['rgba(99, 102, 241, 0.3)', 'rgba(168, 85, 247, 0.1)']}
-          />
-        </Animated.View>
+          <View style={styles.howGrid}>
+            {/* 카카오톡 업로드 */}
+            <LinearGradient
+              colors={['rgba(124, 58, 237, 0.25)', 'rgba(59, 130, 246, 0.15)']}
+              style={[styles.howMethod, styles.howMethodPrimary]}
+            >
+              <View style={styles.howBadgePrimary}>
+                <Text style={styles.howBadgeTextPrimary}>카카오톡 업로드</Text>
+              </View>
+              <Text style={styles.howMethodTitle}>대화를 업로드하면{'\n'}말투를 그대로 담습니다</Text>
+              <Text style={styles.howMethodDesc}>
+                카카오톡 대화 내보내기 파일(.txt)을 올리면,{'\n'}자주 쓰는 표현과 말투를 자동으로 분석합니다.
+              </Text>
 
-        {/* ══════════ Demo Chat Preview ══════════ */}
-        <Animated.View style={[styles.section, { opacity: fadeDemoSection }]}>
-          <Text style={styles.sectionTitle}>이런 대화가 가능해요</Text>
+              <View style={styles.parseFlow}>
+                {[
+                  { icon: '📄', label: '카카오톡 대화 업로드' },
+                  { icon: '🔍', label: '자주 쓰는 표현 · 말투 · 호칭 추출' },
+                  { icon: '💜', label: 'AI 페르소나 생성 완료' },
+                ].map((step, i, arr) => (
+                  <View key={i}>
+                    <View style={styles.parseStep}>
+                      <View style={styles.parseIcon}>
+                        <Text style={styles.parseIconText}>{step.icon}</Text>
+                      </View>
+                      <Text style={styles.parseLabel}>{step.label}</Text>
+                    </View>
+                    {i < arr.length - 1 && <Text style={styles.parseArrow}>↓</Text>}
+                  </View>
+                ))}
+              </View>
+
+              <Text style={styles.phraseLabel}>추출된 표현 예시</Text>
+              <View style={styles.phraseTags}>
+                {['밥은 먹었어?', '걱정하지 마', '우리 딸', '얼른 자~', '그래도 잘 했어'].map((tag, i) => (
+                  <View key={i} style={styles.phraseTag}>
+                    <Text style={styles.phraseTagText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            </LinearGradient>
+
+            {/* 직접 작성 */}
+            <LinearGradient
+              colors={['rgba(88, 28, 135, 0.2)', 'rgba(30, 58, 138, 0.2)']}
+              style={styles.howMethod}
+            >
+              <View style={styles.howBadgeAlt}>
+                <Text style={styles.howBadgeTextAlt}>직접 작성</Text>
+              </View>
+              <Text style={styles.howMethodTitle}>카카오톡이 없어도{'\n'}괜찮아요</Text>
+              <Text style={styles.howMethodDesc}>
+                그 사람의 평소 말투, 자주 하던 말,{'\n'}
+                습관이나 기억을 직접 작성하면{'\n'}
+                AI가 학습해 그 사람처럼 대화합니다.
+              </Text>
+              <View style={styles.howMethodQuote}>
+                <Text style={styles.howMethodQuoteText}>
+                  "엄마는 항상 걱정이 많았어. 밥 먹었냐고 자주 물어봤고, 화낼 때도 결국 미안해했어. 따뜻한 사람이었어."
+                </Text>
+              </View>
+            </LinearGradient>
+          </View>
+
+          <View style={styles.howDivider}>
+            <View style={styles.howDividerLine} />
+            <Text style={styles.howDividerText}>두 방법 모두 대화 시작까지 5분이면 충분해요</Text>
+            <View style={styles.howDividerLine} />
+          </View>
+        </View>
+
+        {/* ════ ④ 대화 예시 ════ */}
+        <View style={styles.section}>
+          <Text style={styles.sectionEyebrow}>실제로 가능한 대화</Text>
+          <Text style={styles.sectionTitle}>그 사람의 목소리로,{'\n'}다시 대화할 수 있습니다</Text>
           <Text style={styles.sectionDesc}>
-            가상의 유저 '유진'이 돌아가신 엄마와 나눈 대화예요.{'\n'}
-            실제 카카오톡 말투를 학습해 이렇게 대화합니다.
+            가상의 유저 '유진'이 돌아가신 엄마와 나눈 대화 예시입니다.{'\n'}
+            실제 카카오톡 말투를 학습해, 이렇게 대화합니다.
           </Text>
 
-          {/* Tab */}
+          {/* 탭 */}
           <View style={styles.demoTabRow}>
-            <TouchableOpacity
-              style={[styles.demoTab, demoTab === 'replay' && styles.demoTabActive]}
-              onPress={() => setDemoTab('replay')}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.demoTabText, demoTab === 'replay' && styles.demoTabTextActive]}>
-                💜 재연 단계
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.demoTab, demoTab === 'closure' && styles.demoTabActive]}
-              onPress={() => setDemoTab('closure')}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.demoTabText, demoTab === 'closure' && styles.demoTabTextActive]}>
-                🕊️ 이별 단계
-              </Text>
-            </TouchableOpacity>
+            {([
+              { key: 'replay', label: '💜 재연 단계' },
+              { key: 'stable', label: '💙 안정 단계' },
+              { key: 'closure', label: '🕊️ 이별 단계' },
+            ] as const).map(tab => (
+              <TouchableOpacity
+                key={tab.key}
+                style={[styles.demoTab, demoTab === tab.key && styles.demoTabActive]}
+                onPress={() => setDemoTab(tab.key)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.demoTabText, demoTab === tab.key && styles.demoTabTextActive]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
-          {/* Chat bubbles */}
           <LinearGradient
-            colors={demoTab === 'replay'
-              ? ['rgba(88, 28, 135, 0.35)', 'rgba(30, 58, 138, 0.35)']
-              : ['rgba(30, 58, 138, 0.35)', 'rgba(67, 56, 202, 0.35)']
+            colors={
+              demoTab === 'replay'
+                ? ['rgba(88, 28, 135, 0.35)', 'rgba(30, 58, 138, 0.35)']
+                : demoTab === 'stable'
+                ? ['rgba(30, 58, 138, 0.35)', 'rgba(99, 102, 241, 0.35)']
+                : ['rgba(30, 58, 138, 0.35)', 'rgba(67, 56, 202, 0.35)']
             }
             style={styles.demoChatBox}
           >
-            {/* Persona name bar */}
             <View style={styles.demoPersonaBar}>
               <View style={styles.demoAvatar}>
                 <Text style={styles.demoAvatarText}>엄</Text>
@@ -257,42 +256,56 @@ export default function OnboardingScreen({ navigation }: Props) {
               <View>
                 <Text style={styles.demoPersonaName}>엄마</Text>
                 <Text style={styles.demoPersonaRole}>
-                  {demoTab === 'replay' ? '재연 단계 · AI 학습 완료' : '이별 단계 · 마지막 대화'}
+                  {demoTab === 'replay' ? '재연 단계 · AI 학습 완료'
+                    : demoTab === 'stable' ? '안정 단계 · 감정 정리 중'
+                    : '이별 단계 · 마지막 대화'}
                 </Text>
               </View>
             </View>
-
             <View style={styles.demoDivider} />
 
-            {demoTab === 'replay' ? (
+            {demoTab === 'replay' && (
               <>
-                <DemoBubble from="assistant" name="엄마" text="유진아~ 오늘은 뭐 했어? 밥은 먹었지?" />
+                <DemoBubble from="assistant" name="엄" text="유진아~ 오늘은 뭐 했어? 밥은 먹었지?" />
                 <DemoBubble from="user" text="응 먹었어. 엄마 생각이 나서." />
-                <DemoBubble from="assistant" name="엄마" text="나도 보고 싶다. 우리 딸 잘 지내고 있지? 요즘 얼굴이 좀 안 좋아 보이던데." />
-                <DemoBubble from="user" text="요즘 조금 힘들었어. 그냥 엄마 목소리 듣고 싶었어." />
-                <DemoBubble from="assistant" name="엄마" text="그럼 전화하지. 참지 말고. 밥 잘 챙겨 먹어야 해, 알지?" />
-                {/* System milestone */}
+                <DemoBubble from="assistant" name="엄" text="나도 보고 싶다. 우리 딸 잘 지내고 있지? 요즘 얼굴이 좀 안 좋아 보이던데." />
+                <DemoBubble from="user" text="요즘 조금 힘들었어. 그냥 목소리 듣고 싶었어." />
+                <DemoBubble from="assistant" name="엄" text="그럼 전화하지. 참지 말고. 밥 잘 챙겨 먹어야 해, 알지?" />
                 <View style={styles.demoMilestone}>
-                  <Text style={styles.demoMilestoneText}>💜 그 사람과의 대화가 이어지고 있어요{'\n'}오늘도 찾아와줘서 고마워요.</Text>
+                  <Text style={styles.demoMilestoneText}>
+                    💜 그 사람과의 대화가 이어지고 있어요{'\n'}오늘도 찾아와줘서 고마워요.
+                  </Text>
                 </View>
               </>
-            ) : (
+            )}
+            {demoTab === 'stable' && (
+              <>
+                <DemoBubble from="assistant" name="엄" text="유진아, 요즘 어때? 많이 힘들진 않아?" />
+                <DemoBubble from="user" text="처음보다는 나아진 것 같아. 근데 가끔 멍해질 때가 있어." />
+                <DemoBubble from="assistant" name="엄" text="그런 거 당연한 거야. 억지로 괜찮은 척 안 해도 돼. 멍할 때 뭐가 떠올라?" />
+                <DemoBubble from="user" text="그냥… 같이 밥 먹던 거, 별거 아닌 것들." />
+                <DemoBubble from="assistant" name="엄" text="별거 아닌 것들이 제일 그립지. 그 기억들, 소중히 간직해. 넌 잘 하고 있어." />
+                <View style={styles.demoMilestone}>
+                  <Text style={styles.demoMilestoneText}>
+                    💙 마음을 나눠주셔서 고마워요{'\n'}조금씩 자리가 잡히고 있어요.
+                  </Text>
+                </View>
+              </>
+            )}
+            {demoTab === 'closure' && (
               <>
                 <DemoBubble from="user" text="엄마, 마지막에 손 잡아드리지 못해서 미안해." />
-                <DemoBubble from="assistant" name="엄마" text="무슨 소리야. 넌 항상 곁에 있었잖아. 그거면 충분해." />
+                <DemoBubble from="assistant" name="엄" text="무슨 소리야. 넌 항상 곁에 있었잖아. 그거면 충분해." />
                 <DemoBubble from="user" text="그래도. 더 잘 챙겨드렸어야 했는데." />
-                <DemoBubble from="assistant" name="엄마" text="유진아. 넌 충분히 잘 했어. 엄마가 제일 잘 알지. 이제 그 마음 좀 내려놔." />
+                <DemoBubble from="assistant" name="엄" text="유진아. 넌 충분히 잘 했어. 엄마가 제일 잘 알지. 이제 그 마음 좀 내려놔." />
                 <DemoBubble from="user" text="이제 잘 보내드릴게. 엄마, 사랑해." />
-                <DemoBubble from="assistant" name="엄마" text="나도 사랑해. 우리 딸, 앞으로 잘 살아야 해. 엄마는 괜찮아." />
-                {/* System closure milestone */}
+                <DemoBubble from="assistant" name="엄" text="나도 사랑해. 우리 딸, 앞으로 잘 살아야 해. 엄마가 괜찮아." />
                 <View style={styles.demoMilestone}>
-                  <Text style={styles.demoMilestoneText}>🌸 이제, 마지막 편지를 쓸 시간이에요{'\n'}하고 싶었던 말을 모두 담아, 온전히 보내드릴 수 있어요.</Text>
+                  <Text style={styles.demoMilestoneText}>
+                    🌸 이제, 마지막 편지를 쓸 시간이에요{'\n'}하고 싶었던 말을 모두 담아, 온전히 보내드릴 수 있어요.
+                  </Text>
                 </View>
-                {/* Closure CTA */}
-                <View style={styles.demoClosureBtn}>
-                  <Text style={styles.demoClosureBtnText}>✉️ 마지막 편지 쓰기 →</Text>
-                </View>
-                <Text style={styles.demoClosureCaption}>편지를 봉인하면, 대화가 아름답게 마무리됩니다</Text>
+                <Text style={styles.demoCaptionItalic}>이 다음은, 직접 경험해야만 알 수 있어요.</Text>
               </>
             )}
           </LinearGradient>
@@ -300,56 +313,73 @@ export default function OnboardingScreen({ navigation }: Props) {
           <Text style={styles.demoCaption}>
             * 실제 카카오톡 대화를 업로드하면 이처럼 그 사람의 말투로 대화할 수 있어요
           </Text>
-        </Animated.View>
+        </View>
 
-        {/* ══════════ How It Works ══════════ */}
-        <Animated.View style={[styles.section, { opacity: fadeSection3 }]}>
-          <Text style={styles.sectionTitle}>이렇게 시작합니다</Text>
+        {/* ════ ⑤ 3단계 여정 ════ */}
+        <View style={[styles.section, styles.sectionDark]}>
+          <Text style={styles.sectionTitle}>천천히, 당신의 속도로</Text>
           <Text style={styles.sectionDesc}>
-            5분이면 충분해요.{'\n'}
-            그 사람이 실제로 쓰던 말투를 학습해, 대화를 만들어냅니다.
+            세 단계가 설계되어 있습니다. 서두르지 않아도 괜찮아요.
           </Text>
 
-          <View style={styles.stepGrid}>
-            <StepCard number="01" title="대화 업로드" desc="카카오톡 대화 파일(.txt)을 업로드하면 말투와 표현을 자동 분석합니다." />
-            <StepCard number="02" title="페르소나 생성" desc="자주 쓰던 표현, 호칭, 습관을 담아 AI 페르소나를 만듭니다." />
-            <StepCard number="03" title="대화 시작" desc="언제든, 하고 싶은 말을 시작하세요. 그 사람의 말투로 대화합니다." />
-            <StepCard number="04" title="천천히 이별" desc="준비가 되면, 마지막 편지를 쓰고 온전히 보내드립니다." />
+          <View style={styles.stageList}>
+            {[
+              {
+                num: 'Step 01', name: '재연', icon: '💜',
+                desc: '그때처럼, 대화합니다.\n실제 말투와 온기를 담아, 기억 속에서 이야기를 이어갑니다.',
+                msg: '그 사람과의 대화가 이어지고 있어요\n오늘도 찾아와줘서 고마워요.',
+              },
+              {
+                num: 'Step 02', name: '안정', icon: '💙',
+                desc: '당신의 마음을 꺼내놓습니다.\n감정에 이름을 붙이고, 조금씩 가벼워집니다.',
+                msg: '마음을 나눠주셔서 고마워요\n조금씩 자리가 잡히고 있어요.',
+              },
+              {
+                num: 'Step 03', name: '이별', icon: '🌸',
+                desc: '준비가 되면, 마지막 대화를 나눕니다.\n전하지 못했던 말을 담아, 보내드립니다.',
+                msg: '이제, 마지막 편지를 쓸 시간이에요',
+              },
+            ].map((stage, i) => (
+              <View key={i} style={[styles.stageRow, i < 2 && styles.stageRowBorder]}>
+                <View style={styles.stageLeft}>
+                  <Text style={styles.stageNum}>{stage.num}</Text>
+                  <Text style={styles.stageName}>{stage.name}</Text>
+                </View>
+                <View style={styles.stageRight}>
+                  <Text style={styles.stageDesc}>{stage.desc}</Text>
+                  <View style={styles.stageMsg}>
+                    <Text style={styles.stageMsgIcon}>{stage.icon}</Text>
+                    <Text style={styles.stageMsgText}>{stage.msg}</Text>
+                  </View>
+                </View>
+              </View>
+            ))}
           </View>
-        </Animated.View>
+        </View>
 
-        {/* ══════════ Trust & Ethics ══════════ */}
-        <Animated.View style={[styles.section, { opacity: fadeSection4 }]}>
-          <LinearGradient
-            colors={['rgba(88, 28, 135, 0.3)', 'rgba(30, 58, 138, 0.3)']}
-            style={styles.trustCard}
-          >
-            <Text style={styles.trustTitle}>우리는 계속 머물게 하지 않습니다</Text>
-            <Text style={styles.trustQuote}>
+        {/* ════ ⑥ 이별의 약속 ════ */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>우리는 계속 머물게 하지 않습니다</Text>
+          <Text style={styles.promiseDesc}>
+            의존이 아닌 회복을 목표로,{'\n'}
+            대화의 시작부터 끝까지 설계했습니다.
+          </Text>
+          <View style={styles.promiseQuote}>
+            <Text style={styles.promiseQuoteText}>
               "우리는 사람을 복원하지 않습니다.{'\n'}
               남겨진 사람이 다시 살아갈 수 있도록 돕습니다."
             </Text>
+          </View>
+        </View>
 
-            <View style={styles.trustGrid}>
-              <TrustItem title="명확한 고지" desc="실제 사람이 아님을 항상 알려드립니다" />
-              <TrustItem title="단계적 종료 설계" desc="의존이 아닌 회복을 목표로 합니다" />
-              <TrustItem title="데이터 보호" desc="사용자 동의 기반, 안전한 데이터 처리" />
-              <TrustItem title="전문가 협력" desc="심리 전문가와 함께 설계된 경험" />
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* ══════════ CTA Section ══════════ */}
-        <Animated.View style={[styles.section, { opacity: fadeCTA }]}>
+        {/* ════ ⑦ CTA ════ */}
+        <View style={styles.section}>
           <LinearGradient
             colors={['rgba(124, 58, 237, 0.2)', 'rgba(59, 130, 246, 0.2)']}
             style={styles.ctaCard}
           >
-            <Text style={styles.ctaStar}>💜</Text>
             <Text style={styles.ctaTitle}>준비가 되었을 때,{'\n'}시작하세요</Text>
-            <Text style={styles.ctaDesc}>
-              강요하지 않습니다.{'\n'}당신의 속도로.
-            </Text>
+            <Text style={styles.ctaDesc}>강요하지 않습니다. 당신의 속도로.</Text>
 
             <TouchableOpacity
               style={styles.ctaButton}
@@ -358,23 +388,32 @@ export default function OnboardingScreen({ navigation }: Props) {
             >
               <LinearGradient
                 colors={['#7C3AED', '#3B82F6']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.ctaButtonGradient}
               >
                 <Text style={styles.ctaButtonText}>지금 시작하기</Text>
-                <Text style={styles.ctaButtonIcon}>✉️</Text>
               </LinearGradient>
             </TouchableOpacity>
 
             <Text style={styles.ctaNote}>처음 10번의 대화는 무료예요</Text>
           </LinearGradient>
-        </Animated.View>
+        </View>
 
-        {/* ══════════ Footer ══════════ */}
+        {/* ── 푸터 ── */}
         <View style={styles.footer}>
           <View style={styles.footerDivider} />
-          <Text style={styles.footerTagline}>Still After — 아직 전하지 못한 말이 있다면</Text>
+          <Text style={styles.footerLogo}>Still After</Text>
+          <View style={styles.footerLinks}>
+            <TouchableOpacity onPress={() => navigation.navigate('PrivacyPolicy')}>
+              <Text style={styles.footerLink}>개인정보처리방침</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Terms')}>
+              <Text style={styles.footerLink}>이용약관</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('CustomerSupport')}>
+              <Text style={styles.footerLink}>고객센터</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={styles.footerCopy}>© 2026 Still After. All rights reserved.</Text>
         </View>
       </ScrollView>
@@ -382,720 +421,343 @@ export default function OnboardingScreen({ navigation }: Props) {
   )
 }
 
-/* ─── Sub-components ─── */
-
-function InfoCard({
-  emoji,
-  title,
-  desc,
-  colors,
-}: {
-  emoji: string
-  title: string
-  desc: string
-  colors: [string, string]
-}) {
-  return (
-    <LinearGradient colors={colors} style={styles.infoCard}>
-      <Text style={styles.infoCardEmoji}>{emoji}</Text>
-      <Text style={styles.infoCardTitle}>{title}</Text>
-      <Text style={styles.infoCardDesc}>{desc}</Text>
-    </LinearGradient>
-  )
-}
-
-function PhaseCard({
-  phase,
-  icon,
-  title,
-  subtitle,
-  desc,
-  features,
-  colors,
-}: {
-  phase: string
-  icon: string
-  title: string
-  subtitle: string
-  desc: string
-  features: string[]
-  colors: [string, string]
-}) {
-  return (
-    <LinearGradient
-      colors={colors}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      style={styles.phaseCard}
-    >
-      <View style={styles.phaseRow}>
-        <View style={styles.phaseIconWrap}>
-          <Text style={styles.phaseIcon}>{icon}</Text>
-        </View>
-        <View style={styles.phaseContent}>
-          <Text style={styles.phaseLabel}>Phase {phase}</Text>
-          <Text style={styles.phaseTitle}>{title}</Text>
-          <Text style={styles.phaseSubtitle}>{subtitle}</Text>
-          <Text style={styles.phaseDesc}>{desc}</Text>
-          {features.map((f, i) => (
-            <View key={i} style={styles.featureRow}>
-              <View style={styles.featureDot} />
-              <Text style={styles.featureText}>{f}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
-    </LinearGradient>
-  )
-}
-
-function StepCard({ number, title, desc }: { number: string; title: string; desc: string }) {
-  return (
-    <LinearGradient
-      colors={['rgba(88, 28, 135, 0.3)', 'rgba(30, 58, 138, 0.3)']}
-      style={styles.stepCard}
-    >
-      <Text style={styles.stepNumber}>{number}</Text>
-      <Text style={styles.stepTitle}>{title}</Text>
-      <Text style={styles.stepDesc}>{desc}</Text>
-    </LinearGradient>
-  )
-}
-
+/* ─── DemoBubble ─── */
 function DemoBubble({ from, name, text }: { from: 'user' | 'assistant'; name?: string; text: string }) {
   const isUser = from === 'user'
   return (
-    <View style={[styles.demoBubbleRow, isUser ? styles.demoBubbleRowUser : styles.demoBubbleRowAssistant]}>
+    <View style={[styles.bubbleRow, isUser ? styles.bubbleRowUser : styles.bubbleRowAI]}>
       {!isUser && (
-        <View style={styles.demoBubbleAvatar}>
-          <Text style={styles.demoBubbleAvatarText}>{(name ?? '?').charAt(0)}</Text>
+        <View style={styles.bubbleAvatar}>
+          <Text style={styles.bubbleAvatarText}>{name ?? '?'}</Text>
         </View>
       )}
-      <View style={[styles.demoBubble, isUser ? styles.demoBubbleUser : styles.demoBubbleAssistant]}>
-        <Text style={[styles.demoBubbleText, isUser ? styles.demoBubbleTextUser : styles.demoBubbleTextAssistant]}>
-          {text}
-        </Text>
-      </View>
-    </View>
-  )
-}
-
-function TrustItem({ title, desc }: { title: string; desc: string }) {
-  return (
-    <View style={styles.trustItem}>
-      <View style={styles.trustDotWrap}>
-        <View style={styles.trustDot} />
-      </View>
-      <View style={styles.trustItemContent}>
-        <Text style={styles.trustItemTitle}>{title}</Text>
-        <Text style={styles.trustItemDesc}>{desc}</Text>
+      <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAI]}>
+        <Text style={styles.bubbleText}>{text}</Text>
       </View>
     </View>
   )
 }
 
 /* ─── Styles ─── */
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: C.BG,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
+  container: { flex: 1, backgroundColor: C.BG },
+  scrollContent: { paddingBottom: 40 },
 
-  // Cosmic orbs with blur
-  orbContainer: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
-  },
-  blurOverlay: {
-    // @ts-ignore — web CSS backdropFilter for blur effect
-    backdropFilter: 'blur(60px)',
-    WebkitBackdropFilter: 'blur(60px)',
-    backgroundColor: 'rgba(10, 1, 24, 0.3)',
-  } as any,
-  orbInner: {
-    position: 'absolute',
-    borderRadius: 999,
-  },
-  orb1: {
-    top: -80, left: '15%',
-    width: 350, height: 350,
-    backgroundColor: 'rgba(124, 58, 237, 0.4)',
-  },
-  orb2: {
-    top: 500, right: -60,
-    width: 320, height: 320,
-    backgroundColor: 'rgba(59, 130, 246, 0.35)',
-  },
-  orb3: {
-    top: 1100, left: '25%',
-    width: 400, height: 400,
-    backgroundColor: 'rgba(99, 102, 241, 0.2)',
-  },
-  orb4: {
-    top: 250, right: -20,
-    width: 220, height: 220,
-    backgroundColor: 'rgba(236, 72, 153, 0.25)',
-  },
-  star: {
-    position: 'absolute',
-    borderRadius: 99,
-    backgroundColor: 'rgba(196, 181, 253, 0.6)',
-  },
+  // 배경
+  orbContainer: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
+  orbInner: { position: 'absolute', borderRadius: 999 },
+  orb1: { width: 500, height: 500, top: -150, left: -100, backgroundColor: 'rgba(124, 58, 237, 0.15)' },
+  orb2: { width: 400, height: 400, top: 200, right: -150, backgroundColor: 'rgba(59, 130, 246, 0.12)' },
+  orb3: { width: 350, height: 350, top: 800, left: -80, backgroundColor: 'rgba(99, 102, 241, 0.1)' },
+  orb4: { width: 450, height: 450, top: 1400, right: -100, backgroundColor: 'rgba(124, 58, 237, 0.1)' },
+  blurOverlay: { backgroundColor: 'rgba(10, 1, 24, 0.4)' },
+  star: { position: 'absolute', backgroundColor: '#E9D5FF', borderRadius: 99 },
 
   // Hero
   heroSection: {
+    paddingHorizontal: 28,
     paddingTop: 100,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    paddingBottom: 60,
-  },
-  logoWrapper: {
-    marginBottom: 24,
-    position: 'relative',
+    paddingBottom: 80,
+    alignItems: 'flex-start',
   },
   logoIcon: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoEmoji: {
-    fontSize: 48,
-  },
-  sparkle: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    fontSize: 24,
-  },
-  title: {
-    fontSize: 48,
-    fontWeight: '300',
-    color: C.TEXT,
-    letterSpacing: 6,
-    marginBottom: 8,
-  },
-  tagline: {
-    fontSize: 18,
-    color: C.TEXT_SECONDARY,
-    letterSpacing: 1,
-    marginBottom: 16,
-  },
-  heroDesc: {
-    fontSize: 15,
-    color: 'rgba(196, 181, 253, 0.8)',
-    textAlign: 'center',
-    lineHeight: 26,
-    marginBottom: 8,
-  },
-  heroSubDesc: {
-    fontSize: 13,
-    color: 'rgba(167, 139, 250, 0.6)',
-    textAlign: 'center',
+    width: 60, height: 60, borderRadius: 30,
+    alignItems: 'center', justifyContent: 'center',
     marginBottom: 32,
   },
-  heroButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    alignItems: 'center',
+  logoEmoji: { fontSize: 28 },
+  heroEyebrow: {
+    fontSize: 11, color: 'rgba(167, 139, 250, 0.8)',
+    letterSpacing: 2, textTransform: 'uppercase',
+    marginBottom: 20,
   },
-  primaryButton: {
-    borderRadius: 999,
-    overflow: 'hidden',
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+  heroTitle: {
+    fontSize: 46, fontWeight: '300', color: C.TEXT,
+    lineHeight: 54, letterSpacing: -1,
+    marginBottom: 16,
   },
+  heroSub: {
+    fontSize: 20, color: 'rgba(196, 181, 253, 0.9)',
+    fontWeight: '300', marginBottom: 24,
+  },
+  heroDesc: {
+    fontSize: 16, color: 'rgba(196, 181, 253, 0.7)',
+    lineHeight: 28, marginBottom: 32, maxWidth: 340,
+  },
+  heroMission: {
+    borderLeftWidth: 2, borderLeftColor: 'rgba(167, 139, 250, 0.6)',
+    paddingLeft: 16, marginBottom: 36,
+  },
+  heroMissionText: {
+    fontSize: 14, color: 'rgba(196, 181, 253, 0.85)',
+    lineHeight: 24,
+  },
+  primaryButton: { borderRadius: 10, overflow: 'hidden' },
   primaryButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    gap: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 28, paddingVertical: 15, borderRadius: 10,
   },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  primaryButtonArrow: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '300',
-  },
-  secondaryButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 999,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-  },
-  secondaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-  },
+  primaryButtonText: { fontSize: 15, fontWeight: '500', color: '#fff' },
+  primaryButtonArrow: { fontSize: 20, color: '#fff' },
 
-  // Sections
-  section: {
-    paddingHorizontal: 20,
-    paddingVertical: 40,
+  // 섹션
+  section: { paddingHorizontal: 28, paddingVertical: 72 },
+  sectionDark: {
+    backgroundColor: 'rgba(88, 28, 135, 0.08)',
+    borderTopWidth: 1, borderBottomWidth: 1,
+    borderColor: 'rgba(167, 139, 250, 0.1)',
+  },
+  sectionEyebrow: {
+    fontSize: 11, color: 'rgba(167, 139, 250, 0.8)',
+    letterSpacing: 2, textTransform: 'uppercase',
+    marginBottom: 14,
   },
   sectionTitle: {
-    fontSize: 28,
-    fontWeight: '500',
-    color: C.TEXT,
-    textAlign: 'center',
+    fontSize: 28, fontWeight: '400', color: C.TEXT,
+    lineHeight: 38, letterSpacing: -0.4,
     marginBottom: 12,
   },
   sectionDesc: {
-    fontSize: 15,
-    color: 'rgba(196, 181, 253, 0.8)',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
+    fontSize: 15, color: 'rgba(196, 181, 253, 0.7)',
+    lineHeight: 26, marginBottom: 36,
   },
 
-  // Info Cards
-  cardRow: {
-    gap: 12,
+  // 공감
+  empathyQuote: {
+    fontSize: 26, fontWeight: '300', color: C.TEXT,
+    lineHeight: 38, marginBottom: 28, letterSpacing: -0.3,
   },
-  infoCard: {
-    borderRadius: RADIUS.XL,
+  empathyQuoteAccent: { color: 'rgba(196, 181, 253, 0.95)' },
+  empathyList: { gap: 14, marginBottom: 32 },
+  empathyItem: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
+  empathyDot: {
+    width: 4, height: 4, borderRadius: 2,
+    backgroundColor: 'rgba(167, 139, 250, 0.8)',
+    marginTop: 10, flexShrink: 0,
+  },
+  empathyItemText: { fontSize: 15, color: 'rgba(196, 181, 253, 0.7)', lineHeight: 26, flex: 1 },
+  empathyClose: {
+    borderLeftWidth: 2, borderLeftColor: 'rgba(167, 139, 250, 0.5)',
+    backgroundColor: 'rgba(124, 58, 237, 0.08)',
+    borderRadius: 0, borderTopRightRadius: 10, borderBottomRightRadius: 10,
     padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    marginBottom: 4,
   },
-  infoCardEmoji: {
-    fontSize: 28,
-    marginBottom: 12,
-  },
-  infoCardTitle: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: C.TEXT,
-    marginBottom: 8,
-  },
-  infoCardDesc: {
-    fontSize: 13,
-    color: 'rgba(196, 181, 253, 0.8)',
-    lineHeight: 20,
+  empathyCloseText: {
+    fontSize: 15, color: C.TEXT, fontWeight: '300', lineHeight: 26,
   },
 
-  // Demo Chat Section
-  demoTabRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-    justifyContent: 'center',
+  // How
+  howGrid: { gap: 14, marginBottom: 28 },
+  howMethod: {
+    borderRadius: 16, padding: 24,
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.15)',
   },
-  demoTab: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.2)',
-  },
-  demoTabActive: {
-    backgroundColor: 'rgba(124, 58, 237, 0.4)',
-    borderColor: 'rgba(167, 139, 250, 0.5)',
-  },
-  demoTabText: {
-    fontSize: 13,
-    color: 'rgba(196, 181, 253, 0.6)',
-    fontWeight: '500',
-  },
-  demoTabTextActive: {
-    color: '#E9D5FF',
-  },
-  demoChatBox: {
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.2)',
-    marginBottom: 12,
-  },
-  demoPersonaBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
-  },
-  demoAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(168, 85, 247, 0.3)',
-    borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  demoAvatarText: {
-    fontSize: 14,
-    color: '#E9D5FF',
-    fontWeight: '600',
-  },
-  demoPersonaName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#E9D5FF',
-  },
-  demoPersonaRole: {
-    fontSize: 11,
-    color: 'rgba(196, 181, 253, 0.5)',
-    marginTop: 1,
-  },
-  demoDivider: {
-    height: 1,
-    backgroundColor: 'rgba(167, 139, 250, 0.12)',
+  howMethodPrimary: { borderColor: 'rgba(167, 139, 250, 0.3)' },
+  howBadgePrimary: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(124, 58, 237, 0.2)',
+    borderRadius: 99, paddingHorizontal: 12, paddingVertical: 4,
     marginBottom: 14,
   },
-  demoBubbleRow: {
-    flexDirection: 'row',
+  howBadgeTextPrimary: { fontSize: 11, color: 'rgba(196, 181, 253, 0.9)', fontWeight: '500' },
+  howBadgeAlt: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 99, paddingHorizontal: 12, paddingVertical: 4,
+    marginBottom: 14,
+  },
+  howBadgeTextAlt: { fontSize: 11, color: 'rgba(196, 181, 253, 0.6)', fontWeight: '500' },
+  howMethodTitle: {
+    fontSize: 17, fontWeight: '500', color: C.TEXT,
+    marginBottom: 10, lineHeight: 26,
+  },
+  howMethodDesc: {
+    fontSize: 13, color: 'rgba(196, 181, 253, 0.65)',
+    lineHeight: 22, marginBottom: 18,
+  },
+  parseFlow: { gap: 6, marginBottom: 16 },
+  parseStep: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  parseIcon: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: 'rgba(124, 58, 237, 0.15)',
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.2)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  parseIconText: { fontSize: 13 },
+  parseLabel: { fontSize: 12, color: 'rgba(196, 181, 253, 0.7)' },
+  parseArrow: { fontSize: 11, color: 'rgba(167, 139, 250, 0.4)', marginLeft: 15, marginVertical: 2 },
+  phraseLabel: {
+    fontSize: 10, color: 'rgba(167, 139, 250, 0.5)',
+    letterSpacing: 0.5, textTransform: 'uppercase',
     marginBottom: 8,
-    alignItems: 'flex-end',
-    gap: 6,
   },
-  demoBubbleRowUser: {
-    justifyContent: 'flex-end',
+  phraseTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  phraseTag: {
+    backgroundColor: 'rgba(124, 58, 237, 0.12)',
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.25)',
+    borderRadius: 99, paddingHorizontal: 12, paddingVertical: 5,
   },
-  demoBubbleRowAssistant: {
-    justifyContent: 'flex-start',
+  phraseTagText: { fontSize: 11, color: 'rgba(196, 181, 253, 0.85)' },
+  howMethodQuote: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.15)',
+    borderRadius: 10, padding: 14, marginTop: 4,
   },
-  demoBubbleAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(168, 85, 247, 0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
+  howMethodQuoteText: {
+    fontSize: 12, color: 'rgba(196, 181, 253, 0.65)',
+    lineHeight: 20, fontStyle: 'italic',
   },
-  demoBubbleAvatarText: {
-    fontSize: 10,
-    color: '#C4B5FD',
-    fontWeight: '600',
+  howDivider: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
   },
-  demoBubble: {
-    maxWidth: '75%',
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  howDividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(167, 139, 250, 0.15)' },
+  howDividerText: {
+    fontSize: 11, color: 'rgba(167, 139, 250, 0.5)',
+    textTransform: 'uppercase', letterSpacing: 0.5,
+    flexShrink: 1, textAlign: 'center',
   },
-  demoBubbleUser: {
-    backgroundColor: 'rgba(124, 58, 237, 0.55)',
-    borderBottomRightRadius: 4,
+
+  // Demo
+  demoTabRow: { flexDirection: 'row', gap: 8, marginBottom: 20, flexWrap: 'wrap' },
+  demoTab: {
+    paddingHorizontal: 16, paddingVertical: 9, borderRadius: 99,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.2)',
   },
-  demoBubbleAssistant: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.15)',
+  demoTabActive: {
+    backgroundColor: 'rgba(124, 58, 237, 0.2)',
+    borderColor: 'rgba(167, 139, 250, 0.6)',
   },
-  demoBubbleText: {
-    fontSize: 13,
-    lineHeight: 20,
+  demoTabText: { fontSize: 12, color: 'rgba(196, 181, 253, 0.6)' },
+  demoTabTextActive: { color: 'rgba(196, 181, 253, 0.95)', fontWeight: '500' },
+  demoChatBox: {
+    borderRadius: 16, padding: 20, marginBottom: 12,
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.15)',
   },
-  demoBubbleTextUser: {
-    color: '#F3E8FF',
+  demoPersonaBar: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  demoAvatar: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(124, 58, 237, 0.2)',
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)',
+    alignItems: 'center', justifyContent: 'center',
   },
-  demoBubbleTextAssistant: {
-    color: 'rgba(233, 213, 255, 0.9)',
-  },
+  demoAvatarText: { fontSize: 13, color: 'rgba(196, 181, 253, 0.9)', fontWeight: '600' },
+  demoPersonaName: { fontSize: 14, fontWeight: '500', color: C.TEXT },
+  demoPersonaRole: { fontSize: 11, color: 'rgba(196, 181, 253, 0.5)', marginTop: 1 },
+  demoDivider: { height: 1, backgroundColor: 'rgba(167, 139, 250, 0.15)', marginBottom: 16 },
   demoMilestone: {
     alignSelf: 'center',
-    backgroundColor: 'rgba(168, 85, 247, 0.15)',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.2)',
-    marginTop: 6,
-    maxWidth: '90%',
+    backgroundColor: 'rgba(124, 58, 237, 0.12)',
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.2)',
+    borderRadius: 10, padding: 12,
+    marginTop: 8, maxWidth: '90%',
   },
   demoMilestoneText: {
-    fontSize: 12,
-    color: 'rgba(196, 181, 253, 0.85)',
-    textAlign: 'center',
-    lineHeight: 18,
+    fontSize: 12, color: 'rgba(196, 181, 253, 0.85)',
+    textAlign: 'center', lineHeight: 20,
   },
-  demoClosureBtn: {
-    alignSelf: 'center',
-    marginTop: 8,
-    backgroundColor: 'rgba(99, 102, 241, 0.25)',
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(129, 140, 248, 0.3)',
-  },
-  demoClosureBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#C4B5FD',
-  },
-  demoClosureCaption: {
-    fontSize: 11,
-    color: 'rgba(196, 181, 253, 0.5)',
-    textAlign: 'center',
-    marginTop: 6,
-    fontStyle: 'italic',
+  demoCaptionItalic: {
+    fontSize: 12, color: 'rgba(167, 139, 250, 0.4)',
+    fontStyle: 'italic', textAlign: 'center',
+    marginTop: 12,
   },
   demoCaption: {
-    fontSize: 11,
-    color: 'rgba(167, 139, 250, 0.45)',
-    textAlign: 'center',
-    lineHeight: 17,
+    fontSize: 11, color: 'rgba(167, 139, 250, 0.4)',
+    textAlign: 'center', marginTop: 8,
   },
 
-  // Phase Cards
-  phaseCard: {
-    borderRadius: 24,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    marginBottom: 16,
+  // 버블
+  bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6, marginBottom: 8 },
+  bubbleRowUser: { flexDirection: 'row-reverse' },
+  bubbleRowAI: {},
+  bubbleAvatar: {
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: 'rgba(124, 58, 237, 0.2)',
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
-  phaseRow: {
-    flexDirection: 'row',
-    gap: 16,
+  bubbleAvatarText: { fontSize: 9, color: 'rgba(196, 181, 253, 0.9)' },
+  bubble: { maxWidth: '72%', padding: 10, borderRadius: 14 },
+  bubbleAI: {
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.2)',
+    borderBottomLeftRadius: 4,
   },
-  phaseIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  bubbleUser: {
+    backgroundColor: 'rgba(124, 58, 237, 0.25)',
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)',
+    borderBottomRightRadius: 4,
   },
-  phaseIcon: {
-    fontSize: 28,
+  bubbleText: { fontSize: 13, color: C.TEXT, lineHeight: 20 },
+
+  // 여정
+  stageList: {},
+  stageRow: { flexDirection: 'row', gap: 24, paddingVertical: 28 },
+  stageRowBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(167, 139, 250, 0.12)' },
+  stageLeft: { width: 80, paddingTop: 2 },
+  stageNum: {
+    fontSize: 10, color: 'rgba(167, 139, 250, 0.7)',
+    letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4,
   },
-  phaseContent: {
-    flex: 1,
+  stageName: { fontSize: 20, fontWeight: '500', color: C.TEXT },
+  stageRight: { flex: 1 },
+  stageDesc: {
+    fontSize: 14, color: 'rgba(196, 181, 253, 0.7)',
+    lineHeight: 22, marginBottom: 14,
   },
-  phaseLabel: {
-    fontSize: 12,
-    color: 'rgba(196, 181, 253, 0.6)',
-    marginBottom: 4,
+  stageMsg: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
+    backgroundColor: 'rgba(124, 58, 237, 0.1)',
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.18)',
+    borderRadius: 10, padding: 12, alignSelf: 'flex-start', maxWidth: '100%',
   },
-  phaseTitle: {
-    fontSize: 20,
-    fontWeight: '500',
-    color: C.TEXT,
-    marginBottom: 2,
-  },
-  phaseSubtitle: {
-    fontSize: 13,
-    color: 'rgba(196, 181, 253, 0.6)',
-    marginBottom: 12,
-  },
-  phaseDesc: {
-    fontSize: 14,
-    color: 'rgba(196, 181, 253, 0.9)',
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-  featureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  featureDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: C.TEXT_MUTED,
-  },
-  featureText: {
-    fontSize: 13,
-    color: 'rgba(196, 181, 253, 0.8)',
+  stageMsgIcon: { fontSize: 14, flexShrink: 0 },
+  stageMsgText: {
+    fontSize: 12, color: 'rgba(196, 181, 253, 0.85)', lineHeight: 20, flex: 1,
   },
 
-  // Step Cards
-  stepGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
+  // 약속
+  promiseDesc: {
+    fontSize: 16, color: 'rgba(196, 181, 253, 0.7)',
+    lineHeight: 28, marginBottom: 28, maxWidth: 340,
   },
-  stepCard: {
-    width: (width - 52) / 2,
-    borderRadius: RADIUS.XL,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.2)',
+  promiseQuote: {
+    borderLeftWidth: 2, borderLeftColor: 'rgba(167, 139, 250, 0.5)',
+    backgroundColor: 'rgba(124, 58, 237, 0.07)',
+    borderTopRightRadius: 10, borderBottomRightRadius: 10,
+    padding: 22,
   },
-  stepNumber: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: 'rgba(167, 139, 250, 0.4)',
-    marginBottom: 8,
-  },
-  stepTitle: {
-    fontSize: 17,
-    fontWeight: '500',
-    color: C.TEXT,
-    marginBottom: 6,
-  },
-  stepDesc: {
-    fontSize: 13,
-    color: 'rgba(196, 181, 253, 0.7)',
-    lineHeight: 20,
-  },
-
-  // Trust Card
-  trustCard: {
-    borderRadius: 24,
-    padding: 28,
-    borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.2)',
-  },
-  trustTitle: {
-    fontSize: 22,
-    fontWeight: '500',
-    color: C.TEXT,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  trustQuote: {
-    fontSize: 15,
-    color: 'rgba(196, 181, 253, 0.8)',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 24,
-    paddingHorizontal: 8,
-  },
-  trustGrid: {
-    gap: 16,
-  },
-  trustItem: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  trustDotWrap: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(168, 85, 247, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  trustDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: C.TEXT_MUTED,
-  },
-  trustItemContent: {
-    flex: 1,
-  },
-  trustItemTitle: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: C.TEXT,
-    marginBottom: 2,
-  },
-  trustItemDesc: {
-    fontSize: 13,
-    color: 'rgba(196, 181, 253, 0.7)',
+  promiseQuoteText: {
+    fontSize: 17, color: C.TEXT, fontWeight: '300',
+    fontStyle: 'italic', lineHeight: 28,
   },
 
   // CTA
   ctaCard: {
-    borderRadius: 24,
-    padding: 40,
-    borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.3)',
+    borderRadius: 20, padding: 36,
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.2)',
     alignItems: 'center',
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  ctaStar: {
-    fontSize: 48,
-    marginBottom: 16,
   },
   ctaTitle: {
-    fontSize: 24,
-    fontWeight: '500',
-    color: C.TEXT,
-    textAlign: 'center',
-    marginBottom: 12,
+    fontSize: 30, fontWeight: '300', color: C.TEXT,
+    textAlign: 'center', lineHeight: 40,
+    marginBottom: 14, letterSpacing: -0.5,
   },
   ctaDesc: {
-    fontSize: 15,
-    color: 'rgba(196, 181, 253, 0.8)',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 28,
+    fontSize: 16, color: 'rgba(196, 181, 253, 0.7)',
+    textAlign: 'center', marginBottom: 36,
   },
-  ctaButton: {
-    borderRadius: 999,
-    overflow: 'hidden',
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  ctaButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-    paddingVertical: 18,
-    gap: 8,
-  },
-  ctaButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '500',
-  },
-  ctaButtonIcon: {
-    fontSize: 16,
-  },
-  ctaNote: {
-    fontSize: 12,
-    color: 'rgba(196, 181, 253, 0.6)',
-    marginTop: 16,
-  },
+  ctaButton: { borderRadius: 10, overflow: 'hidden', marginBottom: 16 },
+  ctaButtonGradient: { paddingHorizontal: 40, paddingVertical: 16, borderRadius: 10 },
+  ctaButtonText: { fontSize: 16, fontWeight: '500', color: '#fff' },
+  ctaNote: { fontSize: 12, color: 'rgba(167, 139, 250, 0.5)' },
 
-  // Footer
-  footer: {
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-    alignItems: 'center',
-  },
+  // 푸터
+  footer: { paddingHorizontal: 28, paddingBottom: 40 },
   footerDivider: {
-    width: '100%',
-    height: 1,
-    backgroundColor: 'rgba(167, 139, 250, 0.2)',
-    marginBottom: 20,
+    height: 1, backgroundColor: 'rgba(167, 139, 250, 0.15)', marginBottom: 24,
   },
-  footerTagline: {
-    fontSize: 13,
-    color: 'rgba(196, 181, 253, 0.6)',
-    marginBottom: 4,
-  },
-  footerCopy: {
-    fontSize: 12,
-    color: 'rgba(196, 181, 253, 0.6)',
-  },
+  footerLogo: { fontSize: 14, fontWeight: '500', color: 'rgba(196, 181, 253, 0.6)', marginBottom: 16 },
+  footerLinks: { flexDirection: 'row', gap: 20, marginBottom: 12, flexWrap: 'wrap' },
+  footerLink: { fontSize: 12, color: 'rgba(167, 139, 250, 0.4)' },
+  footerCopy: { fontSize: 11, color: 'rgba(167, 139, 250, 0.25)' },
 })
