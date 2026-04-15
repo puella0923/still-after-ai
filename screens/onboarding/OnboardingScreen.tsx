@@ -286,7 +286,7 @@ export default function OnboardingScreen({ navigation }: Props) {
 
             {demoTab === 'replay' && (
               <>
-                <DemoBubble from="assistant" name="엄" text="유진아~ 오늘은 뭐 했어? 밥은 먹었지?" />
+                <DemoBubble from="assistant" name="엄" text="지수아~ 오늘은 뭐 했어? 밥은 먹었지?" />
                 <DemoBubble from="user" text="응 먹었어. 엄마 생각이 나서." />
                 <DemoBubble from="assistant" name="엄" text="나도 보고 싶다. 우리 딸 잘 지내고 있지? 요즘 얼굴이 좀 안 좋아 보이던데." />
                 <DemoBubble from="user" text="요즘 조금 힘들었어. 그냥 목소리 듣고 싶었어." />
@@ -300,7 +300,7 @@ export default function OnboardingScreen({ navigation }: Props) {
             )}
             {demoTab === 'stable' && (
               <>
-                <DemoBubble from="assistant" name="엄" text="유진아, 요즘 어때? 많이 힘들진 않아?" />
+                <DemoBubble from="assistant" name="엄" text="지수아, 요즘 어때? 많이 힘들진 않아?" />
                 <DemoBubble from="user" text="처음보다는 나아진 것 같아. 근데 가끔 멍해질 때가 있어." />
                 <DemoBubble from="assistant" name="엄" text="그런 거 당연한 거야. 억지로 괜찮은 척 안 해도 돼. 멍할 때 뭐가 떠올라?" />
                 <DemoBubble from="user" text="그냥… 같이 밥 먹던 거, 별거 아닌 것들." />
@@ -317,7 +317,7 @@ export default function OnboardingScreen({ navigation }: Props) {
                 <DemoBubble from="user" text="엄마, 마지막에 손 잡아드리지 못해서 미안해." />
                 <DemoBubble from="assistant" name="엄" text="무슨 소리야. 넌 항상 곁에 있었잖아. 그거면 충분해." />
                 <DemoBubble from="user" text="그래도. 더 잘 챙겨드렸어야 했는데." />
-                <DemoBubble from="assistant" name="엄" text="유진아. 넌 충분히 잘 했어. 엄마가 제일 잘 알지. 이제 그 마음 좀 내려놔." />
+                <DemoBubble from="assistant" name="엄" text="지수아. 넌 충분히 잘 했어. 엄마가 제일 잘 알지. 이제 그 마음 좀 내려놔." />
                 <DemoBubble from="user" text="이제 잘 보내드릴게. 엄마, 사랑해." />
                 <DemoBubble from="assistant" name="엄" text="나도 사랑해. 우리 딸, 앞으로 잘 살아야 해. 엄마가 괜찮아." />
                 <View style={styles.demoMilestone}>
