@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, ActivityIndicator } from 'react-native'
-import { NavigationContainer, LinkingOptions } from '@react-navigation/native'
+import { NavigationContainer, LinkingOptions, getStateFromPath as defaultGetStateFromPath } from '@react-navigation/native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { StatusBar } from 'expo-status-bar'
 import { AuthProvider, useAuth } from './context/AuthContext'
@@ -95,6 +95,18 @@ function AppContent() {
           alias: ['auth/callback', 'auth/reset-password'],
         },
       },
+    },
+    // /Login 직접 접근 시 navigation 스택에 Onboarding을 앞에 삽입
+    // → 브라우저/하드웨어 뒤로가기 시 Onboarding으로 이동 (탭/앱 종료 방지)
+    getStateFromPath: (path, options) => {
+      const state = defaultGetStateFromPath(path, options)
+      if (path === '/Login' || path === 'Login') {
+        return {
+          routes: [{ name: 'Onboarding' }, { name: 'Login' }],
+          index: 1,
+        }
+      }
+      return state
     },
   }
 
