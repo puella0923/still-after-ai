@@ -51,6 +51,17 @@ export default function LoginScreen({ navigation }: Props) {
     }
   }, [session, navigation])
 
+  // 딥링크로 /Login 직접 접근 시 스택에 Onboarding이 없으면 삽입
+  // → 뒤로가기(브라우저/하드웨어) 시 앱이 꺼지지 않고 온보딩으로 이동
+  useEffect(() => {
+    if (!navigation.canGoBack()) {
+      navigation.reset({
+        index: 1,
+        routes: [{ name: 'Onboarding' }, { name: 'Login' }],
+      })
+    }
+  }, [])
+
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
