@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { View, ActivityIndicator } from 'react-native'
 import { NavigationContainer, LinkingOptions, getStateFromPath as defaultGetStateFromPath } from '@react-navigation/native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
@@ -47,6 +47,23 @@ const linking: LinkingOptions<RootStackParamList> = {
 
 function AppContent() {
   const { loading, session } = useAuth()
+  const isAuthed = !!session
+
+  // 웹 전용: /Login 직접 접근 시 브라우저 history에 Onboarding(/) 엔트리 주입
+  // replaceState/pushState는 popstate를 발생시키지 않으므로 React Navigation이 반응하지 않음
+  // 이렇게 하면 브라우저 네이티브 back 버튼도 Onboarding으로 이동
+  useEffect(() => {
+    if (loading) return
+    if (isAuthed) return
+    if (typeof window === 'undefined') return
+    if (window.location.pathname !== '/Login') return
+
+    const currentState = window.history.state
+    // 현재 /Login 엔트리를 / (Onboarding)으로 교체 (popstate 미발생)
+    window.history.replaceState(null, '', '/')
+    // /Login을 새 엔트리로 push (popstate 미발생)
+    window.history.pushState(currentState, '', '/Login')
+  }, [loading, isAuthed])
 
   if (loading) {
     return (
@@ -55,8 +72,6 @@ function AppContent() {
       </View>
     )
   }
-
-  const isAuthed = !!session
   const initialRoute: keyof RootStackParamList = isAuthed ? 'Main' : 'Onboarding'
 
   // 비인증 상태에서는 딥링크로 인증 필요 화면에 진입하지 않도록
