@@ -7,7 +7,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
-import { parseKakaoChat, generateSystemPrompt, ParsedKakaoChat } from '../../services/kakaoParser'
+import { parseKakaoChat, generateSystemPrompt, generatePetSystemPrompt, ParsedKakaoChat } from '../../services/kakaoParser'
 import { createPersona, uploadPersonaPhoto } from '../../services/personaService'
 import { useAuth } from '../../context/AuthContext'
 import { C, RADIUS } from '../theme'
@@ -22,7 +22,7 @@ type KakaoParseResult = {
   fileName: string
 }
 
-const RELATIONS = ['부모님', '배우자', '연인', '친구', '형제/자매', '자녀', '기타']
+const RELATIONS = ['부모님', '배우자', '연인', '친구', '형제/자매', '자녀', '반려동물', '기타']
 
 /** 이름 마지막 글자 받침 유무에 따라 "이름아/이름야" 반환 */
 function getCallingForm(name: string): string {
@@ -286,6 +286,9 @@ export default function PersonaCreateScreen({ navigation }: Props) {
         systemPrompt = generateSystemPrompt(parsed, relationship)
       } else if (activeTab === 'kakao') {
         throw new Error('카카오톡 파일 분석 결과가 없어 기억을 만들 수 없어요. 파일을 다시 업로드해주세요.')
+      } else if (relationship === '반려동물') {
+        // 반려동물 전용 프롬프트 (펫로스 특화)
+        systemPrompt = generatePetSystemPrompt(name.trim(), manualText.trim())
       } else {
         // 직접 작성: manualText를 시스템 프롬프트에 반영
         systemPrompt = `당신은 ${name.trim()}입니다. 사용자와 ${relationship} 관계입니다.
@@ -393,10 +396,10 @@ ${manualText.trim()}
 
         {/* 이름 입력 */}
         <View style={styles.section}>
-          <Text style={styles.label}>어떻게 불렀나요?</Text>
+          <Text style={styles.label}>{relationship === '반려동물' ? '이름이 뭐였나요?' : '어떻게 불렀나요?'}</Text>
           <TextInput
             style={styles.input}
-            placeholder="예: 엄마, 지수, 준혁"
+            {relationship === '반려동물' ? '예: 초코, 보리, 콩이' : '예: 엄마, 지수, 준혁'}
             value={name}
             onChangeText={setName}
             maxLength={20}
