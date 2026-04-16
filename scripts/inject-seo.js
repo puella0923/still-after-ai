@@ -13,7 +13,7 @@ const seoTags = `
     <meta name="google-site-verification" content="42HCXffGpWRJRMDEoND2Qnu_9lqmGdbwBZygPF_jCvE" />
 
     <!-- ① Naver 소유권 인증 (네이버 서치어드바이저 등록 후 코드 교체) -->
-    <meta name="naver-site-verification" content="893ee6e460bf5d2903bd236f520d0d24e04740b7" />
+    <meta name="naver-site-verification" content="0acf48b9c13eb16b92c73d263cbc113e7b9d941e" />
 
     <!-- ② 기본 메타태그 -->
     <title>Still After — 아직 전하지 못한 말이 있다면</title>
