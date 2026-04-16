@@ -49,6 +49,10 @@ export default function PersonaCreateScreen({ navigation }: Props) {
   const [errorMsg, setErrorMsg] = useState('')       // 파싱 오류
   const [createErrorMsg, setCreateErrorMsg] = useState('') // 생성 오류
   const [agreedToService, setAgreedToService] = useState(false)
+  // 반려동물 종류
+  const PET_TYPES = ['강아지', '고양이', '햄스터', '토끼', '앵무새', '다른 동물']
+  const [animalType, setAnimalType] = useState('')
+  const [customAnimal, setCustomAnimal] = useState('')
   // 사진 관련
   const [photoUri, setPhotoUri] = useState<string | null>(null)   // 로컬 미리보기 URI
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null)   // 업로드용 blob
@@ -242,8 +246,11 @@ export default function PersonaCreateScreen({ navigation }: Props) {
     }
   }
 
+  const resolvedAnimalType = animalType === '다른 동물' ? customAnimal.trim() : animalType
+
   const canSubmit = (): boolean => {
     if (!name.trim() || !relationship || !agreedToService) return false
+    if (relationship === '반려동물' && !resolvedAnimalType) return false
     if (activeTab === 'manual') return manualText.trim().length >= 20
     if (activeTab === 'kakao') return parseResult !== null && kakaoRawText.trim().length > 0
     return false
@@ -262,6 +269,8 @@ export default function PersonaCreateScreen({ navigation }: Props) {
           ? '이름을 입력해주세요.'
           : !relationship
           ? '관계를 선택해주세요.'
+          : relationship === '반려동물' && !resolvedAnimalType
+          ? '어떤 동물이었는지 선택해주세요.'
           : activeTab === 'kakao' && !parseResult
           ? '카카오톡 파일을 먼저 업로드해주세요.'
           : activeTab === 'manual' && manualText.trim().length < 20
@@ -288,7 +297,7 @@ export default function PersonaCreateScreen({ navigation }: Props) {
         throw new Error('카카오톡 파일 분석 결과가 없어 기억을 만들 수 없어요. 파일을 다시 업로드해주세요.')
       } else if (relationship === '반려동물') {
         // 반려동물 전용 프롬프트 (펫로스 특화)
-        systemPrompt = generatePetSystemPrompt(name.trim(), manualText.trim())
+        systemPrompt = generatePetSystemPrompt(name.trim(), resolvedAnimalType, manualText.trim())
       } else {
         // 직접 작성: manualText를 시스템 프롬프트에 반영
         systemPrompt = `당신은 ${name.trim()}입니다. 사용자와 ${relationship} 관계입니다.
@@ -434,7 +443,7 @@ ${manualText.trim()}
               <TouchableOpacity
                 key={rel}
                 style={[styles.relationBtn, relationship === rel && styles.relationBtnActive]}
-                onPress={() => setRelationship(rel)}
+                onPress={() => { setRelationship(rel); if (rel !== '반려동물') { setAnimalType(''); setCustomAnimal('') } }}
               >
                 <Text style={[styles.relationText, relationship === rel && styles.relationTextActive]}>
                   {rel}
@@ -443,6 +452,34 @@ ${manualText.trim()}
             ))}
           </View>
         </View>
+
+        {/* 반려동물 종류 선택 */}
+        {relationship === '반려동물' && (
+          <View style={styles.section}>
+            <Text style={styles.label}>어떤 동물이었나요?</Text>
+            <View style={styles.relationRow}>
+              {PET_TYPES.map(pt => (
+                <TouchableOpacity
+                  key={pt}
+                  style={[styles.relationBtn, animalType === pt && styles.relationBtnActive]}
+                  onPress={() => { setAnimalType(pt); if (pt !== '다른 동물') setCustomAnimal('') }}
+                >
+                  <Text style={[styles.relationText, animalType === pt && styles.relationTextActive]}>{pt}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {animalType === '다른 동물' && (
+              <TextInput
+                style={[styles.input, { marginTop: 12 }]}
+                placeholder='예: 페랿, 도마랜, 금붕어...'
+                value={customAnimal}
+                onChangeText={setCustomAnimal}
+                maxLength={20}
+                placeholderTextColor='#B0A89E'
+              />
+            )}
+          </View>
+        )}
 
         {/* 탭 */}
         <View style={styles.section}>
