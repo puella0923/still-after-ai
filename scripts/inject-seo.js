@@ -12,6 +12,9 @@ const seoTags = `
     <!-- ① Search Console 소유권 인증 -->
     <meta name="google-site-verification" content="42HCXffGpWRJRMDEoND2Qnu_9lqmGdbwBZygPF_jCvE" />
 
+    <!-- ① Naver 소유권 인증 (네이버 서치어드바이저 등록 후 코드 교체) -->
+    <meta name="naver-site-verification" content="NAVER_VERIFICATION_CODE_HERE" />
+
     <!-- ② 기본 메타태그 -->
     <title>Still After — 아직 전하지 못한 말이 있다면</title>
     <meta name="description" content="사랑하는 사람을 떠나보낸 후, 못 다한 말을 전하는 공간. 천천히, 당신의 속도로." />
@@ -55,8 +58,8 @@ const seoTags = `
 
 let html = fs.readFileSync(distIndex, 'utf-8');
 
-// 이미 주입된 경우 스킵
-if (html.includes('google-site-verification')) {
+// 이미 주입된 경우 스킵 (naver-site-verification 플레이스홀더 업데이트 시에는 재실행 필요)
+if (html.includes('google-site-verification') && !html.includes('NAVER_VERIFICATION_CODE_HERE')) {
   console.log('✅ SEO tags already present, skipping injection.');
   process.exit(0);
 }
