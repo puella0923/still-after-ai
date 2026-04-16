@@ -53,6 +53,8 @@ export default function PersonaCreateScreen({ navigation }: Props) {
   const PET_TYPES = ['강아지', '고양이', '햄스터', '토끼', '앵무새', '다른 동물']
   const [animalType, setAnimalType] = useState('')
   const [customAnimal, setCustomAnimal] = useState('')
+  // 기타 관계 직접 입력
+  const [customRelationship, setCustomRelationship] = useState('')
   // 사진 관련
   const [photoUri, setPhotoUri] = useState<string | null>(null)   // 로컬 미리보기 URI
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null)   // 업로드용 blob
@@ -247,9 +249,11 @@ export default function PersonaCreateScreen({ navigation }: Props) {
   }
 
   const resolvedAnimalType = animalType === '다른 동물' ? customAnimal.trim() : animalType
+  const resolvedRelationship = relationship === '기타' ? customRelationship.trim() : relationship
 
   const canSubmit = (): boolean => {
     if (!name.trim() || !relationship || !agreedToService) return false
+    if (relationship === '기타' && !customRelationship.trim()) return false
     if (relationship === '반려동물' && !resolvedAnimalType) return false
     if (activeTab === 'manual') return manualText.trim().length >= 20
     if (activeTab === 'kakao') return parseResult !== null && kakaoRawText.trim().length > 0
@@ -269,6 +273,8 @@ export default function PersonaCreateScreen({ navigation }: Props) {
           ? '이름을 입력해주세요.'
           : !relationship
           ? '관계를 선택해주세요.'
+          : relationship === '기타' && !customRelationship.trim()
+          ? '관계를 직접 입력해주세요.'
           : relationship === '반려동물' && !resolvedAnimalType
           ? '어떤 동물이었는지 선택해주세요.'
           : activeTab === 'kakao' && !parseResult
@@ -288,11 +294,11 @@ export default function PersonaCreateScreen({ navigation }: Props) {
       let systemPrompt = ''
 
       if (activeTab === 'kakao' && parseResult) {
-        systemPrompt = generateSystemPrompt(parseResult.parsed, relationship)
+        systemPrompt = generateSystemPrompt(parseResult.parsed, resolvedRelationship)
       } else if (activeTab === 'kakao' && kakaoRawText) {
         // fallback: parseResult 없이 rawText만 있는 경우
         const parsed = parseKakaoChat(kakaoRawText, name.trim() || undefined)
-        systemPrompt = generateSystemPrompt(parsed, relationship)
+        systemPrompt = generateSystemPrompt(parsed, resolvedRelationship)
       } else if (activeTab === 'kakao') {
         throw new Error('카카오톡 파일 분석 결과가 없어 기억을 만들 수 없어요. 파일을 다시 업로드해주세요.')
       } else if (relationship === '반려동물') {
@@ -300,7 +306,7 @@ export default function PersonaCreateScreen({ navigation }: Props) {
         systemPrompt = generatePetSystemPrompt(name.trim(), resolvedAnimalType, manualText.trim())
       } else {
         // 직접 작성: manualText를 시스템 프롬프트에 반영
-        systemPrompt = `당신은 ${name.trim()}입니다. 사용자와 ${relationship} 관계입니다.
+        systemPrompt = `당신은 ${name.trim()}입니다. 사용자와 ${resolvedRelationship} 관계입니다.
 당신은 이미 이 세상을 떠났습니다. 지금 이 대화는 기억 속에서만 가능한 대화예요.
 
 아래는 사용자가 직접 작성한 ${name.trim()}에 대한 기억입니다. 이 내용을 바탕으로 자연스럽게 대화하세요.
@@ -326,7 +332,7 @@ ${manualText.trim()}
 
       const personaId = await createPersona({
         name: name.trim(),
-        relationship,
+        relationship: resolvedRelationship,
         rawChatText: activeTab === 'kakao' ? kakaoRawText : manualText,
         systemPrompt,
         parsedMessages: parseResult?.parsed.messages ?? [],
@@ -443,7 +449,7 @@ ${manualText.trim()}
               <TouchableOpacity
                 key={rel}
                 style={[styles.relationBtn, relationship === rel && styles.relationBtnActive]}
-                onPress={() => { setRelationship(rel); if (rel !== '반려동물') { setAnimalType(''); setCustomAnimal('') } }}
+                onPress={() => { setRelationship(rel); if (rel !== '반려동물') { setAnimalType(''); setCustomAnimal('') } if (rel !== '기타') setCustomRelationship('') }}
               >
                 <Text style={[styles.relationText, relationship === rel && styles.relationTextActive]}>
                   {rel}
@@ -451,6 +457,16 @@ ${manualText.trim()}
               </TouchableOpacity>
             ))}
           </View>
+          {relationship === '기타' && (
+            <TextInput
+              style={[styles.input, { marginTop: 12 }]}
+              placeholder="예: 선생님, 직장동료, 이웃"
+              value={customRelationship}
+              onChangeText={setCustomRelationship}
+              maxLength={20}
+              placeholderTextColor="#B0A89E"
+            />
+          )}
         </View>
 
         {/* 반려동물 종류 선택 */}
@@ -471,7 +487,7 @@ ${manualText.trim()}
             {animalType === '다른 동물' && (
               <TextInput
                 style={[styles.input, { marginTop: 12 }]}
-                placeholder='예: 페랿, 도마랜, 금붕어...'
+                placeholder='예: 도마뱀, 거북이, 금붕어'
                 value={customAnimal}
                 onChangeText={setCustomAnimal}
                 maxLength={20}
