@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ActivityIndicator, Alert, Platform, Dimensions,
+  ActivityIndicator, Alert, Platform, Dimensions, Linking,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -15,8 +15,9 @@ type Props = {
 }
 
 const FREE_LIMIT = 10
+const PRODUCT_PRICE = 19900
 
-// 테스트/개발 계정은 Paywall 우회
+// íì¤í¸/ê°ë° ê³ì  Paywall ì°í
 const TEST_EMAILS = ['dev@stillafter.com', 'test@stillafter.com', 'stillafter.test@gmail.com']
 const isTestAccount = (email?: string | null) => !!email && TEST_EMAILS.includes(email.toLowerCase())
 
@@ -32,8 +33,28 @@ export default function PaywallScreen({ navigation, route }: Props) {
   const [freeUsed, setFreeUsed] = useState(0)
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(true)
+  const [paymentStep, setPaymentStep] = useState<'idle' | 'waiting' | 'verifying'>('idle')
+  const [shopkey, setShopkey] = useState<string | null>(null)
 
   useEffect(() => { loadFreeUsage() }, [])
+
+  // ê²°ì ì°½ ì´ë¦° í ì± ë³µê· ê°ì§ (ëª¨ë°ì¼/ì¹ ê³µíµ)
+  useEffect(() => {
+    if (paymentStep !== 'waiting') return
+    const handleFocus = () => {
+      if (paymentStep === 'waiting') verifyPayment()
+    }
+    if (Platform.OS === 'web') {
+      window.addEventListener('focus', handleFocus)
+      return () => window.removeEventListener('focus', handleFocus)
+    }
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      if (url.includes('payment/callback') || url.includes('paycomplete=Y')) {
+        verifyPayment()
+      }
+    })
+    return () => sub.remove()
+  }, [paymentStep, shopkey])
 
   const loadFreeUsage = async () => {
     try {
@@ -41,7 +62,10 @@ export default function PaywallScreen({ navigation, route }: Props) {
       if (!user) return
       const { data } = await supabase.from('user_usage')
         .select('message_count, is_paid').eq('user_id', user.id).eq('persona_id', personaId).single()
-      if (data?.is_paid || isTestAccount(user.email)) { navigation.replace('Chat', { personaId }); return }
+      if (data?.is_paid || isTestAccount(user.email)) {
+        navigation.replace('Chat', { personaId })
+        return
+      }
       setFreeUsed(data?.message_count ?? 0)
     } catch { setFreeUsed(0) }
     finally { setChecking(false) }
@@ -51,46 +75,76 @@ export default function PaywallScreen({ navigation, route }: Props) {
     setLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { Alert.alert('로그인 필요', '로그인 후 이용할 수 있어요.'); return }
+      if (!user) { Alert.alert('ë¡ê·¸ì¸ íì', 'ë¡ê·¸ì¸ í ì´ì©í  ì ìì´ì.'); return }
       navigation.replace('Chat', { personaId })
-    } catch { Alert.alert('오류', '잠시 후 다시 시도해주세요.') }
+    } catch { Alert.alert('ì¤ë¥', 'ì ì í ë¤ì ìëí´ì£¼ì¸ì.') }
     finally { setLoading(false) }
   }
 
+  // íì´ì± ê²°ì  ìì
   const handlePayment = async () => {
     setLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { Alert.alert('로그인 필요', '로그인 후 이용할 수 있어요.'); return }
+      if (!user) { Alert.alert('ë¡ê·¸ì¸ íì', 'ë¡ê·¸ì¸ í ì´ì©í  ì ìì´ì.'); return }
 
-      // user_usage 테이블에서 is_paid = true 로 업데이트 (결제 완료 처리)
-      const { data: existing } = await supabase
-        .from('user_usage')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('persona_id', personaId)
-        .single()
+      // Vercel API ë¼ì°í¸ë¡ íì´ì± ê²°ì  ìì²­ ì´ê¸°í
+      const resp = await fetch('/api/payapp-init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          personaId,
+          userId: user.id,
+          userPhone: '',  // ì íì¬í­
+        }),
+      })
 
-      if (existing) {
-        await supabase
-          .from('user_usage')
-          .update({ is_paid: true, updated_at: new Date().toISOString() })
-          .eq('user_id', user.id)
-          .eq('persona_id', personaId)
-      } else {
-        await supabase
-          .from('user_usage')
-          .insert({ user_id: user.id, persona_id: personaId, message_count: 0, is_paid: true })
+      if (!resp.ok) {
+        const err = await resp.json()
+        throw new Error(err.error || 'ê²°ì  ìì²­ ì¤í¨')
       }
 
-      // 결제 완료 → 대화 화면으로 이동
-      navigation.replace('Chat', { personaId })
-    } catch (e) {
-      Alert.alert('오류', '결제 처리 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.')
+      const { shopkey: sk, payurl } = await resp.json()
+      setShopkey(sk)
+      setPaymentStep('waiting')
+
+      // ê²°ì  íì´ì§ë¡ ì´ë (ì¹: ì í­, ì±: ë¸ë¼ì°ì  ì´ê¸°)
+      if (Platform.OS === 'web') {
+        window.open(payurl, '_blank')
+      } else {
+        await Linking.openURL(payurl)
+      }
+    } catch (err: any) {
+      Alert.alert('ê²°ì  ì¤ë¥', err.message || 'ì ì í ë¤ì ìëí´ì£¼ì¸ì.')
     } finally {
       setLoading(false)
     }
   }
+
+  // ê²°ì  ìë£ í ê²ì¦
+  const verifyPayment = useCallback(async () => {
+    if (!shopkey || paymentStep !== 'waiting') return
+    setPaymentStep('verifying')
+    try {
+      const resp = await fetch('/api/payapp-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shopkey }),
+      })
+      const data = await resp.json()
+
+      if (resp.ok && data.success) {
+        navigation.replace('Chat', { personaId })
+      } else {
+        // ê²°ì  ë¯¸ìë£ ëë ì·¨ì
+        setPaymentStep('idle')
+        Alert.alert('ê²°ì  ë¯¸ìë£', 'ê²°ì ê° ìë£ëì§ ììì´ì. ê²°ì ì°½ì ë«ì¼ì¨ëì?')
+      }
+    } catch {
+      setPaymentStep('idle')
+      Alert.alert('ì¤ë¥', 'ê²°ì  íì¸ ì¤ ë¬¸ì ê° ë°ìíì´ì.')
+    }
+  }, [shopkey, paymentStep, personaId])
 
   if (checking) {
     return (
@@ -114,55 +168,81 @@ export default function PaywallScreen({ navigation, route }: Props) {
 
       <View style={styles.container}>
         <Text style={styles.title}>Still After</Text>
-        <Text style={styles.subtitle}>이야기를 이어가도 괜찮아요.{'\n'}천천히, 준비될 때 함께할게요.</Text>
 
-        {remaining > 0 && (
-          <View style={styles.freeInfo}>
-            <Text style={styles.freeInfoText}>
-              아직 무료로 <Text style={styles.freeCount}>{remaining}번</Text> 더 대화할 수 있어요
-            </Text>
+        {paymentStep === 'waiting' ? (
+          // ê²°ì ì°½ ì´ë¦¼ ëê¸° ìí
+          <View style={styles.waitingBox}>
+            <ActivityIndicator color="#a855f7" size="large" style={{ marginBottom: 20 }} />
+            <Text style={styles.waitingTitle}>ê²°ì ì°½ìì ì§íí´ì£¼ì¸ì</Text>
+            <Text style={styles.waitingDesc}>ê²°ì ë¥¼ ìë£íë©´ ìëì¼ë¡ ì´ì´ì ¸ì.{'\n'}ì°½ì ë«ì¼ì¨ë¤ë©´ ìë ë²í¼ì ëë¬ì£¼ì¸ì.</Text>
+            <TouchableOpacity style={styles.checkBtn} onPress={verifyPayment} disabled={paymentStep as string === 'verifying'}>
+              <Text style={styles.checkBtnText}>
+                {paymentStep === 'verifying' ? 'íì¸ ì¤...' : 'ê²°ì  ìë£íì´ì â'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => { setPaymentStep('idle'); setShopkey(null) }}>
+              <Text style={styles.cancelBtnText}>ì·¨ì</Text>
+            </TouchableOpacity>
           </View>
-        )}
-
-        {remaining > 0 ? (
-          <TouchableOpacity style={styles.freeButton} onPress={handleFreeTrial} disabled={loading} activeOpacity={0.85}>
-            {loading ? <ActivityIndicator color="#fff" /> : (
-              <>
-                <Text style={styles.freeButtonText}>이어서 대화하기</Text>
-                <Text style={styles.freeButtonSub}>{remaining}번 더 이야기할 수 있어요</Text>
-              </>
-            )}
-          </TouchableOpacity>
         ) : (
-          <View style={styles.freeExhausted}>
-            <Text style={styles.exhaustedText}>무료 대화를 모두 사용했어요</Text>
-          </View>
-        )}
+          <>
+            <Text style={styles.subtitle}>ì´ì¼ê¸°ë¥¼ ì´ì´ê°ë ê´ì°®ìì.{'\n'}ì²ì²í, ì¤ë¹ë  ë í¨ê»í ê²ì.</Text>
 
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>또는</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        <TouchableOpacity onPress={handlePayment} activeOpacity={0.85} disabled={loading} style={styles.payButtonWrap}>
-          <LinearGradient colors={['#a855f7', '#db2777']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
-          <View style={styles.payButtonContent} pointerEvents="none">
-            {loading ? <ActivityIndicator color="#fff" /> : (
-              <>
-                <Text style={styles.payButtonText}>결제하고 무제한 대화하기</Text>
-                <Text style={styles.payButtonSub}>페르소나당 19,900원 (1회 결제)</Text>
-              </>
+            {remaining > 0 && (
+              <View style={styles.freeInfo}>
+                <Text style={styles.freeInfoText}>
+                  ìì§ ë¬´ë£ë¡ <Text style={styles.freeCount}>{remaining}ë²</Text> ë ëíí  ì ìì´ì
+                </Text>
+              </View>
             )}
-          </View>
-        </TouchableOpacity>
 
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>돌아가기</Text>
-        </TouchableOpacity>
+            {remaining > 0 ? (
+              <TouchableOpacity style={styles.freeButton} onPress={handleFreeTrial} disabled={loading} activeOpacity={0.85}>
+                {loading ? <ActivityIndicator color="#fff" /> : (
+                  <>
+                    <Text style={styles.freeButtonText}>ì´ì´ì ëííê¸°</Text>
+                    <Text style={styles.freeButtonSub}>{remaining}ë² ë ì´ì¼ê¸°í  ì ìì´ì</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.freeExhausted}>
+                <Text style={styles.exhaustedText}>ð¬ ë¬´ë£ 10í ëíë¥¼ ëª¨ë ì¬ì©íì´ì</Text>
+              </View>
+            )}
+
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>ëë</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <TouchableOpacity onPress={handlePayment} activeOpacity={0.85} disabled={loading} style={styles.payButtonWrap}>
+              <LinearGradient colors={['#a855f7', '#db2777']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+              <View style={styles.payButtonContent} pointerEvents="none">
+                {loading ? <ActivityIndicator color="#fff" /> : (
+                  <>
+                    <Text style={styles.payButtonText}>ê²°ì íê³  ë¬´ì í ëííê¸°</Text>
+                    <Text style={styles.payButtonSub}>íë¥´ìëë¹ {PRODUCT_PRICE.toLocaleString()}ì (1í ê²°ì ) Â· íì´ì±</Text>
+                  </>
+                )}
+              </View>
+            </TouchableOpacity>
+
+            <View style={styles.benefitRow}>
+              {['â ë¬´ì í ëí', 'â 1í ê²°ì ', 'â íë¶ ë³´ì¥'].map(b => (
+                <Text key={b} style={styles.benefitText}>{b}</Text>
+              ))}
+            </View>
+
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+              <Text style={styles.backText}>ëìê°ê¸°</Text>
+            </TouchableOpacity>
+          </>
+        )}
 
         <Text style={styles.notice}>
-          이 서비스는 실제 인물을 대체하지 않아요. 감정 회복을 위한 공간이에요.
+          ì´ ìë¹ì¤ë ì¤ì  ì¸ë¬¼ì ëì²´íì§ ììì. ê°ì  íë³µì ìí ê³µê°ì´ìì.
         </Text>
       </View>
     </View>
@@ -170,6 +250,7 @@ export default function PaywallScreen({ navigation, route }: Props) {
 }
 
 const glass = Platform.OS === 'web' ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } as any : {}
+const { width } = Dimensions.get('window')
 
 const styles = StyleSheet.create({
   root: { flex: 1, overflow: 'hidden' },
@@ -178,7 +259,7 @@ const styles = StyleSheet.create({
   orb2: { width: 220, height: 220, bottom: '15%', left: '-10%', backgroundColor: 'rgba(219, 39, 119, 0.08)' },
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   title: { fontSize: 28, fontWeight: '300', color: '#fff', letterSpacing: 2, marginBottom: 8 },
-  subtitle: { fontSize: 16, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 24, marginBottom: 40 },
+  subtitle: { fontSize: 16, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 24, marginBottom: 32 },
   freeInfo: {
     backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 12, padding: 12,
     marginBottom: 16, width: '100%', alignItems: 'center',
@@ -195,17 +276,30 @@ const styles = StyleSheet.create({
   freeButtonSub: { fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 4 },
   freeExhausted: {
     width: '100%', borderRadius: 14, padding: 20, alignItems: 'center', marginBottom: 8,
-    backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
   },
   exhaustedText: { fontSize: 14, color: 'rgba(255,255,255,0.5)' },
   divider: { flexDirection: 'row', alignItems: 'center', width: '100%', marginVertical: 20 },
   dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
   dividerText: { marginHorizontal: 12, color: 'rgba(255,255,255,0.4)', fontSize: 13 },
-  payButtonWrap: { width: '100%', borderRadius: 14, overflow: 'hidden', marginBottom: 16, position: 'relative' as const },
+  payButtonWrap: { width: '100%', borderRadius: 14, overflow: 'hidden', marginBottom: 12, position: 'relative' as const },
   payButtonContent: { padding: 20, alignItems: 'center' as const },
   payButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
-  payButtonSub: { fontSize: 13, color: 'rgba(255,255,255,0.65)', marginTop: 4 },
+  payButtonSub: { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 4 },
+  benefitRow: { flexDirection: 'row', gap: 16, marginBottom: 8 },
+  benefitText: { fontSize: 12, color: 'rgba(255,255,255,0.4)' },
   backButton: { padding: 12 },
   backText: { fontSize: 14, color: 'rgba(255,255,255,0.5)' },
+  // ê²°ì  ëê¸° ìí
+  waitingBox: { alignItems: 'center', width: '100%' },
+  waitingTitle: { fontSize: 20, fontWeight: '600', color: '#fff', marginBottom: 12 },
+  waitingDesc: { fontSize: 14, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 22, marginBottom: 32 },
+  checkBtn: {
+    width: '100%', borderRadius: 14, padding: 18, alignItems: 'center', marginBottom: 12,
+    backgroundColor: 'rgba(168,85,247,0.25)', borderWidth: 1, borderColor: '#a855f7',
+  },
+  checkBtnText: { fontSize: 16, fontWeight: '600', color: '#a855f7' },
+  cancelBtn: { padding: 12 },
+  cancelBtnText: { fontSize: 14, color: 'rgba(255,255,255,0.4)' },
   notice: { position: 'absolute', bottom: 24, fontSize: 11, color: 'rgba(255,255,255,0.35)', textAlign: 'center' },
 })
