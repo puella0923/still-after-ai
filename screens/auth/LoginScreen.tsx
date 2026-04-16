@@ -51,16 +51,26 @@ export default function LoginScreen({ navigation }: Props) {
     }
   }, [session, navigation])
 
-  // 딥링크로 /Login 직접 접근 시 스택에 Onboarding이 없으면 삽입
-  // → 뒤로가기(브라우저/하드웨어) 시 앱이 꺼지지 않고 온보딩으로 이동
+  // 뒤로가기 시 앱/탭이 종료되지 않고 Onboarding으로 이동하도록 처리
   useEffect(() => {
     if (!navigation.canGoBack()) {
-      navigation.reset({
-        index: 1,
-        routes: [{ name: 'Onboarding' }, { name: 'Login' }],
-      })
+      if (typeof window !== 'undefined' && window.history?.pushState) {
+        // 웹: 브라우저 history에 Onboarding URL 주입
+        // replaceState로 현재 항목을 '/'(Onboarding)로 바꾸고
+        // pushState로 '/Login'을 다시 얹어서
+        // back() 시 stillafter.com/ → React Navigation이 Onboarding 렌더링
+        const rnState = window.history.state
+        window.history.replaceState(null, '', '/')
+        window.history.pushState(rnState, '', '/Login')
+      } else {
+        // 네이티브 앱: navigation 스택에 Onboarding 삽입
+        navigation.reset({
+          index: 1,
+          routes: [{ name: 'Onboarding' }, { name: 'Login' }],
+        })
+      }
     }
-  }, [])
+  }, [navigation])
 
   useEffect(() => {
     Animated.parallel([
