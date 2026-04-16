@@ -399,7 +399,7 @@ ${manualText.trim()}
           <Text style={styles.label}>{relationship === '반려동물' ? '이름이 뭐였나요?' : '어떻게 불렀나요?'}</Text>
           <TextInput
             style={styles.input}
-            {relationship === '반려동물' ? '예: 초코, 보리, 콩이' : '예: 엄마, 지수, 준혁'}
+            placeholder={relationship === '반려동물' ? '예: 초코, 보리, 콩이' : '예: 엄마, 지수, 준혁'}
             value={name}
             onChangeText={setName}
             maxLength={20}
