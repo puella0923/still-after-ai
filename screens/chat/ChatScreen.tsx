@@ -308,18 +308,12 @@ export default function ChatScreen({ navigation, route }: Props) {
     } catch { showToast('잠시 후 다시 시도해주세요.') }
   }, [persona, showToast])
 
-  // PM-003: Paywall 도달 시 입력 차단
-  const isPaywallBlocked = !isPaidUser && freeUsageCount !== null && freeUsageCount >= FREE_MESSAGE_LIMIT
+  // PM-003: Paywall 비활성화 (무제한 대화 허용)
+  const isPaywallBlocked = false
 
   const sendMessage = useCallback(async () => {
     const trimmed = inputText.trim()
     if (!trimmed || isTyping || !persona) return
-
-    // PM-003: 무료 한도 초과 시 Paywall 표시 및 차단
-    if (isPaywallBlocked) {
-      setShowPaywall(true)
-      return
-    }
 
     // PM-008: 위험 감지 시 메시지를 대화에 추가하지 않고 기록만 남김
     if (detectDanger(trimmed)) { showDangerAlert(trimmed); setInputText(''); return }
@@ -419,10 +413,7 @@ export default function ChatScreen({ navigation, route }: Props) {
           if (usage) {
             const newCount = (usage.message_count ?? 0) + 1
             await supabase.from('user_usage').update({ message_count: newCount, updated_at: new Date().toISOString() }).eq('user_id', user.id).eq('persona_id', persona.id)
-            if (!usage.is_paid && !isTestAccount(user.email) && newCount >= FREE_MESSAGE_LIMIT) {
-              setFreeUsageCount(newCount)
-              setShowPaywall(true)
-            } else { setFreeUsageCount(newCount) }
+            setFreeUsageCount(newCount)
           } else {
             await supabase.from('user_usage').insert({ user_id: user.id, persona_id: persona.id, message_count: 1, is_paid: false })
             setFreeUsageCount(1)
@@ -492,27 +483,6 @@ export default function ChatScreen({ navigation, route }: Props) {
         </View>
       </Modal>
 
-      {/* Paywall Modal */}
-      <Modal visible={showPaywall} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <LinearGradient colors={['rgba(88, 28, 135, 0.8)', 'rgba(30, 58, 138, 0.8)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.modalGradient}>
-              <Text style={styles.modalIcon}>✨</Text>
-              <Text style={styles.modalTitle}>{personaName}와 더 대화하고 싶으신가요?</Text>
-              <Text style={styles.modalDesc}>무료 체험은 페르소나당 10회입니다.{'\n'}결제 후 무제한 대화가 가능합니다.{'\n\n'}💎 페르소나당 19,900원 (1회 결제)</Text>
-              <TouchableOpacity activeOpacity={0.85} onPress={() => { setShowPaywall(false); navigation.replace('Paywall', { personaId: persona?.id ?? '', stage: currentStage }) }} style={styles.paywallPayBtn}>
-                <LinearGradient colors={['#7C3AED', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.paywallPayBtnGrad}>
-                  <Text style={styles.modalBtnText}>결제하기</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setShowPaywall(false)}>
-                <Text style={styles.modalBtnSecondaryText}>닫기</Text>
-              </TouchableOpacity>
-            </LinearGradient>
-          </View>
-        </View>
-      </Modal>
-
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>
@@ -538,7 +508,7 @@ export default function ChatScreen({ navigation, route }: Props) {
             </View>
           </View>
           <View style={styles.headerRight}>
-            <Text style={styles.headerCount}>{userMessageCount} / {FREE_MESSAGE_LIMIT}</Text>
+            <Text style={styles.headerCount}>{userMessageCount}</Text>
           </View>
         </View>
 
@@ -668,11 +638,6 @@ export default function ChatScreen({ navigation, route }: Props) {
 
           {/* Input Area */}
           {!isReadOnly && (
-            isPaywallBlocked ? (
-              <TouchableOpacity style={styles.paywallBar} activeOpacity={0.85} onPress={() => setShowPaywall(true)}>
-                <Text style={styles.paywallBarText}>✨ 무료 체험이 끝났어요. 탭하여 계속 대화하기</Text>
-              </TouchableOpacity>
-            ) : (
             <View style={styles.inputArea}>
               <TextInput
                 style={styles.textInput}
@@ -703,7 +668,6 @@ export default function ChatScreen({ navigation, route }: Props) {
                 </LinearGradient>
               </TouchableOpacity>
             </View>
-            )
           )}
         </KeyboardAvoidingView>
       </SafeAreaView>
