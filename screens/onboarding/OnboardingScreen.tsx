@@ -73,8 +73,7 @@ export default function OnboardingScreen({ navigation }: Props) {
           <Text style={styles.heroTitle}>한 번만 더{'\n'}말할 수 있다면</Text>
           <Text style={styles.heroSub}>아직 전하지 못한 말이 있나요?</Text>
           <Text style={styles.heroDesc}>
-            죄책감을 혼자 안고 있지 않아도 됩니다.{'\n'}
-            하지 못한 말을 전하고, 천천히 놓을 수 있도록 돕습니다.
+            죄책감을 혼자 안고 있지 않아도 됩니다. 하지 못한 말을 전하고, 천천히 놓을 수 있도록 돕습니다.
           </Text>
 
           {/* 미션 인용 */}
