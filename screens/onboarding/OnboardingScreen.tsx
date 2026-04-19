@@ -293,7 +293,7 @@ export default function OnboardingScreen({ navigation }: Props) {
                 <DemoBubble from="user" text="응 먹었어. 엄마 생각이 나서." />
                 <DemoBubble from="assistant" name="엄" text="나도 보고 싶다. 우리 딸 잘 지내고 있지? 요즘 얼굴이 좀 안 좋아 보이던데." />
                 <DemoBubble from="user" text="요즘 조금 힘들었어. 그냥 목소리 듣고 싶었어." />
-                <DemoBubble from="assistant" name="엄" text="그럼 전화하지. 참지 말고. 밥 잘 챙겨 먹어야 해, 알지?" />
+                <DemoBubble from="assistant" name="엄" text="그럼 언제든 얘기해. 참지 말고. 밥 잘 챙겨 먹어야 해, 알지?" />
                 <View style={styles.demoMilestone}>
                   <Text style={styles.demoMilestoneText}>
                     💜 그 사람과의 대화가 이어지고 있어요{'\n'}오늘도 찾아와줘서 고마워요.
