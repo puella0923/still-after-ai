@@ -52,7 +52,7 @@ function getClosurePhase(count: number): ClosurePhase {
   return 4
 }
 function getReplayProgressMessage(count: number): string | null {
-  if (count <= 2) return null
+  if (count <= 2) return '천천히, 하고 싶은 말을 건네보세요'
   if (count <= 5) return '그때처럼, 이야기를 시작해보세요'
   if (count <= 10) return '익숙했던 대화를 이어가고 있어요'
   if (count <= 15) return '그 사람과 함께 있는 시간입니다'
@@ -263,7 +263,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         if (prev.some(m => m.action === 'goto_stable')) return prev
         return [...prev, {
           id: makeId(), role: 'system',
-          content: '대화가 조금씩 이어지고 있어요.\n\n준비가 되면 다음 단계로 넘어갈 수 있어요.\n아직 더 이야기하고 싶다면, 천천히 해도 괜찮아요.',
+          content: '이야기를 나눠주셔서 고마워요.\n\n이제 조금 다른 방향으로 이야기해볼 수 있어요.\n마음이 준비됐을 때 다음 단계로 넘어가요. 서두르지 않아도 괜찮아요.',
           action: 'goto_stable' as const,
         }]
       })
@@ -274,7 +274,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         if (prev.some(m => m.action === 'goto_closure')) return prev
         return [...prev, {
           id: makeId(), role: 'system',
-          content: '감정을 정리하는 시간을 보내고 있어요.\n\n준비가 되면 마지막 단계로 넘어갈 수 있어요.\n아직 더 이야기하고 싶다면, 서두르지 않아도 돼요.',
+          content: '많은 이야기를 나눠주셨어요.\n\n이제 마지막 단계로 넘어갈 수 있어요.\n하고 싶은 말을 충분히 담았다고 느껴질 때, 천천히 이동해도 괜찮아요.',
           action: 'goto_closure' as const,
         }]
       })
@@ -526,6 +526,15 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
           </Text>
         </View>
 
+        {/* Free usage nudge — show when 3 or fewer messages remain */}
+        {!isPaidUser && freeRemaining !== null && freeRemaining <= 3 && freeRemaining > 0 && (
+          <View style={styles.freeNudgeBanner}>
+            <Text style={styles.freeNudgeText}>
+              💜 무료 대화가 {freeRemaining}회 남아있어요. 이야기를 더 이어가고 싶다면 프리미엄을 이용해보세요.
+            </Text>
+          </View>
+        )}
+
         {/* Closure banner */}
         {persona?.emotional_stage === 'closure' && !isReadOnly && (
           <TouchableOpacity style={styles.closureBanner} onPress={() => {
@@ -776,6 +785,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(167, 139, 250, 0.15)',
   },
   readOnlyBannerText: { fontSize: 13, color: 'rgba(167, 139, 250, 0.7)', textAlign: 'center' },
+  freeNudgeBanner: {
+    backgroundColor: 'rgba(124, 58, 237, 0.12)', paddingHorizontal: 16, paddingVertical: 8,
+    borderBottomWidth: 1, borderBottomColor: 'rgba(124, 58, 237, 0.2)',
+  },
+  freeNudgeText: { fontSize: 12, color: 'rgba(196, 181, 253, 0.75)', textAlign: 'center', lineHeight: 18 },
   paywallBar: {
     backgroundColor: 'rgba(124, 58, 237, 0.15)', paddingHorizontal: 20, paddingVertical: 16,
     borderTopWidth: 1, borderTopColor: 'rgba(167, 139, 250, 0.3)',

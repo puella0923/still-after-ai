@@ -188,8 +188,9 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
               <Text style={styles.completedEmoji}>🌸</Text>
               <Text style={styles.completedTitle}>잘 해내셨어요</Text>
               <Text style={styles.completedSub}>
-                그 기억은 언제까지나 당신 안에 남아있어요.{'\n'}
-                마음에 담아두었던 것들, 이제 조금 가벼워졌으면 해요.{'\n\n'}
+                그 분과 함께한 모든 순간은 당신 안에 남아있어요.{'\n'}
+                담아두셨던 마음을 꺼내준 것만으로도 충분해요.{'\n\n'}
+                이제 조금 더 가볍게, 오늘을 살아가도 괜찮아요.{'\n'}
                 편지와 대화 기록은 언제든 다시 읽을 수 있어요.
               </Text>
               <TouchableOpacity onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Main' }] })} activeOpacity={0.85}>
@@ -197,6 +198,9 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
                   <Text style={styles.homeBtnText}>홈으로 돌아가기</Text>
                 </LinearGradient>
               </TouchableOpacity>
+              <Text style={styles.healingNote}>
+                이별은 끝이 아니에요.{'\n'}그 분은 당신이 살아가는 날들 안에서 함께 있어요.
+              </Text>
             </Animated.View>
           )}
         </Animated.View>
@@ -386,4 +390,5 @@ const styles = StyleSheet.create({
   completedSub: { fontSize: 16, color: 'rgba(200, 180, 255, 0.75)', textAlign: 'center', lineHeight: 27 },
   homeBtn: { borderRadius: 14, paddingVertical: 14, paddingHorizontal: 32, marginTop: 12 },
   homeBtnText: { color: '#fff', fontSize: 15, fontWeight: '500' },
+  healingNote: { fontSize: 13, color: 'rgba(180, 160, 240, 0.55)', textAlign: 'center', lineHeight: 22, marginTop: 24 },
 })

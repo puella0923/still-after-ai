@@ -548,6 +548,9 @@ ${manualText.trim()}
               <Text style={[styles.kakaoGuideSub, { color: '#F59E0B', marginTop: 4 }]}>
                 ⚠️ 1:1 대화방만 지원돼요. 단체 채팅방은 분석할 수 없어요.
               </Text>
+              <Text style={styles.dataDeleteNote}>
+                🔐 업로드한 파일은 기억을 담은 뒤 즉시 삭제되며, 외부에 저장·공유되지 않아요.
+              </Text>
               <Pressable
                 style={[styles.uploadBtn, parseResult && styles.uploadBtnDone]}
                 onPress={Platform.OS === 'web' ? handleWebFilePick : handleNativeFilePick}
@@ -725,6 +728,7 @@ const styles = StyleSheet.create({
   charCount: { fontSize: 12, color: 'rgba(167, 139, 250, 0.6)', textAlign: 'right', marginTop: 4 },
   kakaoGuide: { fontSize: 14, color: 'rgba(196, 181, 253, 0.8)', marginBottom: 8, lineHeight: 20 },
   kakaoGuideSub: { fontSize: 12, color: 'rgba(167, 139, 250, 0.6)', marginBottom: 12, lineHeight: 18 },
+  dataDeleteNote: { fontSize: 12, color: 'rgba(134, 239, 172, 0.75)', marginBottom: 10, lineHeight: 18, paddingHorizontal: 4 },
   uploadBtn: {
     backgroundColor: '#FEE500', borderRadius: 14, paddingVertical: 14,
     alignItems: 'center', marginBottom: 12,
