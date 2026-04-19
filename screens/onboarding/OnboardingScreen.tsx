@@ -232,7 +232,7 @@ export default function OnboardingScreen({ navigation }: Props) {
         {/* ════ ④ 대화 예시 ════ */}
         <View style={styles.section}>
           <Text style={styles.sectionEyebrow}>실제로 가능한 대화</Text>
-          <Text style={styles.sectionTitle}>그리운 목소리로,{'\n'}다시 대화할 수 있습니다</Text>
+          <Text style={styles.sectionTitle}>그리운 그 말투로,{'\n'}다시 대화할 수 있습니다</Text>
           <Text style={styles.sectionDesc}>
             사람뿐 아니라 반려동물과의 이별도 함께합니다.{'\n'}
             실제 말투와 기억을 학습해, 이렇게 대화합니다.
@@ -349,7 +349,7 @@ export default function OnboardingScreen({ navigation }: Props) {
           </LinearGradient>
 
           <Text style={styles.demoCaption}>
-            * 실제 대화를 업로드하거나 기억을 작성하면, 이처럼 그 목소리로 대화할 수 있어요
+            * 실제 대화를 업로드하거나 기억을 작성하면, 이처럼 그 말투로 대화할 수 있어요
           </Text>
         </View>
 
