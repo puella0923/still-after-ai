@@ -73,15 +73,15 @@ export default function OnboardingScreen({ navigation }: Props) {
           <Text style={styles.heroTitle}>한 번만 더{'\n'}말할 수 있다면</Text>
           <Text style={styles.heroSub}>아직 전하지 못한 말이 있나요?</Text>
           <Text style={styles.heroDesc}>
-            그리움을 붙잡는 것이 아니라,{'\n'}
-            천천히, 당신의 속도로 놓을 수 있도록 돕습니다.
+            죄책감을 혼자 안고 있지 않아도 됩니다.{'\n'}
+            하지 못한 말을 전하고, 천천히 놓을 수 있도록 돕습니다.
           </Text>
 
           {/* 미션 인용 */}
           <View style={styles.heroMission}>
             <Text style={styles.heroMissionText}>
-              마지막으로 전하지 못한 말을 하고,{'\n'}
-              그 사람을 온전히 보내드립니다.
+              전하지 못한 말을 꺼내고,{'\n'}
+              스스로를 용서하며 보내드립니다.
             </Text>
           </View>
 
@@ -115,7 +115,8 @@ export default function OnboardingScreen({ navigation }: Props) {
           <View style={styles.empathyList}>
             {[
               '문자를 쓰다가, 받을 사람이 없다는 걸 깨닫고 멈춘 적 있나요.',
-              '그때 그 말을 했더라면, 하고 후회가 남아 있나요.',
+              '그때 그 말을 했더라면 — 그 후회가 아직도 남아 있나요.',
+              '더 잘 챙겨드렸더라면, 그 죄책감이 아직도 사라지지 않나요.',
               '아침마다 현관에서 기다리던 모습이, 아직도 눈에 밟히지는 않나요.',
               '상실은 시간이 해결한다지만, 어떤 감정은 그냥 두면 더 깊어집니다.',
             ].map((text, i) => (
@@ -128,8 +129,8 @@ export default function OnboardingScreen({ navigation }: Props) {
 
           <View style={styles.empathyClose}>
             <Text style={styles.empathyCloseText}>
-              Still After는 그 감정을 억누르지 않고,{'\n'}
-              안전하게 이어가고, 결국 떠나보낼 수 있도록 설계했습니다.
+              Still After는 그리움도, 죄책감도 억누르지 않습니다.{'\n'}
+              안전하게 꺼낸 뒤, 당신이 스스로를 용서할 수 있도록 설계했습니다.
             </Text>
           </View>
         </View>
@@ -469,13 +470,14 @@ export default function OnboardingScreen({ navigation }: Props) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>우리는 계속 머물게 하지 않습니다</Text>
           <Text style={styles.promiseDesc}>
-            의존이 아닌 회복을 목표로,{'\n'}
-            대화의 시작부터 끝까지 설계했습니다.
+            다시 만나게 해주는 것이 아닙니다.{'\n'}
+            떠나보낼 수 있도록 — 끝을 함께 설계하는 서비스입니다.
           </Text>
           <View style={styles.promiseQuote}>
             <Text style={styles.promiseQuoteText}>
               "우리는 사람을 복원하지 않습니다.{'\n'}
-              남겨진 사람이 다시 살아갈 수 있도록 돕습니다."
+              남겨진 사람이 스스로를 용서하고,{'\n'}
+              다시 살아갈 수 있도록 돕습니다."
             </Text>
           </View>
         </View>
@@ -503,7 +505,7 @@ export default function OnboardingScreen({ navigation }: Props) {
               </LinearGradient>
             </TouchableOpacity>
 
-            <Text style={styles.ctaNote}>10번의 무료 대화를 통해 천천히 시작해보세요</Text>
+            <Text style={styles.ctaNote}>10번의 무료 대화로 — 하지 못한 말부터, 천천히 시작해요</Text>
           </LinearGradient>
         </View>
 

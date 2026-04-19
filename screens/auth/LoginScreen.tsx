@@ -45,6 +45,16 @@ export default function LoginScreen({ navigation }: Props) {
     }
   }
 
+  // 웹 전용: 마운트 시 브라우저 history에 Onboarding(/) 엔트리 주입
+  // React Navigation이 Onboarding→Login 이동 시 replaceState를 사용해 / 엔트리가 사라짐
+  // → pushState로 / 복원 후 /Login 재등록하면 브라우저 back = Onboarding ✓
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const currentState = window.history.state
+    window.history.replaceState(null, '', '/')
+    window.history.pushState(currentState, '', '/Login')
+  }, [])
+
   useEffect(() => {
     if (session) {
       navigation.reset({ index: 0, routes: [{ name: 'Main' }] })

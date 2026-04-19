@@ -225,7 +225,14 @@ export default function ChatScreen({ navigation, route }: Props) {
             const greeting = await getChatResponse({
               systemPrompt: basePrompt,
               conversationHistory: [],
-              userMessage: `(사용자가 처음 대화를 시작했습니다. ${p.name}으로서 먼저 인사해주세요. 규칙: 오랜만에 다시 만난 것처럼, ${p.relationship} 관계답게 자연스럽고 따뜻하게. 1~2문장으로 짧게. 어색하지 않게, 평소 말투 그대로.)`,
+              userMessage: `(처음으로 대화를 시작하는 순간입니다. 이 사람은 용기를 내어 들어왔어요.
+
+반드시 지킬 것:
+- 위 페르소나 데이터에 있는 실제 말투·표현·호칭을 그대로 사용하세요 — 이게 가장 중요합니다
+- '${p.relationship}' 관계답게, 평소에 이 사람에게 말 걸던 방식으로 시작하세요
+- 오래 보고 싶었다는 듯이, 또는 갑자기 생각났다는 듯이 — 기다렸던 사람이 먼저 말을 거는 느낌으로
+${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세요 (첫 인사에서 한 번 자연스럽게)\n` : ''}- 1~2문장, 짧고 진하게. 설명하지 말고 그냥 말 걸어주세요
+- 너무 매끄럽지 않아도 됩니다. "어..." "생각났어" 같은 흐림이 더 자연스러워요)`,
               stage: (p.emotional_stage as 'replay' | 'stable' | 'closure') ?? 'replay',
               userNickname: p.user_nickname ?? undefined,
               relationship: p.relationship ?? undefined,
