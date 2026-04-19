@@ -73,7 +73,7 @@ export default function OnboardingScreen({ navigation }: Props) {
           <Text style={styles.heroTitle}>한 번만 더{'\n'}말할 수 있다면</Text>
           <Text style={styles.heroSub}>아직 전하지 못한 말이 있나요?</Text>
           <Text style={styles.heroDesc}>
-            죄책감을 혼자 안고 있지 않아도 됩니다. 하지 못한 말을 전하고, 천천히 놓을 수 있도록 돕습니다.
+            죄책감을 혼자 안고 있지 않아도 됩니다.{'\n'}하지 못한 말을 전하고, 천천히 놓을 수 있도록 돕습니다.
           </Text>
 
           {/* 미션 인용 */}
@@ -128,8 +128,7 @@ export default function OnboardingScreen({ navigation }: Props) {
 
           <View style={styles.empathyClose}>
             <Text style={styles.empathyCloseText}>
-              Still After는 그리움도, 죄책감도 억누르지 않습니다.{'\n'}
-              안전하게 꺼낸 뒤, 당신이 스스로를 용서할 수 있도록 설계했습니다.
+              Still After는 그리움도, 죄책감도 억누르지 않습니다. 안전하게 꺼낸 뒤, 당신이 스스로를 용서할 수 있도록 설계했습니다.
             </Text>
           </View>
         </View>
@@ -152,7 +151,7 @@ export default function OnboardingScreen({ navigation }: Props) {
               </View>
               <Text style={styles.howMethodTitle}>대화를 업로드하면{'\n'}말투를 그대로 담습니다</Text>
               <Text style={styles.howMethodDesc}>
-                대화 내보내기 파일(.txt, .csv)을 올리면,{'\n'}자주 쓰는 표현과 말투를 자동으로 분석합니다.
+                대화 내보내기 파일(.txt, .csv)을 올리면, 자주 쓰는 표현과 말투를 자동으로 분석합니다.
               </Text>
 
               {/* 지원 앱 */}
@@ -210,9 +209,7 @@ export default function OnboardingScreen({ navigation }: Props) {
               </View>
               <Text style={styles.howMethodTitle}>채팅 기록이 없어도{'\n'}괜찮아요</Text>
               <Text style={styles.howMethodDesc}>
-                그 사람의 평소 말투, 자주 하던 말,{'\n'}
-                습관이나 기억을 직접 작성하면{'\n'}
-                AI가 학습해 그 사람처럼 대화합니다.
+                그 사람의 평소 말투, 자주 하던 말, 습관이나 기억을 직접 작성하면 그 사람처럼 대화합니다.
               </Text>
               <View style={styles.howMethodQuote}>
                 <Text style={styles.howMethodQuoteText}>
@@ -234,8 +231,7 @@ export default function OnboardingScreen({ navigation }: Props) {
           <Text style={styles.sectionEyebrow}>실제로 가능한 대화</Text>
           <Text style={styles.sectionTitle}>그리운 그 말투로,{'\n'}다시 대화할 수 있습니다</Text>
           <Text style={styles.sectionDesc}>
-            사람뿐 아니라 반려동물과의 이별도 함께합니다.{'\n'}
-            실제 말투와 기억을 학습해, 이렇게 대화합니다.
+            사람뿐 아니라 반려동물과의 이별도 함께합니다. 실제 말투와 기억을 학습해, 이렇게 대화합니다.
           </Text>
 
           {/* 탭 */}
