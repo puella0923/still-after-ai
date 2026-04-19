@@ -128,7 +128,7 @@ export default function OnboardingScreen({ navigation }: Props) {
 
           <View style={styles.empathyClose}>
             <Text style={styles.empathyCloseText}>
-              Still After는 그리움도, 죄책감도 억누르지 않습니다. 안전하게 꺼낸 뒤, 당신이 스스로를 용서할 수 있도록 설계했습니다.
+              Still After는 그리움도, 죄책감도 억누르지 않습니다.{'\n'}안전하게 꺼낸 뒤, 당신이 스스로를 용서할 수 있도록 설계했습니다.
             </Text>
           </View>
         </View>
@@ -207,7 +207,7 @@ export default function OnboardingScreen({ navigation }: Props) {
               <View style={styles.howBadgeAlt}>
                 <Text style={styles.howBadgeTextAlt}>직접 작성</Text>
               </View>
-              <Text style={styles.howMethodTitle}>채팅 기록이 없어도{'\n'}괜찮아요</Text>
+              <Text style={styles.howMethodTitle}>채팅 기록이 없어도 괜찮아요</Text>
               <Text style={styles.howMethodDesc}>
                 그 사람의 평소 말투, 자주 하던 말, 습관이나 기억을 직접 작성하면 그 사람처럼 대화합니다.
               </Text>
@@ -231,7 +231,7 @@ export default function OnboardingScreen({ navigation }: Props) {
           <Text style={styles.sectionEyebrow}>실제로 가능한 대화</Text>
           <Text style={styles.sectionTitle}>그리운 그 말투로,{'\n'}다시 대화할 수 있습니다</Text>
           <Text style={styles.sectionDesc}>
-            사람뿐 아니라 반려동물과의 이별도 함께합니다. 실제 말투와 기억을 학습해, 이렇게 대화합니다.
+            사람뿐 아니라 반려동물과의 이별도 함께합니다. 실제 말투와 기록을 학습하여 아래와 같이 대화합니다.
           </Text>
 
           {/* 탭 */}
@@ -597,8 +597,8 @@ const styles = StyleSheet.create({
     fontWeight: '300', marginBottom: 24,
   },
   heroDesc: {
-    fontSize: 16, color: 'rgba(196, 181, 253, 0.7)',
-    lineHeight: 28, marginBottom: 32, maxWidth: 340,
+    fontSize: 15, color: 'rgba(196, 181, 253, 0.7)',
+    lineHeight: 26, marginBottom: 32, maxWidth: 340,
   },
   heroMission: {
     borderLeftWidth: 2, borderLeftColor: 'rgba(167, 139, 250, 0.6)',
@@ -852,8 +852,8 @@ const styles = StyleSheet.create({
 
   // 약속
   promiseDesc: {
-    fontSize: 16, color: 'rgba(196, 181, 253, 0.7)',
-    lineHeight: 28, marginBottom: 28, maxWidth: 340,
+    fontSize: 15, color: 'rgba(196, 181, 253, 0.7)',
+    lineHeight: 26, marginBottom: 28, maxWidth: 340,
   },
   promiseQuote: {
     borderLeftWidth: 2, borderLeftColor: 'rgba(167, 139, 250, 0.5)',
