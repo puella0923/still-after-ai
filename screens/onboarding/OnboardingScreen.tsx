@@ -188,6 +188,9 @@ export default function OnboardingScreen({ navigation }: Props) {
                 ))}
               </View>
 
+              <Text style={styles.dataPrivacyNote}>
+                🔐 업로드한 파일은 기억을 담은 뒤 즉시 삭제되며, 외부에 저장·공유되지 않아요.
+              </Text>
               <Text style={styles.phraseLabel}>추출된 표현 예시</Text>
               <View style={styles.phraseTags}>
                 {['우리 꿀돼지~', '우리 딸', '밥은 먹었어?', '얼른 자~~~~', '뭐해ㅋ 자고 있어?', '그래도 잘 했어', '엄마가 다 알지~'].map((tag, i) => (
@@ -385,7 +388,7 @@ export default function OnboardingScreen({ navigation }: Props) {
                 </View>
                 <View style={styles.stageTransitionHint}>
                   <Text style={styles.stageTransitionText}>
-                    준비가 되면 다음 단계로 — 아직 더 이야기하고 싶다면 천천히 해도 괜찮아요
+                    이야기를 나눠주셔서 고마워요 — 마음이 준비됐을 때 다음 단계로, 서두르지 않아도 괜찮아요
                   </Text>
                 </View>
               </View>
@@ -416,7 +419,7 @@ export default function OnboardingScreen({ navigation }: Props) {
                 </View>
                 <View style={styles.stageTransitionHint}>
                   <Text style={styles.stageTransitionText}>
-                    준비가 되면 마지막 단계로 — 서두르지 않아도 괜찮아요
+                    충분히 이야기를 나눴다고 느껴질 때 — 천천히 마지막 단계로 이동해도 괜찮아요
                   </Text>
                 </View>
               </View>
@@ -457,7 +460,9 @@ export default function OnboardingScreen({ navigation }: Props) {
                   <Text style={styles.closureLetterDesc}>
                     20번의 대화가 끝나면, 마지막 편지를 씁니다.{'\n'}
                     전하지 못했던 말을 모두 담아 봉인하면,{'\n'}
-                    대화가 아름답게 마무리됩니다.
+                    대화가 아름답게 마무리됩니다.{'\n\n'}
+                    이별은 끝이 아니에요.{'\n'}
+                    그 분은 당신이 살아가는 날들 안에서 함께 있어요.
                   </Text>
                 </View>
               </View>
@@ -480,6 +485,9 @@ export default function OnboardingScreen({ navigation }: Props) {
               다시 살아갈 수 있도록 돕습니다."
             </Text>
           </View>
+          <Text style={styles.promiseHealingNote}>
+            이별은 끝이 아니에요.{'\n'}그 분은 당신이 살아가는 날들 안에서 함께 있어요.
+          </Text>
         </View>
 
         {/* ════ ⑦ CTA ════ */}
@@ -836,6 +844,15 @@ const styles = StyleSheet.create({
   stageMsgIcon: { fontSize: 14, flexShrink: 0 },
   stageMsgText: {
     fontSize: 12, color: 'rgba(196, 181, 253, 0.85)', lineHeight: 20, flex: 1,
+  },
+
+  dataPrivacyNote: {
+    fontSize: 11, color: 'rgba(134, 239, 172, 0.7)',
+    lineHeight: 18, marginBottom: 14, paddingHorizontal: 2,
+  },
+  promiseHealingNote: {
+    fontSize: 14, color: 'rgba(196, 181, 253, 0.55)',
+    lineHeight: 24, marginTop: 20, textAlign: 'center' as const, fontStyle: 'italic',
   },
 
   // 약속
