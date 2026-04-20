@@ -60,17 +60,6 @@ export default function OnboardingScreen({ navigation }: Props) {
         )
       })}
 
-      {/* ── 언어 토글 (우측 상단 고정) ── */}
-      <TouchableOpacity
-        onPress={toggleLanguage}
-        activeOpacity={0.75}
-        style={styles.langToggle}
-      >
-        <Text style={[styles.langOption, language === 'ko' && styles.langOptionActive]}>한국어</Text>
-        <Text style={styles.langDivider}>/</Text>
-        <Text style={[styles.langOption, language === 'en' && styles.langOptionActive]}>English</Text>
-      </TouchableOpacity>
-
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.contentWrapper}>
 
@@ -479,6 +468,17 @@ export default function OnboardingScreen({ navigation }: Props) {
           <Text style={styles.footerCopy}>© 2026 Still After. All rights reserved.</Text>
         </View>
       </ScrollView>
+
+      {/* ── 언어 토글 (우측 상단 고정 — ScrollView 위에 렌더링) ── */}
+      <TouchableOpacity
+        onPress={toggleLanguage}
+        activeOpacity={0.75}
+        style={styles.langToggle}
+      >
+        <Text style={[styles.langOption, language === 'ko' && styles.langOptionActive]}>한국어</Text>
+        <Text style={styles.langDivider}>/</Text>
+        <Text style={[styles.langOption, language === 'en' && styles.langOptionActive]}>English</Text>
+      </TouchableOpacity>
     </View>
   )
 }
