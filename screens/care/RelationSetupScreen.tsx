@@ -1,4 +1,3 @@
-// @ts-nocheck — 미사용 레거시 화면 (PersonaCreateScreen으로 통합됨)
 import React, { useState } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
@@ -8,8 +7,6 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
-import { buildDefaultPersona } from '../../types/persona'
-import { savePersona } from '../../services/personaStorage'
 import { useLanguage } from '../../context/LanguageContext'
 
 type Props = {
@@ -30,18 +27,16 @@ const STAR_DOTS = Array.from({ length: 25 }, (_, i) => ({
 export default function RelationSetupScreen({ navigation, route }: Props) {
   const { t } = useLanguage()
   const { careType } = route.params
-  const isPerson = careType === 'person'
+  const isPerson = careType === 'human'
   const [selectedRelation, setSelectedRelation] = useState<string | null>(null)
   const [name, setName] = useState('')
   const canProceed = selectedRelation !== null && name.trim().length > 0
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (!canProceed) return
     const trimmedName = name.trim()
     const relation = selectedRelation as string
-    const persona = buildDefaultPersona(trimmedName, relation, careType)
-    await savePersona(persona).catch(() => {})
-    navigation.navigate('ServiceConsent', { careType, relation, name: trimmedName })
+    navigation.navigate('PersonaCreate', { careType, relation, name: trimmedName })
   }
 
   const chips = isPerson ? PERSON_RELATIONS : PET_TYPES

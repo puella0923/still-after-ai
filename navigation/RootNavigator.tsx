@@ -5,6 +5,8 @@ import LoginScreen from '../screens/auth/LoginScreen'
 import EmailAuthScreen from '../screens/auth/EmailAuthScreen'
 import PersonaListScreen from '../screens/persona/PersonaListScreen'
 import PersonaCreateScreen from '../screens/persona/PersonaCreateScreen'
+import CareSelectScreen from '../screens/care/CareSelectScreen'
+import RelationSetupScreen from '../screens/care/RelationSetupScreen'
 import AIGeneratingScreen from '../screens/persona/AIGeneratingScreen'
 import PaywallScreen from '../screens/paywall/PaywallScreen'
 import SettingsScreen from '../screens/settings/SettingsScreen'
@@ -22,7 +24,9 @@ export type RootStackParamList = {
   Login: undefined
   EmailAuth: undefined
   PersonaList: undefined
-  PersonaCreate: undefined
+  CareSelect: undefined
+  RelationSetup: { careType: 'human' | 'pet' }
+  PersonaCreate: { careType: 'human' | 'pet'; relation?: string; name?: string }
   PersonaEdit: {
     personaId: string
     personaName: string
@@ -58,6 +62,8 @@ export default function RootNavigator({ initialRouteName }: Props) {
       <Stack.Screen name="Login"           component={LoginScreen} />
       <Stack.Screen name="EmailAuth"       component={EmailAuthScreen} />
       <Stack.Screen name="PersonaList"     component={PersonaListScreen} />
+      <Stack.Screen name="CareSelect"       component={CareSelectScreen} />
+      <Stack.Screen name="RelationSetup"    component={RelationSetupScreen} />
       <Stack.Screen name="PersonaCreate"   component={PersonaCreateScreen} />
       <Stack.Screen name="PersonaEdit"     component={PersonaEditScreen} />
       <Stack.Screen name="AIGenerating"    component={AIGeneratingScreen} />

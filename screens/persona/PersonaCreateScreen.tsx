@@ -6,6 +6,7 @@ import {
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { parseKakaoChat, generateSystemPrompt, generatePetSystemPrompt, ParsedKakaoChat } from '../../services/kakaoParser'
 import { createPersona, uploadPersonaPhoto } from '../../services/personaService'
@@ -15,6 +16,7 @@ import { C, RADIUS } from '../theme'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'PersonaCreate'>
+  route: RouteProp<RootStackParamList, 'PersonaCreate'>
 }
 
 type KakaoParseResult = {
@@ -23,7 +25,7 @@ type KakaoParseResult = {
   fileName: string
 }
 
-const RELATIONS = ['부모님', '배우자', '연인', '친구', '형제/자매', '자녀', '반려동물', '기타']
+const RELATIONS = ['부모님', '배우자', '연인', '친구', '형제/자매', '자녀', '기타']
 
 /** 이름 마지막 글자 받침 유무에 따라 "이름아/이름야" 반환 */
 function getCallingForm(name: string): string {
@@ -35,12 +37,14 @@ function getCallingForm(name: string): string {
   return jongseong === 0 ? `${name}야` : `${name}아`
 }
 
-export default function PersonaCreateScreen({ navigation }: Props) {
+export default function PersonaCreateScreen({ navigation, route }: Props) {
   const { user } = useAuth()
   const { t } = useLanguage()
-  const [name, setName] = useState('')
+  const { careType = 'human', relation: routeRelation, name: routeName } = route.params ?? {}
+  const isPet = careType === 'pet'
+  const [name, setName] = useState(routeName ?? '')
   const [userNickname, setUserNickname] = useState('')  // 페르소나가 나를 부르던 애칭
-  const [relationship, setRelationship] = useState('')
+  const [relationship, setRelationship] = useState(routeRelation ?? '')
   const [activeTab, setActiveTab] = useState<'manual' | 'kakao'>('manual')
   const [manualText, setManualText] = useState('')
   const [kakaoRawText, setKakaoRawText] = useState('')
@@ -53,7 +57,8 @@ export default function PersonaCreateScreen({ navigation }: Props) {
   const [agreedToService, setAgreedToService] = useState(false)
   // 반려동물 종류
   const PET_TYPES = ['강아지', '고양이', '햄스터', '토끼', '앵무새', '다른 동물']
-  const [animalType, setAnimalType] = useState('')
+  // For pet flow: pre-filled from RelationSetup route param
+  const [animalType, setAnimalType] = useState(isPet ? (routeRelation ?? '') : '')
   const [customAnimal, setCustomAnimal] = useState('')
   // 기타 관계 직접 입력
   const [customRelationship, setCustomRelationship] = useState('')
@@ -254,9 +259,13 @@ export default function PersonaCreateScreen({ navigation }: Props) {
   const resolvedRelationship = relationship === '기타' ? customRelationship.trim() : relationship
 
   const canSubmit = (): boolean => {
-    if (!name.trim() || !relationship || !agreedToService) return false
+    if (!name.trim() || !agreedToService) return false
+    if (isPet) {
+      if (!resolvedAnimalType) return false
+      return manualText.trim().length >= 20
+    }
+    if (!relationship) return false
     if (relationship === '기타' && !customRelationship.trim()) return false
-    if (relationship === '반려동물' && !resolvedAnimalType) return false
     if (activeTab === 'manual') return manualText.trim().length >= 20
     if (activeTab === 'kakao') return parseResult !== null && kakaoRawText.trim().length > 0
     return false
@@ -273,15 +282,15 @@ export default function PersonaCreateScreen({ navigation }: Props) {
       setCreateErrorMsg(
         !name.trim()
           ? t.personaCreate.errorNameRequired
-          : !relationship
-          ? t.personaCreate.errorRelationRequired
-          : relationship === '기타' && !customRelationship.trim()
-          ? t.personaCreate.errorRelationCustomRequired
-          : relationship === '반려동물' && !resolvedAnimalType
+          : isPet && !resolvedAnimalType
           ? t.personaCreate.errorPetTypeRequired
-          : activeTab === 'kakao' && !parseResult
+          : !isPet && !relationship
+          ? t.personaCreate.errorRelationRequired
+          : !isPet && relationship === '기타' && !customRelationship.trim()
+          ? t.personaCreate.errorRelationCustomRequired
+          : !isPet && activeTab === 'kakao' && !parseResult
           ? t.personaCreate.errorKakaoRequired
-          : activeTab === 'manual' && manualText.trim().length < 20
+          : manualText.trim().length < 20
           ? t.personaCreate.errorMemoryTooShort
           : !agreedToService
           ? t.personaCreate.errorConsentRequired
@@ -295,7 +304,10 @@ export default function PersonaCreateScreen({ navigation }: Props) {
     try {
       let systemPrompt = ''
 
-      if (activeTab === 'kakao' && parseResult) {
+      if (isPet) {
+        // 반려동물 전용 프롬프트 (펫로스 특화)
+        systemPrompt = generatePetSystemPrompt(name.trim(), resolvedAnimalType, manualText.trim())
+      } else if (activeTab === 'kakao' && parseResult) {
         systemPrompt = generateSystemPrompt(parseResult.parsed, resolvedRelationship)
       } else if (activeTab === 'kakao' && kakaoRawText) {
         // fallback: parseResult 없이 rawText만 있는 경우
@@ -303,9 +315,6 @@ export default function PersonaCreateScreen({ navigation }: Props) {
         systemPrompt = generateSystemPrompt(parsed, resolvedRelationship)
       } else if (activeTab === 'kakao') {
         throw new Error(t.personaCreate.errorKakaoRequired)
-      } else if (relationship === '반려동물') {
-        // 반려동물 전용 프롬프트 (펫로스 특화)
-        systemPrompt = generatePetSystemPrompt(name.trim(), resolvedAnimalType, manualText.trim())
       } else {
         // 직접 작성: manualText를 시스템 프롬프트에 반영
         systemPrompt = `당신은 ${name.trim()}입니다. 사용자와 ${resolvedRelationship} 관계입니다.
@@ -334,8 +343,8 @@ ${manualText.trim()}
 
       const personaId = await createPersona({
         name: name.trim(),
-        relationship: resolvedRelationship,
-        rawChatText: activeTab === 'kakao' ? kakaoRawText : manualText,
+        relationship: isPet ? resolvedAnimalType : resolvedRelationship,
+        rawChatText: isPet ? manualText : (activeTab === 'kakao' ? kakaoRawText : manualText),
         systemPrompt,
         parsedMessages: parseResult?.parsed.messages ?? [],
         messageStyle: parseResult ? {
@@ -413,10 +422,10 @@ ${manualText.trim()}
 
         {/* 이름 입력 */}
         <View style={styles.section}>
-          <Text style={styles.label}>{relationship === '반려동물' ? t.personaCreate.nameLabelPet : t.personaCreate.nameLabelHuman}</Text>
+          <Text style={styles.label}>{isPet ? t.personaCreate.nameLabelPet : t.personaCreate.nameLabelHuman}</Text>
           <TextInput
             style={styles.input}
-            placeholder={relationship === '반려동물' ? t.personaCreate.namePlaceholderPet : t.personaCreate.namePlaceholderHuman}
+            placeholder={isPet ? t.personaCreate.namePlaceholderPet : t.personaCreate.namePlaceholderHuman}
             value={name}
             onChangeText={setName}
             maxLength={20}
@@ -424,54 +433,58 @@ ${manualText.trim()}
           />
         </View>
 
-        {/* 애칭 입력 (선택) */}
-        <View style={styles.section}>
-          <Text style={styles.label}>
-            {t.personaCreate.myNameLabel}
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder={t.personaCreate.myNamePlaceholder}
-            value={userNickname}
-            onChangeText={setUserNickname}
-            maxLength={20}
-            placeholderTextColor="#B0A89E"
-          />
-          <Text style={styles.inputHint}>
-            {t.personaCreate.myNameHint}
-          </Text>
-        </View>
-
-        {/* 관계 선택 */}
-        <View style={styles.section}>
-          <Text style={styles.label}>{t.personaCreate.relationLabel}</Text>
-          <View style={styles.relationRow}>
-            {RELATIONS.map(rel => (
-              <TouchableOpacity
-                key={rel}
-                style={[styles.relationBtn, relationship === rel && styles.relationBtnActive]}
-                onPress={() => { setRelationship(rel); if (rel !== '반려동물') { setAnimalType(''); setCustomAnimal('') } if (rel !== '기타') setCustomRelationship('') }}
-              >
-                <Text style={[styles.relationText, relationship === rel && styles.relationTextActive]}>
-                  {rel}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          {relationship === '기타' && (
+        {/* 애칭 입력 (선택) — 사람 케어에서만 표시 */}
+        {!isPet && (
+          <View style={styles.section}>
+            <Text style={styles.label}>
+              {t.personaCreate.myNameLabel}
+            </Text>
             <TextInput
-              style={[styles.input, { marginTop: 12 }]}
-              placeholder={t.personaCreate.relationOtherPlaceholder}
-              value={customRelationship}
-              onChangeText={setCustomRelationship}
+              style={styles.input}
+              placeholder={t.personaCreate.myNamePlaceholder}
+              value={userNickname}
+              onChangeText={setUserNickname}
               maxLength={20}
               placeholderTextColor="#B0A89E"
             />
-          )}
-        </View>
+            <Text style={styles.inputHint}>
+              {t.personaCreate.myNameHint}
+            </Text>
+          </View>
+        )}
 
-        {/* 반려동물 종류 선택 */}
-        {relationship === '반려동물' && (
+        {/* 관계 선택 — 사람 케어에서만 표시 */}
+        {!isPet && (
+          <View style={styles.section}>
+            <Text style={styles.label}>{t.personaCreate.relationLabel}</Text>
+            <View style={styles.relationRow}>
+              {RELATIONS.map(rel => (
+                <TouchableOpacity
+                  key={rel}
+                  style={[styles.relationBtn, relationship === rel && styles.relationBtnActive]}
+                  onPress={() => { setRelationship(rel); if (rel !== '기타') setCustomRelationship('') }}
+                >
+                  <Text style={[styles.relationText, relationship === rel && styles.relationTextActive]}>
+                    {rel}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {relationship === '기타' && (
+              <TextInput
+                style={[styles.input, { marginTop: 12 }]}
+                placeholder={t.personaCreate.relationOtherPlaceholder}
+                value={customRelationship}
+                onChangeText={setCustomRelationship}
+                maxLength={20}
+                placeholderTextColor="#B0A89E"
+              />
+            )}
+          </View>
+        )}
+
+        {/* 반려동물 종류 선택 — 펫 케어에서만 표시 */}
+        {isPet && (
           <View style={styles.section}>
             <Text style={styles.label}>{t.personaCreate.petTypeLabel}</Text>
             <View style={styles.relationRow}>
@@ -498,35 +511,39 @@ ${manualText.trim()}
           </View>
         )}
 
-        {/* 탭 */}
+        {/* 탭 — 펫 케어는 직접 작성만, 사람 케어는 탭 선택 */}
         <View style={styles.section}>
           <Text style={styles.label}>
             {name ? t.personaCreate.memoryTitleWithName(name) : t.personaCreate.memoryTitle}
           </Text>
-          <View style={styles.tabRow}>
-            <Pressable
-              style={[styles.tab, activeTab === 'manual' && styles.tabActive]}
-              onPress={() => setActiveTab('manual')}
-            >
-              <Text style={[styles.tabText, activeTab === 'manual' && styles.tabTextActive]}>
-                {t.personaCreate.tabWrite}
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[styles.tab, activeTab === 'kakao' && styles.tabActive]}
-              onPress={() => setActiveTab('kakao')}
-            >
-              <Text style={[styles.tabText, activeTab === 'kakao' && styles.tabTextActive]}>
-                {t.personaCreate.tabKakao}
-              </Text>
-            </Pressable>
-          </View>
+          {!isPet && (
+            <View style={styles.tabRow}>
+              <Pressable
+                style={[styles.tab, activeTab === 'manual' && styles.tabActive]}
+                onPress={() => setActiveTab('manual')}
+              >
+                <Text style={[styles.tabText, activeTab === 'manual' && styles.tabTextActive]}>
+                  {t.personaCreate.tabWrite}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.tab, activeTab === 'kakao' && styles.tabActive]}
+                onPress={() => setActiveTab('kakao')}
+              >
+                <Text style={[styles.tabText, activeTab === 'kakao' && styles.tabTextActive]}>
+                  {t.personaCreate.tabKakao}
+                </Text>
+              </Pressable>
+            </View>
+          )}
 
-          {activeTab === 'manual' ? (
+          {(activeTab === 'manual' || isPet) ? (
             <View>
               <TextInput
                 style={styles.manualInput}
-                placeholder={`${t.personaCreate.writePlaceholder(name || '그분')}\n\n${t.personaCreate.writeExample}`}
+                placeholder={isPet
+                  ? `${t.personaCreate.writePlaceholderPet(name || '반려동물')}\n\n${t.personaCreate.writeExamplePet}`
+                  : `${t.personaCreate.writePlaceholder(name || '그분')}\n\n${t.personaCreate.writeExample}`}
                 value={manualText}
                 onChangeText={setManualText}
                 multiline
@@ -650,7 +667,7 @@ ${manualText.trim()}
               </View>
             ) : (
               <Text style={styles.submitBtnText}>
-                {canSubmit() ? t.personaCreate.submitBtn : !name.trim() ? t.personaCreate.errorNameRequired : !relationship ? t.personaCreate.errorRelationRequired : activeTab === 'kakao' && !parseResult ? t.personaCreate.errorKakaoRequired : activeTab === 'manual' && manualText.trim().length < 20 ? t.personaCreate.errorMemoryTooShort : !agreedToService ? t.personaCreate.errorConsentRequired : t.personaCreate.submitBtn}
+                {canSubmit() ? t.personaCreate.submitBtn : !name.trim() ? t.personaCreate.errorNameRequired : isPet && !resolvedAnimalType ? t.personaCreate.errorPetTypeRequired : !isPet && !relationship ? t.personaCreate.errorRelationRequired : manualText.trim().length < 20 ? t.personaCreate.errorMemoryTooShort : !agreedToService ? t.personaCreate.errorConsentRequired : t.personaCreate.submitBtn}
               </Text>
             )}
           </LinearGradient>

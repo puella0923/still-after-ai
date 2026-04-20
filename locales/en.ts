@@ -300,6 +300,9 @@ const en: Translations = {
     writePlaceholder: (name: string) =>
       `Write freely about ${name}'s way of speaking, favorite phrases, and memorable moments.`,
     writeExample: "e.g. Mom was always warm and a little worried about everything...",
+    writePlaceholderPet: (name: string) =>
+      `Write freely about ${name}'s personality, favorite things, special moments you shared, and adorable habits.`,
+    writeExamplePet: "e.g. Coco always wagged their tail like crazy on walks. They'd stare at me every time I ate...",
     charCountHint: '(Please enter at least 20 characters)',
     kakaoDesc: "Upload your chat history together. We'll carefully capture their unique tone and warmth.",
     kakaoInstructions: 'KakaoTalk → Chat room → Menu (≡) → Export chat → Select .txt or .csv file',

@@ -1,4 +1,3 @@
-// @ts-nocheck — 미사용 레거시 화면 (PersonaCreateScreen으로 통합됨)
 import React from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, Platform, Dimensions,
@@ -23,7 +22,7 @@ const STAR_DOTS = Array.from({ length: 25 }, (_, i) => ({
 
 export default function CareSelectScreen({ navigation }: Props) {
   const { t } = useLanguage()
-  const handleSelect = (careType: 'person' | 'pet') => {
+  const handleSelect = (careType: 'human' | 'pet') => {
     navigation.navigate('RelationSetup', { careType })
   }
 
@@ -45,7 +44,7 @@ export default function CareSelectScreen({ navigation }: Props) {
         </View>
 
         <View style={styles.cardRow}>
-          <TouchableOpacity style={styles.card} onPress={() => handleSelect('person')} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.card} onPress={() => handleSelect('human')} activeOpacity={0.85}>
             <LinearGradient colors={['rgba(168, 85, 247, 0.15)', 'rgba(219, 39, 119, 0.1)']} style={styles.cardGrad}>
               <Text style={styles.cardEmoji}>🧑‍🤝‍🧑</Text>
               <Text style={styles.cardTitle}>{t.careSelect.humanLabel}</Text>

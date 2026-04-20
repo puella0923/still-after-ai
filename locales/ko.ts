@@ -297,6 +297,9 @@ const ko = {
     writePlaceholder: (name: string) =>
       `${name}의 말투, 자주 하던 말, 기억에 남는 순간들을 자유롭게 적어주세요.`,
     writeExample: '예) 엄마는 항상 걱정이 많고 따뜻했어...',
+    writePlaceholderPet: (name: string) =>
+      `${name}의 성격, 좋아하던 것들, 함께했던 특별한 순간들, 귀여운 버릇들을 자유롭게 적어주세요.`,
+    writeExamplePet: '예) 초코는 산책할 때마다 꼬리를 세차게 흔들었어. 밥 먹을 때 항상 나를 빤히 쳐다봤고...',
     charCountHint: '(20자 이상 입력해주세요)',
     kakaoDesc: '함께 나눈 카카오톡 대화를 올려주세요. 그 분만의 말투와 온기를 조심스럽게 담아낼게요.',
     kakaoInstructions: '카카오톡 앱 → 채팅방 → 우측 상단 메뉴(≡) → 대화 내보내기 → .txt 또는 .csv 파일 선택',
