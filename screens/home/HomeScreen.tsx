@@ -264,6 +264,17 @@ export default function HomeScreen() {
           })}
         </View>
 
+        {/* Stage filter description — only shown when a specific stage is active */}
+        {filter !== 'all' && (
+          <View style={styles.filterDescRow}>
+            <Text style={styles.filterDescText}>
+              {filter === 'replay' ? t.home.filterDescReplay
+                : filter === 'stable' ? t.home.filterDescStable
+                : t.home.filterDescClosure}
+            </Text>
+          </View>
+        )}
+
         {/* Content */}
         {loading ? (
           <View style={styles.loadingWrap}>
@@ -536,6 +547,15 @@ const styles = StyleSheet.create({
     ...(({ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }) as any),
   },
   filterPillText: { fontSize: 13, fontWeight: '500', color: 'rgba(196, 181, 253, 0.8)' },
+
+  // Stage filter description
+  filterDescRow: {
+    marginHorizontal: 20, marginTop: -12, marginBottom: 20,
+    paddingHorizontal: 14, paddingVertical: 10,
+    backgroundColor: 'rgba(167, 139, 250, 0.07)',
+    borderRadius: 10, borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.15)',
+  },
+  filterDescText: { fontSize: 12, color: 'rgba(196, 181, 253, 0.7)', lineHeight: 18 },
 
   // Loading
   loadingWrap: { paddingVertical: 60, alignItems: 'center' },
