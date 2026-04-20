@@ -445,7 +445,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={persona.id}
                 style={styles.archivedCard}
-                onPress={() => navigation.navigate('PersonaList')}
+                onPress={() => navigation.navigate('Chat', { personaId: persona.id })}
                 activeOpacity={0.75}
               >
                 <View style={styles.archivedAvatarWrap}>

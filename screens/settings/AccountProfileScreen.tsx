@@ -415,10 +415,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingTop: 56, paddingBottom: 12,
     borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)',
   },
-  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
+  backBtn: { height: 36, minWidth: 60, alignItems: 'center', justifyContent: 'center' },
+  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' as any },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '600', color: '#fff' },
-  langToggle: { width: 70, alignItems: 'flex-end' },
+  langToggle: { minWidth: 100, alignItems: 'flex-end' },
 
   content: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 20 },
 
