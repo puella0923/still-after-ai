@@ -7,6 +7,7 @@ import PersonaListScreen from '../screens/persona/PersonaListScreen'
 import PersonaCreateScreen from '../screens/persona/PersonaCreateScreen'
 import CareSelectScreen from '../screens/care/CareSelectScreen'
 import RelationSetupScreen from '../screens/care/RelationSetupScreen'
+import TimingCheckScreen from '../screens/care/TimingCheckScreen'
 import AIGeneratingScreen from '../screens/persona/AIGeneratingScreen'
 import PaywallScreen from '../screens/paywall/PaywallScreen'
 import SettingsScreen from '../screens/settings/SettingsScreen'
@@ -26,7 +27,8 @@ export type RootStackParamList = {
   PersonaList: undefined
   CareSelect: undefined
   RelationSetup: { careType: 'human' | 'pet' }
-  PersonaCreate: { careType: 'human' | 'pet'; relation?: string; name?: string }
+  TimingCheck: { careType: 'human' | 'pet'; relation: string; name: string }
+  PersonaCreate: { careType: 'human' | 'pet'; relation?: string; name?: string; timing?: string }
   PersonaEdit: {
     personaId: string
     personaName: string
@@ -41,7 +43,7 @@ export type RootStackParamList = {
   PrivacyPolicy: undefined
   Terms: undefined
   CustomerSupport: undefined
-  ClosureCeremony: { personaId: string; personaName: string; aiFarewell: string }
+  ClosureCeremony: { personaId: string; personaName: string; aiFarewell: string; careType?: string }
   Main: undefined
   Chat: { personaId: string }
 }
@@ -64,6 +66,7 @@ export default function RootNavigator({ initialRouteName }: Props) {
       <Stack.Screen name="PersonaList"     component={PersonaListScreen} />
       <Stack.Screen name="CareSelect"       component={CareSelectScreen} />
       <Stack.Screen name="RelationSetup"    component={RelationSetupScreen} />
+      <Stack.Screen name="TimingCheck"      component={TimingCheckScreen} />
       <Stack.Screen name="PersonaCreate"   component={PersonaCreateScreen} />
       <Stack.Screen name="PersonaEdit"     component={PersonaEditScreen} />
       <Stack.Screen name="AIGenerating"    component={AIGeneratingScreen} />

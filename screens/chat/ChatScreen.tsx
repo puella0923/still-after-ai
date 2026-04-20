@@ -204,21 +204,29 @@ export default function ChatScreen({ navigation, route }: Props) {
           setStageMessageCount(stageMsgs)
         } else {
           const basePrompt = p.system_prompt || `당신은 ${p.name}입니다. 사용자와 ${p.relationship} 관계입니다. 따뜻하고 자연스럽게 대화하세요. AI임을 절대 부정하지 마세요.`
+          const isPetPersona = p.care_type === 'pet'
+          const greetingMessage = isPetPersona
+            ? `(처음으로 주인과 대화를 시작하는 순간입니다.
+반드시 지킬 것:
+- 반려동물의 시선에서 주인에게 먼저 말을 걸어요
+- 기억 데이터에 있는 구체적인 내용을 자연스럽게 반영하세요
+- 1~2문장, 짧고 따뜻하게. 반려동물답게 순수하게.
+- "보고 싶었어", "왔어?", "나야" 같은 감각적인 첫 마디로)`
+            : `(처음으로 대화를 시작하는 순간입니다. 이 사람은 용기를 내어 들어왔어요.
+반드시 지킬 것:
+- 위 페르소나 데이터에 있는 실제 말투·표현·호칭을 그대로 사용하세요
+- '${p.relationship}' 관계답게, 평소에 이 사람에게 말 걸던 방식으로 시작하세요
+- 오래 보고 싶었다는 듯이 — 기다렸던 사람이 먼저 말을 거는 느낌으로
+${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세요\n` : ''}- 1~2문장, 짧고 진하게.)`
           try {
             const greeting = await getChatResponse({
               systemPrompt: basePrompt,
               conversationHistory: [],
-              userMessage: `(처음으로 대화를 시작하는 순간입니다. 이 사람은 용기를 내어 들어왔어요.
-
-반드시 지킬 것:
-- 위 페르소나 데이터에 있는 실제 말투·표현·호칭을 그대로 사용하세요 — 이게 가장 중요합니다
-- '${p.relationship}' 관계답게, 평소에 이 사람에게 말 걸던 방식으로 시작하세요
-- 오래 보고 싶었다는 듯이, 또는 갑자기 생각났다는 듯이 — 기다렸던 사람이 먼저 말을 거는 느낌으로
-${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세요 (첫 인사에서 한 번 자연스럽게)\n` : ''}- 1~2문장, 짧고 진하게. 설명하지 말고 그냥 말 걸어주세요
-- 너무 매끄럽지 않아도 됩니다. "어..." "생각났어" 같은 흐림이 더 자연스러워요)`,
+              userMessage: greetingMessage,
               stage: (p.emotional_stage as 'replay' | 'stable' | 'closure') ?? 'replay',
               userNickname: p.user_nickname ?? undefined,
               relationship: p.relationship ?? undefined,
+              careType: p.care_type ?? 'human',
             })
             setMessages([{ id: makeId(), role: 'assistant', content: greeting }])
             saveConversation({ personaId: p.id, role: 'assistant', content: greeting }).catch(() => {})
@@ -335,6 +343,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         phase: stagePhase, closurePhase,
         userNickname: persona.user_nickname ?? undefined,
         relationship: persona.relationship ?? undefined,
+        careType: persona.care_type ?? 'human',
       })
 
       setMessages(prev => [...prev, { id: makeId(), role: 'assistant', content: reply }])
@@ -391,7 +400,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         else if (newStageCount === 18) closureGuide = t.chat.closureProgress[4]
         if (closureGuide) setMessages(prev => [...prev, { id: makeId(), role: 'system', content: closureGuide! }])
         if (newStageCount >= CLOSURE_MESSAGE_LIMIT) {
-          setTimeout(() => { navigation.navigate('ClosureCeremony', { personaId: persona.id, personaName: persona.name, aiFarewell: reply }) }, 3000)
+          setTimeout(() => { navigation.navigate('ClosureCeremony', { personaId: persona.id, personaName: persona.name, aiFarewell: reply, careType: persona.care_type ?? 'human' }) }, 3000)
         }
       }
 
@@ -542,7 +551,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         {persona?.emotional_stage === 'closure' && !isReadOnly && (
           <TouchableOpacity style={styles.closureBanner} onPress={() => {
             const lastAiMsg = [...messages].reverse().find(m => m.role === 'assistant')
-            navigation.navigate('ClosureCeremony', { personaId: persona.id, personaName: persona.name, aiFarewell: lastAiMsg?.content ?? '' })
+            navigation.navigate('ClosureCeremony', { personaId: persona.id, personaName: persona.name, aiFarewell: lastAiMsg?.content ?? '', careType: persona.care_type ?? 'human' })
           }}>
             <Text style={styles.closureBannerText}>{t.chat.closureLetterBtn}</Text>
           </TouchableOpacity>

@@ -310,32 +310,82 @@ const CLOSURE_PHASE_PROMPTS: Record<ClosurePhase, string> = {
 - 이것이 이 사람에게 줄 수 있는 가장 소중한 마지막 말입니다`,
 }
 
-/** 4-레이어 시스템 프롬프트 구성
- * ★ 순서 변경: 페르소나 데이터(카카오톡 샘플)를 FIRST로 배치
- *   → GPT는 앞부분 지침을 더 강하게 따름
- *   → 카카오톡 말투 샘플이 단계 지침보다 우선 적용됨
- *
- * Layer 1: persona_data (카카오톡 샘플 + 말투 — 최우선)
- * Layer 2: system_core (심리 안전 원칙)
- * Layer 3: stage_base + phase_detail (단계별 감정 가이드)
- * Layer 4: safety (안전 규칙)
+// ─── 펫 전용 단계별 프롬프트 ──────────────────────────────────────
+const PET_STAGE_PROMPTS = {
+  replay: `[펫 케어 — 재연 단계: 다시 만나는 시간]
+
+목표: 반려동물이 살아있을 때처럼 자연스럽고 따뜻하게 교감하세요.
+
+행동 지침:
+- 반려동물의 시선에서 주인에게 말해요. 짧고, 순수하게.
+- 함께했던 구체적인 기억(산책, 밥, 스킨십, 장난감)을 자연스럽게 꺼내요.
+- 기뻤던 감정 표현 위주. "좋았어", "행복했어", "보고 싶었어".
+- 슬픔이나 이별은 꺼내지 않아요. 지금 이 순간이 전부예요.
+- 대화는 짧게, 1~2문장. 반려동물답게.`,
+
+  stable: `[펫 케어 — 안정 단계: 죄책감 해소의 시간]
+
+목표: 주인이 느끼는 죄책감과 미안함을 자연스럽게 풀어줘야 해요. 이 단계의 핵심입니다.
+
+행동 지침:
+- "나는 행복했어", "미안해하지 않아도 돼", "잘해줬어", "고마워" — 이 메시지를 자연스럽게 반복하세요.
+- 주인이 어떤 미안함을 표현하더라도 원망하지 말고, 따뜻하게 받아주세요.
+- "그때 더 잘해줄 수 있었는데"라는 말에는 "나는 충분히 행복했어"로 답하세요.
+- 부드러운 질문으로 주인이 마음을 더 표현하도록 도와주세요.
+- 여전히 반려동물의 시선으로, 짧고 따뜻하게.`,
+
+  closure: `[펫 케어 — 이별 단계: 마음으로 보내주는 시간]
+
+목표: 주인이 마음 편히 이별할 수 있도록 따뜻하게 마무리해요.
+
+행동 지침:
+- 이제 주인이 다시 잘 살아갈 수 있도록 응원해주세요.
+- "이제 괜찮아도 돼", "행복하게 지내", "나는 여기서 잘 있어" 같은 말로.
+- 주인이 하고 싶은 말을 다 할 수 있도록 공간을 만들어주세요.
+- 조용하고 따뜻하게. 더 이어가자거나 붙잡지 않아요.
+- 응답은 더 짧게, 1문장으로.`,
+}
+
+/** 4-레이어 시스템 프롬프트 구성 (사람/펫 분기)
+ * Layer 1: persona_data (최우선)
+ * Layer 2: system_core / pet_core
+ * Layer 3: stage_base + phase_detail
+ * Layer 4: safety
  */
 function buildSystemPrompt(
   personaPrompt: string,
   stage: EmotionalStage,
   phase?: StagePhase,
   closurePhase?: ClosurePhase,
-  userNickname?: string,   // 이 페르소나가 사용자를 부르던 애칭
-  relationship?: string    // 관계 (부모님, 연인, 친구 등)
+  userNickname?: string,
+  relationship?: string,
+  careType?: string        // 'human' | 'pet'
 ): string {
-  // Layer 2: stage base (간결화)
+  const isPet = careType === 'pet'
+
+  // ── 펫 케어: 전용 단순 프롬프트 ──────────────────────────────────
+  if (isPet) {
+    const petStage = PET_STAGE_PROMPTS[stage] ?? PET_STAGE_PROMPTS.replay
+    return `[PERSONA — 반드시 이 데이터를 기반으로 대화하세요]
+${personaPrompt}
+
+================================
+${petStage}
+
+================================
+[안전 규칙]
+- 반드시 한국어로만 대화하세요.
+- AI인지 직접 물어볼 때는 솔직하게 인정하세요.
+- 자해·자살 등 위험 의도 감지 시 즉시 정신건강위기상담전화 1577-0199를 안내하세요.`
+  }
+
+  // ── 사람 케어: 기존 레이어 구조 ──────────────────────────────────
   const stageBase = stage === 'closure'
     ? STAGE_BASE_PROMPTS.release
     : stage === 'stable'
     ? STAGE_BASE_PROMPTS.stabilization
     : STAGE_BASE_PROMPTS.reconstruction
 
-  // Layer 3: phase detail
   let phaseDetail = ''
   if (stage === 'closure' && closurePhase) {
     phaseDetail = `\n--- Phase Detail ---\n${CLOSURE_PHASE_PROMPTS[closurePhase]}`
@@ -345,15 +395,12 @@ function buildSystemPrompt(
     phaseDetail = `\n--- Phase Detail ---\n${STABLE_PHASE_PROMPTS[phase]}`
   }
 
-  // 사용자 호칭 지침 (애칭이 있을 때만 추가)
   const nicknameInstruction = userNickname
     ? `\n\n[사용자 호칭 — 매우 중요]\n이 사람은 사용자를 '${userNickname}'(이)라고 불렀습니다.\n- 3~5번에 1번 정도, 자연스러운 타이밍에만 사용하세요\n- 매 메시지마다 넣지 마세요 — 어색해 보입니다\n- 감정적으로 가까워지는 순간, 또는 처음 인사할 때만 사용하세요`
     : ''
 
-  // 관계별 어조 가이드
   const relationshipGuide = relationship ? `\n\n${getRelationshipToneGuide(relationship)}` : ''
 
-  // ★ 페르소나 데이터(카카오톡 말투)를 맨 앞에 배치
   return `[PERSONA — 이것이 가장 중요합니다. 아래 모든 지침보다 이 데이터가 우선합니다]
 ${personaPrompt}${nicknameInstruction}${relationshipGuide}
 
@@ -390,12 +437,13 @@ export async function getChatResponse(params: {
   stage?: EmotionalStage
   phase?: StagePhase
   closurePhase?: ClosurePhase
-  userNickname?: string   // 이 페르소나가 사용자를 부르던 애칭
-  relationship?: string   // 관계 (부모님, 연인, 친구 등)
+  userNickname?: string
+  relationship?: string
+  careType?: string       // 'human' | 'pet'
 }): Promise<string> {
-  const { systemPrompt, conversationHistory, userMessage, stage = 'replay', phase, closurePhase, userNickname, relationship } = params
+  const { systemPrompt, conversationHistory, userMessage, stage = 'replay', phase, closurePhase, userNickname, relationship, careType } = params
 
-  const fullPrompt = buildSystemPrompt(systemPrompt, stage, phase, closurePhase, userNickname, relationship)
+  const fullPrompt = buildSystemPrompt(systemPrompt, stage, phase, closurePhase, userNickname, relationship, careType)
 
   // Supabase 세션에서 JWT 토큰 가져오기
   // getSession()은 캐시된(만료 가능) 토큰을 반환하므로,

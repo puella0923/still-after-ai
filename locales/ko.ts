@@ -473,6 +473,17 @@ const ko = {
     completedSub: '그 분과 함께한 모든 순간은 당신 안에 남아있어요.\n담아두셨던 마음을 꺼내준 것만으로도 충분해요.\n\n이제 조금 더 가볍게, 오늘을 살아가도 괜찮아요.\n편지와 대화 기록은 언제든 다시 읽을 수 있어요.',
     homeBtn: '홈으로 돌아가기',
     healingNote: '이별은 끝이 아니에요.\n그 분은 당신이 살아가는 날들 안에서 함께 있어요.',
+    // Pet-specific overrides
+    petAiLetterLabel: (name: string) => `${name}이/가 남긴 온기`,
+    petIntro: '이제 당신이 답할 차례예요. 그 아이에게 담아두셨던 말씀을 꺼내보세요. 서두르지 않아도 돼요.',
+    petPlaceholder: (name: string) => `사랑하는 ${name}에게, ...`,
+    petSealBtn: '편지 봉인하기 — 작별 인사 🐾',
+    petModalTitle: '🐾 천천히 보내드릴게요',
+    petModalMsg: (name: string) =>
+      `${name}에게 쓴 편지를 간직하고 대화를 조심스럽게 마무리할게요. 봉인 후에도 편지와 대화 기록은 언제든 다시 읽을 수 있어요.`,
+    petCompletedEmoji: '🐾',
+    petCompletedSub: '그 아이와 함께한 모든 순간은 당신 안에 남아있어요.\n아무것도 잊혀지지 않아요. 다만 더 따뜻하게 기억될 뿐이에요.\n\n이제 조금 더 가볍게, 오늘을 살아가도 괜찮아요.\n편지와 대화 기록은 언제든 다시 읽을 수 있어요.',
+    petHealingNote: '이별은 끝이 아니에요.\n그 아이는 당신이 살아가는 날들 안에서 함께 있어요.',
   },
 
   // ── Persona List ──

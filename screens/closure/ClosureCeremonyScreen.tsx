@@ -40,8 +40,9 @@ const STAR_DOTS = Array.from({ length: 30 }, (_, i) => ({
 const DRAFT_KEY_PREFIX = '@stillafter/closure_draft_'
 
 export default function ClosureCeremonyScreen({ navigation, route }: Props) {
-  const { personaId, personaName, aiFarewell } = route.params
+  const { personaId, personaName, aiFarewell, careType } = route.params
   const { t } = useLanguage()
+  const isPet = careType === 'pet'
   const draftKey = `${DRAFT_KEY_PREFIX}${personaId}`
 
   const [letter, setLetter] = useState('')
@@ -188,15 +189,15 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
 
           {completed && (
             <Animated.View style={[styles.completedContainer, { opacity: completedOpacity }]}>
-              <Text style={styles.completedEmoji}>🌸</Text>
+              <Text style={styles.completedEmoji}>{isPet ? t.closure.petCompletedEmoji : '🌸'}</Text>
               <Text style={styles.completedTitle}>{t.closure.completedTitle}</Text>
-              <Text style={styles.completedSub}>{t.closure.completedSub}</Text>
+              <Text style={styles.completedSub}>{isPet ? t.closure.petCompletedSub : t.closure.completedSub}</Text>
               <TouchableOpacity onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Main' }] })} activeOpacity={0.85}>
                 <LinearGradient colors={['#6366f1', '#a855f7']} style={styles.homeBtn}>
                   <Text style={styles.homeBtnText}>{t.closure.homeBtn}</Text>
                 </LinearGradient>
               </TouchableOpacity>
-              <Text style={styles.healingNote}>{t.closure.healingNote}</Text>
+              <Text style={styles.healingNote}>{isPet ? t.closure.petHealingNote : t.closure.healingNote}</Text>
             </Animated.View>
           )}
         </Animated.View>
@@ -226,18 +227,20 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
         <View style={styles.content}>
           {!!aiFarewell && (
             <View style={styles.farewellCard}>
-              <Text style={styles.farewellLabel}>{t.closure.aiLetterLabel(personaName)}</Text>
+              <Text style={styles.farewellLabel}>
+                {isPet ? t.closure.petAiLetterLabel(personaName) : t.closure.aiLetterLabel(personaName)}
+              </Text>
               <Text style={styles.farewellText}>"{aiFarewell}"</Text>
             </View>
           )}
 
-          <Text style={styles.intro}>{t.closure.intro}</Text>
+          <Text style={styles.intro}>{isPet ? t.closure.petIntro : t.closure.intro}</Text>
 
           <TextInput
             style={styles.letterInput}
             multiline
             numberOfLines={12}
-            placeholder={t.closure.placeholder(personaName)}
+            placeholder={isPet ? t.closure.petPlaceholder(personaName) : t.closure.placeholder(personaName)}
             placeholderTextColor="rgba(255,255,255,0.25)"
             value={letter}
             onChangeText={setLetter}
@@ -253,10 +256,10 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
           >
             {letter.trim().length >= 10 ? (
               <LinearGradient colors={['#6366f1', '#a855f7']} style={styles.completeBtnGrad}>
-                <Text style={styles.completeBtnText}>{t.closure.sealBtn}</Text>
+                <Text style={styles.completeBtnText}>{isPet ? t.closure.petSealBtn : t.closure.sealBtn}</Text>
               </LinearGradient>
             ) : (
-              <Text style={[styles.completeBtnText, { color: 'rgba(255,255,255,0.3)' }]}>{t.closure.sealBtn}</Text>
+              <Text style={[styles.completeBtnText, { color: 'rgba(255,255,255,0.3)' }]}>{isPet ? t.closure.petSealBtn : t.closure.sealBtn}</Text>
             )}
           </TouchableOpacity>
 
@@ -268,9 +271,9 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
       <Modal visible={showConfirm} transparent animationType="fade" onRequestClose={() => setShowConfirm(false)}>
         <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setShowConfirm(false)}>
           <TouchableOpacity style={styles.modalBox} activeOpacity={1} onPress={() => {}}>
-            <Text style={styles.modalEmoji}>🌸</Text>
-            <Text style={styles.modalTitle}>{t.closure.modalTitle}</Text>
-            <Text style={styles.modalMessage}>{t.closure.modalMsg(personaName)}</Text>
+            <Text style={styles.modalEmoji}>{isPet ? '🐾' : '🌸'}</Text>
+            <Text style={styles.modalTitle}>{isPet ? t.closure.petModalTitle : t.closure.modalTitle}</Text>
+            <Text style={styles.modalMessage}>{isPet ? t.closure.petModalMsg(personaName) : t.closure.modalMsg(personaName)}</Text>
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowConfirm(false)} activeOpacity={0.7}>
                 <Text style={styles.modalCancelText}>{t.closure.modalCancel}</Text>

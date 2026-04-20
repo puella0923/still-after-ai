@@ -476,6 +476,17 @@ const en: Translations = {
     completedSub: "Every moment spent with them lives on inside you.\nThe fact that you let it out — that's enough.\n\nIt's okay to go on a little lighter from here.\nYou can always come back to read the letter and conversation.",
     homeBtn: 'Return Home',
     healingNote: "Goodbye is not the end.\nThey live on in every day you keep going.",
+    // Pet-specific overrides
+    petAiLetterLabel: (name: string) => `The warmth ${name} left behind`,
+    petIntro: "Now it's your turn. Let out what you've been holding for them. Take your time — there's no rush.",
+    petPlaceholder: (name: string) => `Dear ${name}, ...`,
+    petSealBtn: 'Seal the letter — Say goodbye 🐾',
+    petModalTitle: '🐾 Saying goodbye, gently',
+    petModalMsg: (name: string) =>
+      `Your letter to ${name} will be kept and the conversation carefully concluded. You can always come back to read it after sealing.`,
+    petCompletedEmoji: '🐾',
+    petCompletedSub: "Every moment with them lives on inside you.\nNothing is forgotten — it only grows warmer in time.\n\nIt's okay to go on a little lighter from here.\nYou can always come back to read the letter.",
+    petHealingNote: "Goodbye is not the end.\nThey live on in every day you keep going.",
   },
 
   // ── Persona List ──

@@ -41,10 +41,10 @@ function getCallingForm(name: string): string {
 export default function PersonaCreateScreen({ navigation, route }: Props) {
   const { user } = useAuth()
   const { t } = useLanguage()
-  const { careType = 'human', relation: routeRelation, name: routeName } = route.params ?? {}
+  const { careType = 'human', relation: routeRelation, name: routeName, timing: routeTiming } = route.params ?? {}
   const isPet = careType === 'pet'
   const [name, setName] = useState(routeName ?? '')
-  const [userNickname, setUserNickname] = useState('')  // 페르소나가 나를 부르던 애칭
+  const [userNickname, setUserNickname] = useState('')
   const [relationship, setRelationship] = useState(routeRelation ?? '')
   const [activeTab, setActiveTab] = useState<'manual' | 'kakao'>('manual')
   const [manualText, setManualText] = useState('')
@@ -53,20 +53,26 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
   const [loading, setLoading] = useState(false)
   const [isParsing, setIsParsing] = useState(false)
   const [parseResult, setParseResult] = useState<KakaoParseResult | null>(null)
-  const [errorMsg, setErrorMsg] = useState('')       // 파싱 오류
-  const [createErrorMsg, setCreateErrorMsg] = useState('') // 생성 오류
+  const [errorMsg, setErrorMsg] = useState('')
+  const [createErrorMsg, setCreateErrorMsg] = useState('')
   const [agreedToService, setAgreedToService] = useState(false)
-  // 반려동물 종류
-  const PET_TYPES = ['강아지', '고양이', '햄스터', '토끼', '앵무새', '다른 동물']
-  // For pet flow: pre-filled from RelationSetup route param
+  // 반려동물 종류 (RelationSetup에서 pre-filled)
   const [animalType, setAnimalType] = useState(isPet ? (routeRelation ?? '') : '')
   const [customAnimal, setCustomAnimal] = useState('')
-  // 기타 관계 직접 입력
+  // 기타 관계 직접 입력 (사람 케어)
   const [customRelationship, setCustomRelationship] = useState('')
   // 사진 관련
-  const [photoUri, setPhotoUri] = useState<string | null>(null)   // 로컬 미리보기 URI
-  const [photoBlob, setPhotoBlob] = useState<Blob | null>(null)   // 업로드용 blob
+  const [photoUri, setPhotoUri] = useState<string | null>(null)
+  const [photoBlob, setPhotoBlob] = useState<Blob | null>(null)
   const [photoFileName, setPhotoFileName] = useState('')
+  // ── 펫 전용 질문지 필드 ──────────────────────────────────────────
+  const PET_PERSONALITIES = ['활발해요', '차분해요', '애교가 많아요', '겁이 많아요', '장난꾸러기예요', '독립적이에요']
+  const [petPersonality, setPetPersonality] = useState<string[]>([])
+  const [petHabits, setPetHabits] = useState('')      // 특별한 습관/버릇
+  const [petBond, setPetBond] = useState('')           // 나와 어떤 관계였나요?
+  const [petFavorites, setPetFavorites] = useState('') // 제일 좋아하던 것
+  const [petLastMemory, setPetLastMemory] = useState('') // 마지막 기억
+  const [petUnsaid, setPetUnsaid] = useState('')       // 하고 싶었던 말 (선택)
 
   // 파일 파싱 처리 (공통)
   const processKakaoFile = (rawText: string, fName: string) => {
@@ -262,8 +268,8 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
   const canSubmit = (): boolean => {
     if (!name.trim() || !agreedToService) return false
     if (isPet) {
-      if (!resolvedAnimalType) return false
-      return manualText.trim().length >= 20
+      // 펫: 마지막 기억만 필수 (나머지는 선택)
+      return petLastMemory.trim().length >= 10
     }
     if (!relationship) return false
     if (relationship === '기타' && !customRelationship.trim()) return false
@@ -306,8 +312,12 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
       let systemPrompt = ''
 
       if (isPet) {
-        // 반려동물 전용 프롬프트 (펫로스 특화)
-        systemPrompt = generatePetSystemPrompt(name.trim(), resolvedAnimalType, manualText.trim())
+        // 구조화된 질문지 데이터로 펫 프롬프트 생성
+        systemPrompt = generatePetSystemPrompt(
+          name.trim(), resolvedAnimalType, manualText.trim(),
+          { personality: petPersonality, habits: petHabits.trim(), bond: petBond.trim(),
+            favorites: petFavorites.trim(), lastMemory: petLastMemory.trim(), unsaid: petUnsaid.trim() }
+        )
       } else if (activeTab === 'kakao' && parseResult) {
         systemPrompt = generateSystemPrompt(parseResult.parsed, resolvedRelationship)
       } else if (activeTab === 'kakao' && kakaoRawText) {
@@ -345,7 +355,9 @@ ${manualText.trim()}
       const personaId = await createPersona({
         name: name.trim(),
         relationship: isPet ? resolvedAnimalType : resolvedRelationship,
-        rawChatText: isPet ? manualText : (activeTab === 'kakao' ? kakaoRawText : manualText),
+        careType: careType as 'human' | 'pet',
+        timing: routeTiming ?? null,
+        rawChatText: isPet ? petLastMemory : (activeTab === 'kakao' ? kakaoRawText : manualText),
         systemPrompt,
         parsedMessages: parseResult?.parsed.messages ?? [],
         messageStyle: parseResult ? {
@@ -354,6 +366,13 @@ ${manualText.trim()}
         } : {},
         photoUrl,
         userNickname: userNickname.trim() || null,
+        // 펫 전용 필드
+        petPersonality: isPet && petPersonality.length > 0 ? petPersonality : null,
+        petHabits:     isPet && petHabits.trim()     ? petHabits.trim()     : null,
+        petBond:       isPet && petBond.trim()        ? petBond.trim()        : null,
+        petFavorites:  isPet && petFavorites.trim()   ? petFavorites.trim()   : null,
+        petLastMemory: isPet && petLastMemory.trim()  ? petLastMemory.trim()  : null,
+        petUnsaid:     isPet && petUnsaid.trim()      ? petUnsaid.trim()      : null,
       })
 
       navigation.replace('AIGenerating', { name: name.trim(), personaId })
@@ -512,49 +531,100 @@ ${manualText.trim()}
           </View>
         )}
 
-        {/* 탭 — 펫 케어는 직접 작성만, 사람 케어는 탭 선택 */}
+        {/* ── 펫 질문지 (7개 구조화 필드) ─────────────────────────── */}
+        {isPet && (
+          <>
+            {/* Q1: 성격 (복수 선택 칩) */}
+            <View style={styles.section}>
+              <Text style={styles.label}>어떤 성격이었나요? <Text style={styles.labelOptional}>(복수 선택)</Text></Text>
+              <View style={styles.relationRow}>
+                {PET_PERSONALITIES.map(p => {
+                  const isOn = petPersonality.includes(p)
+                  return (
+                    <TouchableOpacity key={p} activeOpacity={0.8}
+                      style={[styles.relationBtn, isOn && styles.relationBtnActive]}
+                      onPress={() => setPetPersonality(prev => isOn ? prev.filter(x => x !== p) : [...prev, p])}>
+                      <Text style={[styles.relationText, isOn && styles.relationTextActive]}>{p}</Text>
+                    </TouchableOpacity>
+                  )
+                })}
+              </View>
+            </View>
+
+            {/* Q2: 특별한 습관/버릇 */}
+            <View style={styles.section}>
+              <Text style={styles.label}>특별한 습관이나 버릇이 있었나요? <Text style={styles.labelOptional}>(선택)</Text></Text>
+              <TextInput style={styles.input}
+                placeholder={`예) 밥 먹을 때 항상 옆에 앉았어요\n산책 가자는 말만 들어도 빙글빙글 돌았어요`}
+                value={petHabits} onChangeText={setPetHabits}
+                multiline numberOfLines={3} placeholderTextColor="#B0A89E" textAlignVertical="top" />
+            </View>
+
+            {/* Q3: 나와의 관계/유대 */}
+            <View style={styles.section}>
+              <Text style={styles.label}>나를 어떻게 대했나요? <Text style={styles.labelOptional}>(선택)</Text></Text>
+              <TextInput style={styles.input}
+                placeholder={`예) 항상 현관까지 마중 나왔어요\n무서울 때마다 제 옆에 꼭 붙었어요`}
+                value={petBond} onChangeText={setPetBond}
+                multiline numberOfLines={3} placeholderTextColor="#B0A89E" textAlignVertical="top" />
+            </View>
+
+            {/* Q4: 제일 좋아하던 것 */}
+            <View style={styles.section}>
+              <Text style={styles.label}>제일 좋아하던 게 뭐였나요? <Text style={styles.labelOptional}>(선택)</Text></Text>
+              <TextInput style={styles.input}
+                placeholder={`예) 배 만져주기, 간식, 공원 산책`}
+                value={petFavorites} onChangeText={setPetFavorites}
+                placeholderTextColor="#B0A89E" />
+            </View>
+
+            {/* Q5: 마지막 기억 (필수) */}
+            <View style={styles.section}>
+              <Text style={styles.label}>마지막으로 기억하는 순간을 적어주세요 <Text style={styles.labelRequired}>*</Text></Text>
+              <TextInput style={[styles.input, styles.inputTall]}
+                placeholder={`예) 마지막에 제 손을 핥아줬어요\n눈을 마주치며 꼬리를 흔들었어요`}
+                value={petLastMemory} onChangeText={setPetLastMemory}
+                multiline numberOfLines={4} placeholderTextColor="#B0A89E" textAlignVertical="top" />
+              <Text style={styles.charCount}>
+                {petLastMemory.length}자 {petLastMemory.length < 10 ? '(10자 이상)' : '✓'}
+              </Text>
+            </View>
+
+            {/* Q6: 하고 싶었던 말 */}
+            <View style={styles.section}>
+              <Text style={styles.label}>꼭 하고 싶었던 말이 있나요? <Text style={styles.labelOptional}>(선택)</Text></Text>
+              <TextInput style={[styles.input, styles.inputTall]}
+                placeholder={`예) 많이 사랑해\n좋은 곳에서 행복하게 지내길 바라`}
+                value={petUnsaid} onChangeText={setPetUnsaid}
+                multiline numberOfLines={4} placeholderTextColor="#B0A89E" textAlignVertical="top" />
+            </View>
+          </>
+        )}
+
+        {/* 탭 — 사람 케어만 */}
+        {!isPet && (
         <View style={styles.section}>
           <Text style={styles.label}>
             {name ? t.personaCreate.memoryTitleWithName(name) : t.personaCreate.memoryTitle}
           </Text>
-          {!isPet && (
-            <View style={styles.tabRow}>
-              <Pressable
-                style={[styles.tab, activeTab === 'manual' && styles.tabActive]}
-                onPress={() => setActiveTab('manual')}
-              >
-                <Text style={[styles.tabText, activeTab === 'manual' && styles.tabTextActive]}>
-                  {t.personaCreate.tabWrite}
-                </Text>
-              </Pressable>
-              <Pressable
-                style={[styles.tab, activeTab === 'kakao' && styles.tabActive]}
-                onPress={() => setActiveTab('kakao')}
-              >
-                <Text style={[styles.tabText, activeTab === 'kakao' && styles.tabTextActive]}>
-                  {t.personaCreate.tabKakao}
-                </Text>
-              </Pressable>
-            </View>
-          )}
+          <View style={styles.tabRow}>
+            <Pressable style={[styles.tab, activeTab === 'manual' && styles.tabActive]} onPress={() => setActiveTab('manual')}>
+              <Text style={[styles.tabText, activeTab === 'manual' && styles.tabTextActive]}>{t.personaCreate.tabWrite}</Text>
+            </Pressable>
+            <Pressable style={[styles.tab, activeTab === 'kakao' && styles.tabActive]} onPress={() => setActiveTab('kakao')}>
+              <Text style={[styles.tabText, activeTab === 'kakao' && styles.tabTextActive]}>{t.personaCreate.tabKakao}</Text>
+            </Pressable>
+          </View>
 
-          {(activeTab === 'manual' || isPet) ? (
+          {activeTab === 'manual' ? (
             <View>
               <TextInput
                 style={styles.manualInput}
-                placeholder={isPet
-                  ? `${t.personaCreate.writePlaceholderPet(name || '반려동물')}\n\n${t.personaCreate.writeExamplePet}`
-                  : `${t.personaCreate.writePlaceholder(name || '그분')}\n\n${t.personaCreate.writeExample}`}
-                value={manualText}
-                onChangeText={setManualText}
-                multiline
-                numberOfLines={8}
-                placeholderTextColor="#B0A89E"
-                textAlignVertical="top"
+                placeholder={`${t.personaCreate.writePlaceholder(name || '그분')}\n\n${t.personaCreate.writeExample}`}
+                value={manualText} onChangeText={setManualText}
+                multiline numberOfLines={8} placeholderTextColor="#B0A89E" textAlignVertical="top"
               />
-              <Text style={styles.charCount}>
-                {manualText.length}자 {manualText.length < 20 ? t.personaCreate.charCountHint : '✓'}
-              </Text>
+              <Text style={styles.charCount}>{manualText.length}자 {manualText.length < 20 ? t.personaCreate.charCountHint : '✓'}</Text>
             </View>
           ) : (
             <View>
@@ -626,6 +696,7 @@ ${manualText.trim()}
             </View>
           )}
         </View>
+        )}
 
         {/* 서비스 동의 */}
         <View style={styles.section}>
@@ -668,7 +739,13 @@ ${manualText.trim()}
               </View>
             ) : (
               <Text style={styles.submitBtnText}>
-                {canSubmit() ? t.personaCreate.submitBtn : !name.trim() ? t.personaCreate.errorNameRequired : isPet && !resolvedAnimalType ? t.personaCreate.errorPetTypeRequired : !isPet && !relationship ? t.personaCreate.errorRelationRequired : manualText.trim().length < 20 ? t.personaCreate.errorMemoryTooShort : !agreedToService ? t.personaCreate.errorConsentRequired : t.personaCreate.submitBtn}
+                {canSubmit() ? t.personaCreate.submitBtn
+                  : !name.trim() ? t.personaCreate.errorNameRequired
+                  : isPet && petLastMemory.trim().length < 10 ? '마지막 기억을 10자 이상 적어주세요'
+                  : !isPet && !relationship ? t.personaCreate.errorRelationRequired
+                  : !isPet && manualText.trim().length < 20 ? t.personaCreate.errorMemoryTooShort
+                  : !agreedToService ? t.personaCreate.errorConsentRequired
+                  : t.personaCreate.submitBtn}
               </Text>
             )}
           </LinearGradient>
@@ -717,6 +794,9 @@ const styles = StyleSheet.create({
   bannerText: { fontSize: 11, color: '#FDE68A', textAlign: 'center' },
   section: { paddingHorizontal: 24, marginBottom: 24 },
   label: { fontSize: 15, fontWeight: '600', color: '#F3E8FF', marginBottom: 12 },
+  labelOptional: { fontSize: 13, fontWeight: '400', color: 'rgba(167,139,250,0.55)' },
+  labelRequired: { fontSize: 13, fontWeight: '600', color: '#db2777' },
+  inputTall: { minHeight: 100, paddingTop: 14 },
   input: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)',
     borderRadius: 14, padding: 14, fontSize: 16, color: '#FFFFFF',

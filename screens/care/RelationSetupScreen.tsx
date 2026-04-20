@@ -39,7 +39,7 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
 
   const handleNext = () => {
     if (!canProceed) return
-    navigation.navigate('PersonaCreate', {
+    navigation.navigate('TimingCheck', {
       careType,
       relation: resolvedRelation,
       name: name.trim(),

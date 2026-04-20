@@ -10,7 +10,8 @@ export type Persona = {
   user_id: string
   name: string
   relationship: string
-  care_type: string
+  care_type: string             // 'human' | 'pet'
+  timing: string | null         // 떠난 시점
   raw_chat_text: string | null
   parsed_messages: any[]
   system_prompt: string | null
@@ -23,6 +24,13 @@ export type Persona = {
   archived_at: string | null    // 이별 완료 시각
   created_at: string
   updated_at: string
+  // 반려동물 전용 필드
+  pet_personality: string[] | null
+  pet_habits: string | null
+  pet_bond: string | null
+  pet_favorites: string | null
+  pet_last_memory: string | null
+  pet_unsaid: string | null
 }
 
 export type Conversation = {
@@ -46,20 +54,29 @@ async function getCurrentUserId(): Promise<string> {
 export async function createPersona(data: {
   name: string
   relationship: string
+  careType?: string
+  timing?: string | null
   rawChatText: string
   systemPrompt: string
   parsedMessages: any[]
   messageStyle: any
   photoUrl?: string | null
-  userNickname?: string | null  // 이 페르소나가 사용자를 부르던 애칭
+  userNickname?: string | null
+  // 반려동물 전용
+  petPersonality?: string[] | null
+  petHabits?: string | null
+  petBond?: string | null
+  petFavorites?: string | null
+  petLastMemory?: string | null
+  petUnsaid?: string | null
 }): Promise<string> {
   const userId = await getCurrentUserId()
 
-  // photo_url 없이 먼저 INSERT (컬럼 유무 무관하게 항상 성공)
   const basePayload: Record<string, unknown> = {
     user_id: userId,
     name: data.name,
     relationship: data.relationship,
+    care_type: data.careType ?? 'human',
     raw_chat_text: data.rawChatText,
     system_prompt: data.systemPrompt,
     parsed_messages: data.parsedMessages,
@@ -68,13 +85,15 @@ export async function createPersona(data: {
     emotional_stage: 'replay',
   }
 
-  // 선택 필드: DB 컬럼이 존재하면 포함 (마이그레이션 완료 후)
-  if (data.userNickname) {
-    basePayload.user_nickname = data.userNickname
-  }
-  if (data.photoUrl) {
-    basePayload.photo_url = data.photoUrl
-  }
+  if (data.timing)           basePayload.timing           = data.timing
+  if (data.userNickname)     basePayload.user_nickname    = data.userNickname
+  if (data.photoUrl)         basePayload.photo_url        = data.photoUrl
+  if (data.petPersonality)   basePayload.pet_personality  = data.petPersonality
+  if (data.petHabits)        basePayload.pet_habits       = data.petHabits
+  if (data.petBond)          basePayload.pet_bond         = data.petBond
+  if (data.petFavorites)     basePayload.pet_favorites    = data.petFavorites
+  if (data.petLastMemory)    basePayload.pet_last_memory  = data.petLastMemory
+  if (data.petUnsaid)        basePayload.pet_unsaid       = data.petUnsaid
 
   const { data: persona, error } = await supabase
     .from('personas')
