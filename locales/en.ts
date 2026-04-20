@@ -253,6 +253,16 @@ const en: Translations = {
     nextBtn: 'Next',
   },
 
+  // ── Timing Check ──
+  timingCheck: {
+    emojiHuman: '🕯️',
+    emojiPet: '🐾',
+    titleHuman: (name: string) => `How long has it been\nsince ${name ? `${name} ` : ''}left?`,
+    titlePet: (name: string) => `How long has it been\nsince ${name ? `${name} ` : ''}crossed the rainbow bridge?`,
+    subtitleHuman: "We'll be with you wherever you are in your grief.",
+    subtitlePet: "Let us know how long ago your little one left your side.",
+  },
+
   // ── Service Consent ──
   consent: {
     title: 'Just a moment before we begin.',

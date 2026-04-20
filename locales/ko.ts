@@ -250,6 +250,16 @@ const ko = {
     nextBtn: '다음',
   },
 
+  // ── Timing Check ──
+  timingCheck: {
+    emojiHuman: '🕯️',
+    emojiPet: '🐾',
+    titleHuman: (name: string) => `${name ? `${name}이(가)` : ''} 떠난 지\n얼마나 됐나요?`,
+    titlePet: (name: string) => `${name ? `${name}이(가)` : ''} 무지개다리를 건넌 지\n얼마나 됐나요?`,
+    subtitleHuman: '지금 느끼는 감정에 맞게 함께할게요.',
+    subtitlePet: '그 아이가 곁을 떠난 지 얼마나 됐는지 알려주세요.',
+  },
+
   // ── Service Consent ──
   consent: {
     title: '함께하기 전에 잠깐 확인해주세요.',

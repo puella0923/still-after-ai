@@ -59,16 +59,18 @@ export default function TimingCheckScreen({ navigation, route }: Props) {
         </TouchableOpacity>
 
         <View style={styles.header}>
-          <Text style={styles.emoji}>🕯️</Text>
+          <Text style={styles.emoji}>
+            {careType === 'pet' ? t.timingCheck.emojiPet : t.timingCheck.emojiHuman}
+          </Text>
           <Text style={styles.title}>
-            {language === 'ko'
-              ? `${name}${name ? '이(가)' : ''} 떠난 지\n얼마나 됐나요?`
-              : `How long has it been\nsince ${name} left?`}
+            {careType === 'pet'
+              ? t.timingCheck.titlePet(name)
+              : t.timingCheck.titleHuman(name)}
           </Text>
           <Text style={styles.subtitle}>
-            {language === 'ko'
-              ? '지금 느끼는 감정에 맞게 함께할게요.'
-              : "We'll be with you wherever you are in your grief."}
+            {careType === 'pet'
+              ? t.timingCheck.subtitlePet
+              : t.timingCheck.subtitleHuman}
           </Text>
         </View>
 
