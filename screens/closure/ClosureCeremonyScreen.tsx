@@ -109,26 +109,26 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
     setIsAnimating(true)
     saveLetterToDb()
 
-    Animated.timing(overlayOpacity, { toValue: 1, duration: 500, useNativeDriver: true }).start()
+    Animated.timing(overlayOpacity, { toValue: 1, duration: 500, useNativeDriver: Platform.OS !== 'web' }).start()
 
     Animated.parallel([
-      Animated.timing(letterTransY, { toValue: -60, duration: 600, useNativeDriver: true }),
-      Animated.timing(letterScale, { toValue: 1.06, duration: 600, useNativeDriver: true }),
+      Animated.timing(letterTransY, { toValue: -60, duration: 600, useNativeDriver: Platform.OS !== 'web' }),
+      Animated.timing(letterScale, { toValue: 1.06, duration: 600, useNativeDriver: Platform.OS !== 'web' }),
     ]).start()
 
     setTimeout(() => {
       Animated.parallel([
         Animated.sequence([
-          Animated.timing(letterScale, { toValue: 1.13, duration: 380, useNativeDriver: true }),
-          Animated.timing(letterScale, { toValue: 1.06, duration: 300, useNativeDriver: true }),
+          Animated.timing(letterScale, { toValue: 1.13, duration: 380, useNativeDriver: Platform.OS !== 'web' }),
+          Animated.timing(letterScale, { toValue: 1.06, duration: 300, useNativeDriver: Platform.OS !== 'web' }),
         ]),
         Animated.sequence([
           Animated.delay(200),
-          Animated.timing(letterOpacity, { toValue: 0, duration: 750, useNativeDriver: true }),
+          Animated.timing(letterOpacity, { toValue: 0, duration: 750, useNativeDriver: Platform.OS !== 'web' }),
         ]),
         Animated.sequence([
           Animated.delay(200),
-          Animated.timing(letterTransY, { toValue: -150, duration: 850, useNativeDriver: true }),
+          Animated.timing(letterTransY, { toValue: -150, duration: 850, useNativeDriver: Platform.OS !== 'web' }),
         ]),
       ]).start()
     }, 700)
@@ -140,12 +140,12 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
           return Animated.sequence([
             Animated.delay(data.delay),
             Animated.parallel([
-              Animated.timing(anim.opacity, { toValue: 0.9, duration: 250, useNativeDriver: true }),
-              Animated.timing(anim.translateY, { toValue: data.driftY, duration: 1500, useNativeDriver: true }),
-              Animated.timing(anim.translateX, { toValue: data.driftX, duration: 1500, useNativeDriver: true }),
+              Animated.timing(anim.opacity, { toValue: 0.9, duration: 250, useNativeDriver: Platform.OS !== 'web' }),
+              Animated.timing(anim.translateY, { toValue: data.driftY, duration: 1500, useNativeDriver: Platform.OS !== 'web' }),
+              Animated.timing(anim.translateX, { toValue: data.driftX, duration: 1500, useNativeDriver: Platform.OS !== 'web' }),
               Animated.sequence([
                 Animated.delay(600),
-                Animated.timing(anim.opacity, { toValue: 0, duration: 900, useNativeDriver: true }),
+                Animated.timing(anim.opacity, { toValue: 0, duration: 900, useNativeDriver: Platform.OS !== 'web' }),
               ]),
             ]),
           ])
@@ -155,7 +155,7 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
 
     setTimeout(() => {
       setCompleted(true)
-      Animated.timing(completedOpacity, { toValue: 1, duration: 1100, useNativeDriver: true }).start()
+      Animated.timing(completedOpacity, { toValue: 1, duration: 1100, useNativeDriver: Platform.OS !== 'web' }).start()
     }, 1900)
   }, [saveLetterToDb])
 

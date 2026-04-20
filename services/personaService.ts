@@ -127,7 +127,7 @@ export async function uploadPersonaPhoto(
 
     const { data } = supabase.storage.from('persona-photos').getPublicUrl(path)
     const url = data?.publicUrl ?? null
-    console.log('[personaService] 사진 업로드 성공:', url)
+    if (__DEV__) console.log('[personaService] 사진 업로드 성공:', url)
     return url
   } catch (e: any) {
     console.error('[personaService] 사진 업로드 예외:', e?.message)
@@ -296,7 +296,7 @@ export async function diagnoseDatabaseHealth(): Promise<{ ok: boolean; issues: s
   if (issues.length > 0) {
     console.error('[DB 진단] 문제 발견:', issues)
   } else {
-    console.log('[DB 진단] 모든 테이블 정상')
+    if (__DEV__) console.log('[DB 진단] 모든 테이블 정상')
   }
   return { ok: issues.length === 0, issues }
 }

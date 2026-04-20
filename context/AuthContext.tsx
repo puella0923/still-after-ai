@@ -25,10 +25,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then(({ data: { session } }) => {
         setSession(session)
         setUser(session?.user ?? null)
-        console.log('[Auth] 세션 복원:', session?.user?.email ?? '없음')
+        if (__DEV__) console.log('[Auth] 세션 복원:', session?.user?.email ?? '없음')
       })
       .catch(() => {
-        console.log('[Auth] 세션 확인 실패 → 비로그인 상태로 시작')
+        if (__DEV__) console.log('[Auth] 세션 확인 실패 → 비로그인 상태로 시작')
       })
       .finally(() => setLoading(false))
 
@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
-      console.log('[Auth] 상태 변경:', event, session?.user?.email ?? '없음')
+      if (__DEV__) console.log('[Auth] 상태 변경:', event, session?.user?.email ?? '없음')
     })
 
     return () => subscription.unsubscribe()
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await supabase.auth.signOut()
     } catch (e) {
-      console.warn('[Auth] signOut 서버 요청 실패 (로컬은 이미 초기화됨):', e)
+      if (__DEV__) console.warn('[Auth] signOut 서버 요청 실패 (로컬은 이미 초기화됨):', e)
     }
   }
 

@@ -7,6 +7,7 @@ import {
   ScrollView,
   Animated,
   Dimensions,
+  Platform,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -35,7 +36,7 @@ export default function OnboardingScreen({ navigation }: Props) {
   }, [session, navigation])
 
   useEffect(() => {
-    Animated.timing(fadeAnim, { toValue: 1, duration: 900, useNativeDriver: true }).start()
+    Animated.timing(fadeAnim, { toValue: 1, duration: 900, useNativeDriver: Platform.OS !== 'web' }).start()
   }, [])
 
   return (

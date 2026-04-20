@@ -10,6 +10,7 @@ import {
   Dimensions,
   Alert,
   Linking,
+  Platform,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -68,13 +69,13 @@ export default function LoginScreen({ navigation }: Props) {
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
-        toValue: 1, duration: 600, useNativeDriver: true,
+        toValue: 1, duration: 600, useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(slideAnim, {
-        toValue: 0, duration: 600, useNativeDriver: true,
+        toValue: 0, duration: 600, useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.spring(iconScale, {
-        toValue: 1, delay: 200, friction: 6, useNativeDriver: true,
+        toValue: 1, delay: 200, friction: 6, useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start()
   }, [])

@@ -74,7 +74,7 @@ export default function HomeScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
-    Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start()
+    Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: Platform.OS !== 'web' }).start()
   }, [])
 
   const fetchData = useCallback(async () => {

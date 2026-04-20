@@ -47,13 +47,13 @@ export default function AIGeneratingScreen({ navigation, route }: Props) {
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 600,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.spring(scaleAnim, {
         toValue: 1,
         tension: 60,
         friction: 8,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start()
 
@@ -63,12 +63,12 @@ export default function AIGeneratingScreen({ navigation, route }: Props) {
         Animated.timing(pulseAnim, {
           toValue: 1.08,
           duration: 1200,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
           duration: 1200,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ])
     )
@@ -77,14 +77,14 @@ export default function AIGeneratingScreen({ navigation, route }: Props) {
     // Dot animation loop
     const dotLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(dot1, { toValue: 1, duration: 300, useNativeDriver: true }),
-        Animated.timing(dot2, { toValue: 1, duration: 300, useNativeDriver: true }),
-        Animated.timing(dot3, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(dot1, { toValue: 1, duration: 300, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(dot2, { toValue: 1, duration: 300, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(dot3, { toValue: 1, duration: 300, useNativeDriver: Platform.OS !== 'web' }),
         Animated.delay(200),
         Animated.parallel([
-          Animated.timing(dot1, { toValue: 0.3, duration: 200, useNativeDriver: true }),
-          Animated.timing(dot2, { toValue: 0.3, duration: 200, useNativeDriver: true }),
-          Animated.timing(dot3, { toValue: 0.3, duration: 200, useNativeDriver: true }),
+          Animated.timing(dot1, { toValue: 0.3, duration: 200, useNativeDriver: Platform.OS !== 'web' }),
+          Animated.timing(dot2, { toValue: 0.3, duration: 200, useNativeDriver: Platform.OS !== 'web' }),
+          Animated.timing(dot3, { toValue: 0.3, duration: 200, useNativeDriver: Platform.OS !== 'web' }),
         ]),
       ])
     )
