@@ -25,6 +25,7 @@ import { RootStackParamList } from '../../navigation/RootNavigator'
 import { getPersonaById, getConversations, saveConversation, diagnoseDatabaseHealth, Persona } from '../../services/personaService'
 import { getChatResponse, detectDanger, ClosurePhase } from '../../services/openaiService'
 import { supabase } from '../../services/supabase'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { C, RADIUS } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
@@ -128,6 +129,7 @@ export default function ChatScreen({ navigation, route }: Props) {
   const [closureLetter, setClosureLetter] = useState<{ content: string; ai_farewell: string } | null>(null)
   const [showDangerModal, setShowDangerModal] = useState(false)
   const [stageConfirmTarget, setStageConfirmTarget] = useState<'stable' | 'closure' | null>(null)
+  const [aiBannerDismissed, setAiBannerDismissed] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const isReadOnly = !!(persona?.is_archived)
@@ -244,6 +246,18 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
     }
     load()
   }, [personaId])
+
+  // AI 고지 배너 — 최초 1회 표시 후 영구 숨김
+  useEffect(() => {
+    AsyncStorage.getItem('@stillafter/ai_banner_dismissed')
+      .then(val => { if (val === '1') setAiBannerDismissed(true) })
+      .catch(() => {})
+  }, [])
+
+  const handleDismissBanner = () => {
+    setAiBannerDismissed(true)
+    AsyncStorage.setItem('@stillafter/ai_banner_dismissed', '1').catch(() => {})
+  }
 
   // 초기 로드 후 stage transition 버튼 노출 체크
   useEffect(() => {
@@ -579,12 +593,15 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
           </View>
         </View>
 
-        {/* AI Disclosure Banner */}
-        <View style={styles.aiBanner}>
-          <Text style={styles.aiBannerText}>
-            {t.chat.aiBanner}
-          </Text>
-        </View>
+        {/* AI Disclosure Banner — 최초 1회, 닫기 가능 */}
+        {!aiBannerDismissed && (
+          <View style={styles.aiBanner}>
+            <Text style={styles.aiBannerText}>{t.chat.aiBanner}</Text>
+            <TouchableOpacity onPress={handleDismissBanner} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.aiBannerClose}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Free usage nudge — show when 3 or fewer messages remain */}
         {!isPaidUser && freeRemaining !== null && freeRemaining <= 3 && freeRemaining > 0 && (
@@ -828,11 +845,13 @@ const styles = StyleSheet.create({
   headerCount: { fontSize: 11, color: 'rgba(196, 181, 253, 0.6)' },
 
   // AI Banner
+  aiBannerClose: { fontSize: 11, color: 'rgba(147, 197, 253, 0.5)', paddingLeft: 8, paddingTop: 1 },
   aiBanner: {
     backgroundColor: 'rgba(30, 58, 138, 0.4)', borderBottomWidth: 1,
     borderBottomColor: 'rgba(96, 165, 250, 0.2)', paddingVertical: 8, paddingHorizontal: 16,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
   },
-  aiBannerText: { fontSize: 12, color: '#93C5FD', textAlign: 'center' },
+  aiBannerText: { fontSize: 12, color: '#93C5FD', textAlign: 'center', flex: 1 },
 
   // Banners
   closureBanner: {
