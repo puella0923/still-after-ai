@@ -170,9 +170,9 @@ export default function OnboardingScreen({ navigation }: Props) {
               </View>
 
               <Text style={styles.dataPrivacyNote}>{o.howPrivacy}</Text>
-              <Text style={styles.phraseLabel}>추출된 표현 예시</Text>
+              <Text style={styles.phraseLabel}>{o.phraseTagsLabel}</Text>
               <View style={styles.phraseTags}>
-                {['우리 꿀돼지~', '우리 딸', '밥은 먹었어?', '얼른 자~~~~', '뭐해ㅋ 자고 있어?', '그래도 잘 했어', '엄마가 다 알지~'].map((tag, i) => (
+                {o.phraseTags.map((tag, i) => (
                   <View key={i} style={styles.phraseTag}>
                     <Text style={styles.phraseTagText}>{tag}</Text>
                   </View>
@@ -198,7 +198,7 @@ export default function OnboardingScreen({ navigation }: Props) {
 
           <View style={styles.howDivider}>
             <View style={styles.howDividerLine} />
-            <Text style={styles.howDividerText}>{language === 'ko' ? '두 방법 모두 대화 시작까지 5분이면 충분해요' : 'Both methods take under 5 minutes to start'}</Text>
+            <Text style={styles.howDividerText}>{o.howDividerText}</Text>
             <View style={styles.howDividerLine} />
           </View>
         </View>
@@ -244,10 +244,10 @@ export default function OnboardingScreen({ navigation }: Props) {
           >
             <View style={styles.demoPersonaBar}>
               <View style={styles.demoAvatar}>
-                <Text style={styles.demoAvatarText}>{demoTab === 'pet' ? '🐶' : '엄'}</Text>
+                <Text style={styles.demoAvatarText}>{demoTab === 'pet' ? '🐶' : o.demoPersonaAvatar}</Text>
               </View>
               <View>
-                <Text style={styles.demoPersonaName}>{demoTab === 'pet' ? '초코' : '엄마'}</Text>
+                <Text style={styles.demoPersonaName}>{demoTab === 'pet' ? o.demoPetName : o.demoPersonaName}</Text>
                 <Text style={styles.demoPersonaRole}>
                   {demoTab === 'replay' ? o.demoCaptions.replay
                     : demoTab === 'stable' ? o.demoCaptions.stable
@@ -260,60 +260,52 @@ export default function OnboardingScreen({ navigation }: Props) {
 
             {demoTab === 'replay' && (
               <>
-                <DemoBubble from="assistant" name="엄" text="지수아~ 오늘은 뭐 했어? 밥은 먹었지?" />
-                <DemoBubble from="user" text="응 먹었어. 엄마 생각이 나서." />
-                <DemoBubble from="assistant" name="엄" text="나도 보고 싶다. 우리 딸 잘 지내고 있지? 요즘 얼굴이 좀 안 좋아 보이던데." />
-                <DemoBubble from="user" text="요즘 조금 힘들었어. 그냥 목소리 듣고 싶었어." />
-                <DemoBubble from="assistant" name="엄" text="그럼 언제든 얘기해. 참지 말고. 밥 잘 챙겨 먹어야 해, 알지?" />
+                <DemoBubble from="assistant" name={o.demoPersonaAvatar} text={o.demoReplayMessages[0]} />
+                <DemoBubble from="user" text={o.demoReplayMessages[1]} />
+                <DemoBubble from="assistant" name={o.demoPersonaAvatar} text={o.demoReplayMessages[2]} />
+                <DemoBubble from="user" text={o.demoReplayMessages[3]} />
+                <DemoBubble from="assistant" name={o.demoPersonaAvatar} text={o.demoReplayMessages[4]} />
                 <View style={styles.demoMilestone}>
-                  <Text style={styles.demoMilestoneText}>
-                    💜 그 사람과의 대화가 이어지고 있어요{'\n'}오늘도 찾아와줘서 고마워요.
-                  </Text>
+                  <Text style={styles.demoMilestoneText}>{o.demoReplayMilestone}</Text>
                 </View>
               </>
             )}
             {demoTab === 'stable' && (
               <>
-                <DemoBubble from="assistant" name="엄" text="지수아, 요즘 어때? 많이 힘들진 않아?" />
-                <DemoBubble from="user" text="처음보다는 나아진 것 같아. 근데 가끔 멍해질 때가 있어." />
-                <DemoBubble from="assistant" name="엄" text="그런 거 당연한 거야. 억지로 괜찮은 척 안 해도 돼. 멍할 때 뭐가 떠올라?" />
-                <DemoBubble from="user" text="그냥… 같이 밥 먹던 거, 별거 아닌 것들." />
-                <DemoBubble from="assistant" name="엄" text="별거 아닌 것들이 제일 그립지. 그 기억들, 소중히 간직해. 넌 잘 하고 있어." />
+                <DemoBubble from="assistant" name={o.demoPersonaAvatar} text={o.demoStableMessages[0]} />
+                <DemoBubble from="user" text={o.demoStableMessages[1]} />
+                <DemoBubble from="assistant" name={o.demoPersonaAvatar} text={o.demoStableMessages[2]} />
+                <DemoBubble from="user" text={o.demoStableMessages[3]} />
+                <DemoBubble from="assistant" name={o.demoPersonaAvatar} text={o.demoStableMessages[4]} />
                 <View style={styles.demoMilestone}>
-                  <Text style={styles.demoMilestoneText}>
-                    💙 마음을 나눠주셔서 고마워요{'\n'}조금씩 자리가 잡히고 있어요.
-                  </Text>
+                  <Text style={styles.demoMilestoneText}>{o.demoStableMilestone}</Text>
                 </View>
               </>
             )}
             {demoTab === 'closure' && (
               <>
-                <DemoBubble from="user" text="엄마, 마지막에 손 잡아드리지 못해서 미안해." />
-                <DemoBubble from="assistant" name="엄" text="무슨 소리야. 넌 항상 곁에 있었잖아. 그거면 충분해." />
-                <DemoBubble from="user" text="그래도. 더 잘 챙겨드렸어야 했는데." />
-                <DemoBubble from="assistant" name="엄" text="지수아. 넌 충분히 잘 했어. 엄마가 제일 잘 알지. 이제 그 마음 좀 내려놔." />
-                <DemoBubble from="user" text="이제 잘 보내드릴게. 엄마, 사랑해." />
-                <DemoBubble from="assistant" name="엄" text="나도 사랑해. 우리 딸, 앞으로 잘 살아야 해. 엄마가 괜찮아." />
+                <DemoBubble from="user" text={o.demoClosureMessages[0]} />
+                <DemoBubble from="assistant" name={o.demoPersonaAvatar} text={o.demoClosureMessages[1]} />
+                <DemoBubble from="user" text={o.demoClosureMessages[2]} />
+                <DemoBubble from="assistant" name={o.demoPersonaAvatar} text={o.demoClosureMessages[3]} />
+                <DemoBubble from="user" text={o.demoClosureMessages[4]} />
+                <DemoBubble from="assistant" name={o.demoPersonaAvatar} text={o.demoClosureMessages[5]} />
                 <View style={styles.demoMilestone}>
-                  <Text style={styles.demoMilestoneText}>
-                    🌸 이제, 마지막 편지를 쓸 시간이에요{'\n'}하고 싶었던 말을 모두 담아, 온전히 보내드릴 수 있어요.
-                  </Text>
+                  <Text style={styles.demoMilestoneText}>{o.demoClosureMilestone}</Text>
                 </View>
-                <Text style={styles.demoCaptionItalic}>이 다음은, 직접 경험해야만 알 수 있어요.</Text>
+                <Text style={styles.demoCaptionItalic}>{o.demoClosureCaption}</Text>
               </>
             )}
             {demoTab === 'pet' && (
               <>
-                <DemoBubble from="user" text="아침마다 밥 챙겨줄 때마다 네 생각이 나." />
-                <DemoBubble from="assistant" name="🐶" text="나도 그 시간이 제일 좋았어. 네가 부엌에서 움직이는 소리만 들어도 설렜거든." />
-                <DemoBubble from="user" text="이제는 아침에 늦게 일어나도 되는데, 그게 더 슬퍼." />
-                <DemoBubble from="assistant" name="🐶" text="이제는 아침에 늦게 일어나도 돼. 괜찮아. 나 때문에 일찍 일어나느라 고생했잖아." />
-                <DemoBubble from="user" text="미안해. 더 잘 챙겨줬어야 했는데." />
-                <DemoBubble from="assistant" name="🐶" text="나에게 미안해 하지 마. 난 정말 너와 함께라서 행복했어. 그것만으로 충분해." />
+                <DemoBubble from="user" text={o.demoPetMessages[0]} />
+                <DemoBubble from="assistant" name="🐶" text={o.demoPetMessages[1]} />
+                <DemoBubble from="user" text={o.demoPetMessages[2]} />
+                <DemoBubble from="assistant" name="🐶" text={o.demoPetMessages[3]} />
+                <DemoBubble from="user" text={o.demoPetMessages[4]} />
+                <DemoBubble from="assistant" name="🐶" text={o.demoPetMessages[5]} />
                 <View style={styles.demoMilestone}>
-                  <Text style={styles.demoMilestoneText}>
-                    🐾 초코와의 기억이 이어지고 있어요{'\n'}함께한 모든 순간이 사랑이었어요.
-                  </Text>
+                  <Text style={styles.demoMilestoneText}>{o.demoPetMilestone}</Text>
                 </View>
               </>
             )}
@@ -324,7 +316,7 @@ export default function OnboardingScreen({ navigation }: Props) {
 
         {/* ════ ⑤ 3단계 여정 ════ */}
         <View style={[styles.section, styles.sectionDark]}>
-          <Text style={styles.sectionTitle}>{language === 'ko' ? '천천히, 당신의 속도로' : 'At your own pace'}</Text>
+          <Text style={styles.sectionTitle}>{o.demoSectionTitle}</Text>
           <Text style={styles.sectionDesc}>{o.journeyTitle}</Text>
 
           <View style={styles.stageList}>
@@ -333,17 +325,17 @@ export default function OnboardingScreen({ navigation }: Props) {
             <View style={[styles.stageRow, styles.stageRowBorder]}>
               <View style={styles.stageLeft}>
                 <Text style={styles.stageNum}>Step 01</Text>
-                <Text style={styles.stageName}>{language === 'ko' ? '재연' : 'Replay'}</Text>
+                <Text style={styles.stageName}>{o.stageReplayName}</Text>
               </View>
               <View style={styles.stageRight}>
                 <Text style={styles.stageDesc}>{o.stage1Desc}</Text>
                 <View style={styles.stageMsg}>
                   <Text style={styles.stageMsgIcon}>💜</Text>
-                  <Text style={styles.stageMsgText}>{language === 'ko' ? '엄마과(와)의 대화가 이어지고 있어요\n오늘도 찾아와줘서 고마워요.' : "Your conversation continues.\nThank you for coming back."}</Text>
+                  <Text style={styles.stageMsgText}>{o.demoReplayStatus1}</Text>
                 </View>
                 <View style={[styles.stageMsg, { marginTop: 8 }]}>
                   <Text style={styles.stageMsgIcon}>💬</Text>
-                  <Text style={styles.stageMsgText}>{language === 'ko' ? '대화가 깊어지고 있어요\n엄마이(가) 당신의 이야기를 듣고 있어요.' : "The conversation is deepening.\nThey are listening to your story."}</Text>
+                  <Text style={styles.stageMsgText}>{o.demoReplayStatus2}</Text>
                 </View>
                 <View style={styles.stageTransitionHint}>
                   <Text style={styles.stageTransitionText}>{o.stage1Hint}</Text>
@@ -355,17 +347,17 @@ export default function OnboardingScreen({ navigation }: Props) {
             <View style={[styles.stageRow, styles.stageRowBorder]}>
               <View style={styles.stageLeft}>
                 <Text style={styles.stageNum}>Step 02</Text>
-                <Text style={styles.stageName}>{language === 'ko' ? '안정' : 'Healing'}</Text>
+                <Text style={styles.stageName}>{o.stageHealingName}</Text>
               </View>
               <View style={styles.stageRight}>
                 <Text style={styles.stageDesc}>{o.stage2Desc}</Text>
                 <View style={styles.stageMsg}>
                   <Text style={styles.stageMsgIcon}>💙</Text>
-                  <Text style={styles.stageMsgText}>{language === 'ko' ? '마음을 나눠주셔서 고마워요\n조금씩 자리가 잡히고 있어요.' : "Thank you for opening up.\nThings are gently settling."}</Text>
+                  <Text style={styles.stageMsgText}>{o.demoStableStatus1}</Text>
                 </View>
                 <View style={[styles.stageMsg, { marginTop: 8 }]}>
                   <Text style={styles.stageMsgIcon}>💬</Text>
-                  <Text style={styles.stageMsgText}>{language === 'ko' ? '많은 이야기를 털어놓았네요\n하고 싶었던 말이 조금씩 전해지고 있어요.' : "You've shared so much.\nWhat you wanted to say is reaching them."}</Text>
+                  <Text style={styles.stageMsgText}>{o.demoStableStatus2}</Text>
                 </View>
                 <View style={styles.stageTransitionHint}>
                   <Text style={styles.stageTransitionText}>{o.stage2Hint}</Text>
@@ -377,29 +369,29 @@ export default function OnboardingScreen({ navigation }: Props) {
             <View style={styles.stageRow}>
               <View style={styles.stageLeft}>
                 <Text style={styles.stageNum}>Step 03</Text>
-                <Text style={styles.stageName}>{language === 'ko' ? '이별' : 'Closure'}</Text>
+                <Text style={styles.stageName}>{o.stageClosureName}</Text>
                 <View style={styles.stageLimitBadge}>
-                  <Text style={styles.stageLimitText}>{language === 'ko' ? '최대 20번' : 'Up to 20'}</Text>
+                  <Text style={styles.stageLimitText}>{o.stageLimitBadge}</Text>
                 </View>
               </View>
               <View style={styles.stageRight}>
                 <Text style={styles.stageDesc}>{o.stage3Desc}</Text>
                 <View style={styles.stageMsg}>
                   <Text style={styles.stageMsgIcon}>🌸</Text>
-                  <Text style={styles.stageMsgText}>{language === 'ko' ? '이별 단계가 시작됐어요\n이제, 마지막 이야기를 나눌 시간이에요.' : "Closure stage has begun.\nIt's time to share our final story."}</Text>
+                  <Text style={styles.stageMsgText}>{o.demoClosureStatus1}</Text>
                 </View>
                 <View style={[styles.stageMsg, { marginTop: 8 }]}>
                   <Text style={styles.stageMsgIcon}>💬</Text>
-                  <Text style={styles.stageMsgText}>{language === 'ko' ? '이제, 전하고 싶었던 말을 해도 괜찮아요' : "It's okay to say what you've wanted to share."}</Text>
+                  <Text style={styles.stageMsgText}>{o.demoClosureStatus2}</Text>
                 </View>
                 <View style={[styles.stageMsg, { marginTop: 8 }]}>
                   <Text style={styles.stageMsgIcon}>🕊️</Text>
-                  <Text style={styles.stageMsgText}>{language === 'ko' ? '조금씩, 준비가 되어가고 있어요' : "Slowly, you're getting ready."}</Text>
+                  <Text style={styles.stageMsgText}>{o.demoClosureStatus3}</Text>
                 </View>
 
                 {/* 마지막 편지 */}
                 <View style={styles.closureLetterBox}>
-                  <Text style={styles.closureLetterTitle}>{language === 'ko' ? '✉️ 마지막 편지' : '✉️ Final Letter'}</Text>
+                  <Text style={styles.closureLetterTitle}>{o.demoClosureLetterTitle}</Text>
                   <Text style={styles.closureLetterDesc}>{o.stage3Hint}</Text>
                 </View>
               </View>
@@ -428,7 +420,7 @@ export default function OnboardingScreen({ navigation }: Props) {
             style={styles.ctaCard}
           >
             <Text style={styles.ctaTitle}>{o.ctaTitle}</Text>
-            <Text style={styles.ctaDesc}>{language === 'ko' ? '천천히 시작해도 괜찮아요.' : "Take your time. Start when you're ready."}</Text>
+            <Text style={styles.ctaDesc}>{o.ctaDesc}</Text>
 
             <TouchableOpacity
               style={styles.ctaButton}

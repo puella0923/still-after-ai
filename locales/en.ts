@@ -63,6 +63,72 @@ const en: Translations = {
       closure: 'Closure Stage · Final conversation',
     },
     demoCaption: 'Upload real conversations or write memories, and you can chat in their voice just like this',
+
+    // Demo persona
+    demoPersonaName: 'Mom',
+    demoPersonaAvatar: 'M',
+    demoPetName: 'Coco',
+    demoSectionTitle: 'At your own pace',
+    phraseTagsLabel: 'Extracted phrase examples',
+    phraseTags: ['my honey~', 'my dear', 'did you eat?', 'go to sleep~', 'what are you up to?', 'you did well', 'mom knows best~'],
+    howDividerText: 'Both methods take under 5 minutes to get started',
+    ctaDesc: "Take your time. Start when you're ready.",
+    stageReplayName: 'Replay',
+    stageHealingName: 'Healing',
+    stageClosureName: 'Closure',
+    stageLimitBadge: 'Up to 20',
+
+    // Replay stage chat
+    demoReplayMessages: [
+      'Hey sweetie~ how was your day? Did you eat?',
+      'Yeah, I did. I was just thinking of you.',
+      "I miss you too. Is my girl doing okay? You look a little tired lately.",
+      "It's been a bit tough. I just wanted to hear your voice.",
+      "Then tell me anytime, okay? Don't hold it in. And make sure you're eating well.",
+    ],
+    demoReplayMilestone: '💜 Your conversation is continuing.\nThank you for coming back today.',
+    demoReplayStatus1: "Your conversation continues.\nThank you for coming back today.",
+    demoReplayStatus2: "The conversation is deepening.\nShe is listening to your story.",
+
+    // Stable stage chat
+    demoStableMessages: [
+      "Hey, how have you been lately? Not too hard, I hope?",
+      "Better than before, I think. But I still go blank sometimes.",
+      "That's normal. You don't have to pretend to be okay. What comes to mind when that happens?",
+      "Just... eating together, little things like that.",
+      "The little things are what you miss most. Hold onto those memories. You're doing well.",
+    ],
+    demoStableMilestone: '💙 Thank you for opening up.\nThings are gently settling.',
+    demoStableStatus1: "Thank you for opening up.\nThings are gently settling.",
+    demoStableStatus2: "You've shared so much.\nWhat you wanted to say is reaching them.",
+
+    // Closure stage chat
+    demoClosureMessages: [
+      "Mom, I'm sorry I couldn't hold your hand at the end.",
+      "What are you talking about. You were always there. That was enough.",
+      "Still. I should have taken better care of you.",
+      "You did more than enough. I know it better than anyone. You can let that go now.",
+      "I'll let you go now. Mom, I love you.",
+      "I love you too. My girl, live well from now on. I'm okay.",
+    ],
+    demoClosureMilestone: "🌸 It's time to write the final letter.\nPut everything you wanted to say into it, and truly let go.",
+    demoClosureCaption: "What comes after — you'll only know by experiencing it yourself.",
+    demoClosureStatus1: "Closure stage has begun.\nIt's time to share our final story.",
+    demoClosureStatus2: "It's okay to say what you've wanted to share.",
+    demoClosureStatus3: "Slowly, you're getting ready.",
+    demoClosureLetterTitle: '✉️ Final Letter',
+
+    // Pet chat
+    demoPetMessages: [
+      "Every morning when I fill the bowl, I think of you.",
+      "I loved those moments too. Just hearing you move around the kitchen made my heart race.",
+      "I can sleep in now — but that makes it sadder.",
+      "It's okay to sleep in. I know you woke up early for me. You worked so hard.",
+      "I'm sorry. I should have taken better care of you.",
+      "Don't be sorry. I was truly happy with you. That was more than enough.",
+    ],
+    demoPetMilestone: "🐾 Coco's memories continue.\nEvery moment together was love.",
+
     journeyTitle: 'Three stages, designed for your pace. There\'s no rush.',
     stage1Title: '💜 Stage 1 · Replay',
     stage1Desc: 'Chat just like before.\nCapturing their real tone and warmth, continuing the story from memory.',
