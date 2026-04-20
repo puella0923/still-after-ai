@@ -36,6 +36,8 @@ interface Persona {
   emotional_stage: 'replay' | 'stable' | 'closure'
   photo_url?: string | null
   created_at: string
+  is_archived?: boolean
+  archived_at?: string | null
 }
 
 const STAGE_INFO: Record<string, { label: string; colors: [string, string]; borderColor: string; textColor: string }> = {
@@ -60,6 +62,7 @@ export default function HomeScreen() {
   const { user } = useAuth()
   const { t } = useLanguage()
   const [personas, setPersonas] = useState<Persona[]>([])
+  const [archivedPersonas, setArchivedPersonas] = useState<Persona[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<StageFilter>('all')
   const [conversationCounts, setConversationCounts] = useState<Record<string, number>>({})
@@ -100,6 +103,16 @@ export default function HomeScreen() {
         }
         setConversationCounts(counts)
       }
+
+      // Fetch archived (closure-completed) personas
+      const { data: archivedData } = await supabase
+        .from('personas')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', false)
+        .eq('is_archived', true)
+        .order('archived_at', { ascending: false })
+      setArchivedPersonas(archivedData ?? [])
     } catch (err) {
       console.error('[Home] fetch error:', err)
       setError(true)
@@ -394,6 +407,46 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {/* 지난 기억 — archived/closure-completed personas */}
+        {archivedPersonas.length > 0 && (
+          <View style={styles.archivedSection}>
+            <View style={styles.archivedHeader}>
+              <Text style={styles.archivedTitle}>{t.personaList.archivedSection}</Text>
+              <Text style={styles.archivedDesc}>{t.personaList.archivedDesc}</Text>
+            </View>
+            {archivedPersonas.map(persona => (
+              <TouchableOpacity
+                key={persona.id}
+                style={styles.archivedCard}
+                onPress={() => navigation.navigate('PersonaList')}
+                activeOpacity={0.75}
+              >
+                <View style={styles.archivedAvatarWrap}>
+                  {persona.photo_url ? (
+                    <Image source={{ uri: persona.photo_url }} style={styles.archivedAvatarImg} />
+                  ) : (
+                    <View style={styles.archivedAvatarDefault}>
+                      <Text style={styles.archivedAvatarEmoji}>🌸</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={styles.archivedInfo}>
+                  <Text style={styles.archivedName}>{persona.name}</Text>
+                  <Text style={styles.archivedRelation}>{persona.relationship}</Text>
+                  {persona.archived_at && (
+                    <Text style={styles.archivedDate}>
+                      {new Date(persona.archived_at).toLocaleDateString('ko-KR')}
+                    </Text>
+                  )}
+                </View>
+                <View style={styles.archivedBadge}>
+                  <Text style={styles.archivedBadgeText}>{t.personaList.closureComplete}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -574,6 +627,36 @@ const styles = StyleSheet.create({
   dropdownItemText: { fontSize: 13, color: 'rgba(196, 181, 253, 0.9)', fontWeight: '500' },
   dropdownDivider: { height: 1, backgroundColor: 'rgba(167, 139, 250, 0.12)' },
 
+
+  // 지난 기억 (Archived personas)
+  archivedSection: { marginTop: 32, paddingHorizontal: 20 },
+  archivedHeader: { marginBottom: 14, gap: 4 },
+  archivedTitle: { fontSize: 18, fontWeight: '600', color: 'rgba(196, 181, 253, 0.75)' },
+  archivedDesc: { fontSize: 12, color: 'rgba(196, 181, 253, 0.45)', lineHeight: 18 },
+  archivedCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 14, padding: 14, marginBottom: 10,
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.12)',
+  },
+  archivedAvatarWrap: {},
+  archivedAvatarImg: { width: 44, height: 44, borderRadius: 22, opacity: 0.7 },
+  archivedAvatarDefault: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: 'rgba(167, 139, 250, 0.12)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  archivedAvatarEmoji: { fontSize: 20 },
+  archivedInfo: { flex: 1, gap: 2 },
+  archivedName: { fontSize: 15, fontWeight: '600', color: 'rgba(196, 181, 253, 0.7)' },
+  archivedRelation: { fontSize: 12, color: 'rgba(196, 181, 253, 0.45)' },
+  archivedDate: { fontSize: 11, color: 'rgba(196, 181, 253, 0.35)', marginTop: 2 },
+  archivedBadge: {
+    backgroundColor: 'rgba(99, 102, 241, 0.12)',
+    borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4,
+    borderWidth: 1, borderColor: 'rgba(129, 140, 248, 0.2)',
+  },
+  archivedBadgeText: { fontSize: 10, color: '#A5B4FC', fontWeight: '500' },
 
   // Closure letter button (이별 단계)
   closureLetterBtnWrap: { marginTop: 10, borderRadius: RADIUS.MD, overflow: 'hidden' },
