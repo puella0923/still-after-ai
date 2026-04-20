@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
+import { useLanguage } from '../../context/LanguageContext'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'AIGenerating'>
@@ -18,12 +19,6 @@ type Props = {
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
-
-const STEPS = [
-  '나눈 이야기들을 찬찬히 읽고 있어요...',
-  '그 분만의 온기와 말투를 조심스럽게 담고 있어요...',
-  '이제 곧 만날 수 있어요...',
-]
 
 // Star dots for cosmic background
 const STAR_DOTS = Array.from({ length: 30 }, (_, i) => ({
@@ -35,6 +30,8 @@ const STAR_DOTS = Array.from({ length: 30 }, (_, i) => ({
 
 export default function AIGeneratingScreen({ navigation, route }: Props) {
   const { name, personaId } = route.params
+  const { t } = useLanguage()
+  const STEPS = [t.aiGenerating.steps[1], t.aiGenerating.steps[2], t.aiGenerating.steps[3]]
 
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.8)).current
@@ -162,7 +159,7 @@ export default function AIGeneratingScreen({ navigation, route }: Props) {
 
         {/* Main text */}
         <Text style={styles.mainText}>
-          {name}의 기억을{'\n'}조심스럽게 불러오고 있어요
+          {(t.aiGenerating.steps[0] as (name: string) => string)(name)}
         </Text>
 
         {/* Step text */}
@@ -197,7 +194,7 @@ export default function AIGeneratingScreen({ navigation, route }: Props) {
         </View>
 
         <Text style={styles.notice}>
-          잠시만요, 소중한 기억을 조심스럽게 담고 있어요.
+          {t.aiGenerating.waitNote}
         </Text>
       </Animated.View>
     </View>

@@ -26,6 +26,7 @@ import { getPersonaById, getConversations, saveConversation, diagnoseDatabaseHea
 import { getChatResponse, detectDanger, ClosurePhase } from '../../services/openaiService'
 import { supabase } from '../../services/supabase'
 import { C, RADIUS } from '../theme'
+import { useLanguage } from '../../context/LanguageContext'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const FREE_MESSAGE_LIMIT = 10
@@ -51,27 +52,7 @@ function getClosurePhase(count: number): ClosurePhase {
   if (count <= 15) return 3
   return 4
 }
-function getReplayProgressMessage(count: number): string | null {
-  if (count <= 2) return '천천히, 하고 싶은 말을 건네보세요'
-  if (count <= 5) return '그때처럼, 이야기를 시작해보세요'
-  if (count <= 10) return '익숙했던 대화를 이어가고 있어요'
-  if (count <= 15) return '그 사람과 함께 있는 시간입니다'
-  return '이 대화는 점점 깊어지고 있어요'
-}
-function getStableProgressMessage(count: number): string | null {
-  if (count <= 5) return '이제, 당신의 이야기를 해도 괜찮아요'
-  if (count <= 10) return '지금 느끼는 감정을 말해도 괜찮아요'
-  if (count <= 15) return '당신의 마음을 조금씩 이해하고 있어요'
-  return '이제, 천천히 준비하고 있어요'
-}
-function getClosureProgressMessage(count: number): string {
-  if (count <= 5) return '이제, 마지막 이야기를 나눌 시간이에요'
-  if (count <= 10) return '함께했던 시간들을, 천천히 떠올려볼까요?'
-  if (count <= 15) return '전하고 싶었던 말을, 지금 해도 괜찮아요'
-  if (count <= 17) return '이제, 마지막 이야기를 나눌 시간이 가까워졌어요'
-  if (count <= 19) return '조금씩, 준비가 되어가고 있어요'
-  return '전하고 싶은 말을, 지금 남겨도 괜찮아요'
-}
+// Progress messages are sourced from t.chat.replayProgress / stableProgress / closureProgress inside the component
 
 // Stage-specific themes
 const STAGE_THEMES = {
@@ -131,6 +112,7 @@ function makeId() { msgCounter += 1; return `m-${msgCounter}` }
 
 export default function ChatScreen({ navigation, route }: Props) {
   const personaId = route.params?.personaId
+  const { t } = useLanguage()
 
   const [persona, setPersona] = useState<Persona | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -244,7 +226,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
           }
         }
       } catch {
-        showToast('페르소나를 불러올 수 없어요')
+        showToast(t.chat.loadPersonaError)
         navigation.replace('PersonaList')
       } finally {
         setLoading(false)
@@ -263,7 +245,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         if (prev.some(m => m.action === 'goto_stable')) return prev
         return [...prev, {
           id: makeId(), role: 'system',
-          content: '이야기를 나눠주셔서 고마워요.\n\n이제 조금 다른 방향으로 이야기해볼 수 있어요.\n마음이 준비됐을 때 다음 단계로 넘어가요. 서두르지 않아도 괜찮아요.',
+          content: t.chat.stageTransitionToStable,
           action: 'goto_stable' as const,
         }]
       })
@@ -274,7 +256,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         if (prev.some(m => m.action === 'goto_closure')) return prev
         return [...prev, {
           id: makeId(), role: 'system',
-          content: '많은 이야기를 나눠주셨어요.\n\n이제 마지막 단계로 넘어갈 수 있어요.\n하고 싶은 말을 충분히 담았다고 느껴질 때, 천천히 이동해도 괜찮아요.',
+          content: t.chat.stageTransitionToClosure,
           action: 'goto_closure' as const,
         }]
       })
@@ -299,7 +281,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       await supabase.from('personas').update({ emotional_stage: 'stable' }).eq('id', persona.id).eq('user_id', user.id)
       setPersona(prev => prev ? { ...prev, emotional_stage: 'stable' } : prev)
       setStageMessageCount(0)
-      setMessages(prev => [...prev, { id: makeId(), role: 'system', content: '🌙 안정 단계로 접어들었어요\n\n이제, 당신의 이야기를 해도 괜찮아요.\n있는 그대로의 마음을 꺼내보세요.' }])
+      setMessages(prev => [...prev, { id: makeId(), role: 'system', content: t.chat.systemStableEntered }])
     } catch { showToast('잠시 후 다시 시도해주세요.') }
   }, [persona, showToast])
 
@@ -311,7 +293,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       await supabase.from('personas').update({ emotional_stage: 'closure' }).eq('id', persona.id).eq('user_id', user.id)
       setPersona(prev => prev ? { ...prev, emotional_stage: 'closure' } : prev)
       setStageMessageCount(0)
-      setMessages(prev => [...prev, { id: makeId(), role: 'system', content: '🌸 이별 단계로 접어들었어요\n\n이제, 마지막 이야기를 나눌 시간이에요.\n서두르지 않아도 돼요. 하고 싶은 말만 꺼내도 괜찮아요.' }])
+      setMessages(prev => [...prev, { id: makeId(), role: 'system', content: t.chat.systemClosureEntered }])
     } catch { showToast('잠시 후 다시 시도해주세요.') }
   }, [persona, showToast])
 
@@ -336,7 +318,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
     setStageMessageCount(newStageCount)
 
     saveConversation({ personaId: persona.id, role: 'user', content: trimmed, emotionalStage: persona.emotional_stage }).catch(err => {
-      showToast('⚠️ 대화 저장 실패')
+      showToast(t.chat.saveError)
     })
 
     try {
@@ -360,8 +342,8 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       // Replay: 중간 마일스톤 메시지
       if (persona.emotional_stage === 'replay') {
         let replayGuide: string | null = null
-        if (newStageCount === 5) replayGuide = `💜 ${persona.name}과(와)의 대화가 이어지고 있어요\n오늘도 찾아와줘서 고마워요.`
-        else if (newStageCount === 10) replayGuide = `대화가 깊어지고 있어요\n${persona.name}이(가) 당신의 이야기를 듣고 있어요.`
+        if (newStageCount === 5) replayGuide = t.chat.systemReturning(persona.name)
+        else if (newStageCount === 10) replayGuide = t.chat.systemDeepening(persona.name)
         if (replayGuide) setMessages(prev => [...prev, { id: makeId(), role: 'system', content: replayGuide! }])
       }
 
@@ -372,7 +354,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
           if (alreadyHasBtn) return prev
           return [...prev, {
             id: makeId(), role: 'system',
-            content: '대화가 조금씩 이어지고 있어요.\n\n준비가 되면 다음 단계로 넘어갈 수 있어요.\n아직 더 이야기하고 싶다면, 천천히 해도 괜찮아요.',
+            content: t.chat.systemStableReady,
             action: 'goto_stable' as const,
           }]
         })
@@ -381,8 +363,8 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       // Stable: 중간 마일스톤 메시지
       if (persona.emotional_stage === 'stable') {
         let stableGuide: string | null = null
-        if (newStageCount === 5) stableGuide = '마음을 나눠주셔서 고마워요\n조금씩 자리가 잡히고 있어요. 💙'
-        else if (newStageCount === 10) stableGuide = '많은 이야기를 털어놓았네요\n하고 싶었던 말이 조금씩 전해지고 있어요.'
+        if (newStageCount === 5) stableGuide = t.chat.systemStableProgress
+        else if (newStageCount === 10) stableGuide = t.chat.systemStableDeep
         if (stableGuide) setMessages(prev => [...prev, { id: makeId(), role: 'system', content: stableGuide! }])
       }
 
@@ -393,7 +375,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
           if (alreadyHasBtn) return prev
           return [...prev, {
             id: makeId(), role: 'system',
-            content: '감정을 정리하는 시간을 보내고 있어요.\n\n준비가 되면 마지막 단계로 넘어갈 수 있어요.\n아직 더 이야기하고 싶다면, 서두르지 않아도 돼요.',
+            content: t.chat.systemClosureReady,
             action: 'goto_closure' as const,
           }]
         })
@@ -402,10 +384,10 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       // Closure milestones
       if (persona.emotional_stage === 'closure') {
         let closureGuide: string | null = null
-        if (newStageCount === 1) closureGuide = '🌸 이별 단계가 시작됐어요\n\n이제, 마지막 이야기를 나눌 시간이에요.'
-        else if (newStageCount === 11) closureGuide = '💬 이제, 전하고 싶었던 말을 해도 괜찮아요'
-        else if (newStageCount === 16) closureGuide = '이제, 마지막 이야기를 나눌 시간이 가까워졌어요'
-        else if (newStageCount === 18) closureGuide = '조금씩, 준비가 되어가고 있어요'
+        if (newStageCount === 1) closureGuide = t.chat.systemClosureEntered
+        else if (newStageCount === 11) closureGuide = t.chat.systemClosureMsg
+        else if (newStageCount === 16) closureGuide = t.chat.closureProgress[3]
+        else if (newStageCount === 18) closureGuide = t.chat.closureProgress[4]
         if (closureGuide) setMessages(prev => [...prev, { id: makeId(), role: 'system', content: closureGuide! }])
         if (newStageCount >= CLOSURE_MESSAGE_LIMIT) {
           setTimeout(() => { navigation.navigate('ClosureCeremony', { personaId: persona.id, personaName: persona.name, aiFarewell: reply }) }, 3000)
@@ -442,9 +424,28 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
   const freeRemaining = (!isPaidUser && freeUsageCount !== null) ? Math.max(0, FREE_MESSAGE_LIMIT - freeUsageCount) : null
 
   const headerSubtitleText = (() => {
-    if (persona?.emotional_stage === 'closure') return getClosureProgressMessage(stageMessageCount)
-    if (persona?.emotional_stage === 'stable') return getStableProgressMessage(stageMessageCount) ?? theme.label
-    return getReplayProgressMessage(stageMessageCount) ?? theme.label
+    if (persona?.emotional_stage === 'closure') {
+      const p = t.chat.closureProgress
+      if (stageMessageCount <= 5) return p[0]
+      if (stageMessageCount <= 10) return p[1]
+      if (stageMessageCount <= 15) return p[2]
+      if (stageMessageCount <= 17) return p[3]
+      if (stageMessageCount <= 19) return p[4]
+      return p[5]
+    }
+    if (persona?.emotional_stage === 'stable') {
+      const p = t.chat.stableProgress
+      if (stageMessageCount <= 5) return p[0]
+      if (stageMessageCount <= 10) return p[1]
+      if (stageMessageCount <= 15) return p[2]
+      return p[3]
+    }
+    const p = t.chat.replayProgress
+    if (stageMessageCount <= 2) return p[0]
+    if (stageMessageCount <= 5) return p[1]
+    if (stageMessageCount <= 10) return p[2]
+    if (stageMessageCount <= 15) return p[3]
+    return p[4]
   })()
 
   if (loading) {
@@ -475,15 +476,15 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
           <View style={styles.modalCard}>
             <LinearGradient colors={['rgba(88, 28, 135, 0.8)', 'rgba(30, 58, 138, 0.8)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.modalGradient}>
               <Text style={styles.modalIcon}>⚠️</Text>
-              <Text style={styles.modalTitle}>많이 힘드시군요</Text>
-              <Text style={styles.modalDesc}>지금 많이 힘드시죠. 전문 상담사와 이야기 나눠보세요.</Text>
+              <Text style={styles.modalTitle}>{t.chat.crisisTitle}</Text>
+              <Text style={styles.modalDesc}>{t.chat.crisisMsg}</Text>
               <TouchableOpacity activeOpacity={0.85} onPress={() => Linking.openURL('tel:1577-0199')} style={styles.dangerCallBtn}>
                 <LinearGradient colors={['#DC2626', '#DB2777']} style={styles.dangerCallBtnGrad}>
-                  <Text style={styles.modalBtnText}>정신건강위기상담전화 연결 (1577-0199)</Text>
+                  <Text style={styles.modalBtnText}>{t.chat.crisisHotline}</Text>
                 </LinearGradient>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setShowDangerModal(false)}>
-                <Text style={styles.modalBtnSecondaryText}>괜찮아요, 계속할게요</Text>
+                <Text style={styles.modalBtnSecondaryText}>{t.chat.crisisOk}</Text>
               </TouchableOpacity>
             </LinearGradient>
           </View>
@@ -522,7 +523,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         {/* AI Disclosure Banner */}
         <View style={styles.aiBanner}>
           <Text style={styles.aiBannerText}>
-            이 대화는 실제 인물이 아닌 기술 기반 서비스와 나누는 대화입니다.
+            {t.chat.aiBanner}
           </Text>
         </View>
 
@@ -530,7 +531,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         {!isPaidUser && freeRemaining !== null && freeRemaining <= 3 && freeRemaining > 0 && (
           <View style={styles.freeNudgeBanner}>
             <Text style={styles.freeNudgeText}>
-              💜 무료 대화가 {freeRemaining}회 남아있어요. 이야기를 더 이어가고 싶다면 프리미엄을 이용해보세요.
+              {t.chat.freeNudge(freeRemaining!)}
             </Text>
           </View>
         )}
@@ -541,14 +542,14 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
             const lastAiMsg = [...messages].reverse().find(m => m.role === 'assistant')
             navigation.navigate('ClosureCeremony', { personaId: persona.id, personaName: persona.name, aiFarewell: lastAiMsg?.content ?? '' })
           }}>
-            <Text style={styles.closureBannerText}>🌸 천천히 보내드릴 준비가 되셨나요? 마지막 편지를 써볼게요 →</Text>
+            <Text style={styles.closureBannerText}>{t.chat.closureLetterBtn}</Text>
           </TouchableOpacity>
         )}
 
         {/* Read-only banner */}
         {isReadOnly && (
           <View style={styles.readOnlyBanner}>
-            <Text style={styles.readOnlyBannerText}>🌸 이별을 마무리한 대화예요. 새 메시지를 보낼 수 없어요.</Text>
+            <Text style={styles.readOnlyBannerText}>{t.chat.closureEndBanner}</Text>
           </View>
         )}
 
@@ -565,17 +566,17 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
                   <View style={styles.closureLetterCard}>
                     <View style={styles.closureLetterDivider}>
                       <View style={styles.closureLetterLine} />
-                      <Text style={styles.closureLetterDividerText}>🌸 마지막 편지</Text>
+                      <Text style={styles.closureLetterDividerText}>{t.chat.closureLetterTitle}</Text>
                       <View style={styles.closureLetterLine} />
                     </View>
                     {!!closureLetter.ai_farewell && (
                       <View style={styles.closureAiFarewell}>
-                        <Text style={styles.closureAiFarewellLabel}>{personaName}의 마지막 말</Text>
+                        <Text style={styles.closureAiFarewellLabel}>{t.chat.aiLetterLabel(personaName)}</Text>
                         <Text style={styles.closureAiFarewellText}>"{closureLetter.ai_farewell}"</Text>
                       </View>
                     )}
                     <View style={styles.closureUserLetter}>
-                      <Text style={styles.closureUserLetterLabel}>내가 쓴 편지</Text>
+                      <Text style={styles.closureUserLetterLabel}>{t.chat.myLetterLabel}</Text>
                       <Text style={styles.closureUserLetterText}>{closureLetter.content}</Text>
                     </View>
                   </View>
@@ -595,14 +596,14 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
             ListEmptyComponent={
               <View style={styles.emptyState}>
                 <Text style={styles.emptyEmoji}>💜</Text>
-                <Text style={styles.emptyTitle}>{personaName}와 대화를 시작하세요</Text>
-                <Text style={styles.emptyDesc}>먼저 인사를 건네보세요.</Text>
+                <Text style={styles.emptyTitle}>{t.chat.emptyTitle(personaName)}</Text>
+                <Text style={styles.emptyDesc}>{t.chat.emptyHint}</Text>
               </View>
             }
             renderItem={({ item }) => {
               if (item.role === 'system') {
                 const hasCta = item.action === 'goto_stable' || item.action === 'goto_closure'
-                const ctaLabel = item.action === 'goto_stable' ? '안정 단계로 넘어가기 →' : '이별 단계 시작하기 →'
+                const ctaLabel = item.action === 'goto_stable' ? t.chat.gotoStableBtn : t.chat.gotoClosureBtn
                 const ctaHandler = item.action === 'goto_stable' ? handleStableTransition : handleClosureTransition
                 return (
                   <View style={styles.systemCardWrap}>
@@ -659,7 +660,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
                 style={styles.textInput}
                 value={inputText}
                 onChangeText={setInputText}
-                placeholder={persona?.emotional_stage === 'stable' ? '지금 어떤 마음인지 이야기해보세요...' : persona?.emotional_stage === 'closure' ? '담아두셨던 말씀을 꺼내보세요...' : `${personaName}에게 말하기...`}
+                placeholder={persona?.emotional_stage === 'stable' ? t.chat.inputPlaceholderStable : persona?.emotional_stage === 'closure' ? t.chat.inputPlaceholderClosure : t.chat.inputPlaceholderDefault(personaName)}
                 placeholderTextColor="rgba(167, 139, 250, 0.5)"
                 multiline
                 maxLength={500}

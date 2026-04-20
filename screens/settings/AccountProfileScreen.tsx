@@ -8,6 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { supabase } from '../../services/supabase'
 import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/LanguageContext'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'AccountProfile'>
@@ -60,14 +61,15 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-function formatDate(iso: string | undefined): string {
-  if (!iso) return '알 수 없음'
+function formatDate(iso: string | undefined): string | null {
+  if (!iso) return null
   const d = new Date(iso)
   return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`
 }
 
 export default function AccountProfileScreen({ navigation }: Props) {
   const { user, signOut } = useAuth()
+  const { t } = useLanguage()
   const [personaCount, setPersonaCount] = useState<number | null>(null)
   const [conversationCount, setConversationCount] = useState<number | null>(null)
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0)
@@ -95,7 +97,7 @@ export default function AccountProfileScreen({ navigation }: Props) {
   }
 
   const email = user?.email ?? ''
-  const createdAt = formatDate((user as any)?.created_at)
+  const createdAt = formatDate((user as any)?.created_at) ?? t.account.joinDateUnknown
 
   return (
     <View style={styles.root}>
@@ -110,7 +112,7 @@ export default function AccountProfileScreen({ navigation }: Props) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backIcon}>‹</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>계정 정보</Text>
+        <Text style={styles.headerTitle}>{t.account.header}</Text>
         <View style={{ width: 36 }} />
       </View>
 
@@ -121,31 +123,31 @@ export default function AccountProfileScreen({ navigation }: Props) {
             <Text style={styles.avatarText}>{email.charAt(0).toUpperCase()}</Text>
           </LinearGradient>
           <Text style={styles.avatarEmail}>{email}</Text>
-          <Text style={styles.avatarSub}>Still After 회원</Text>
+          <Text style={styles.avatarSub}>{t.account.memberLabel}</Text>
         </View>
 
         {/* Account info */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>가입 정보</Text>
-          <InfoRow label="이메일" value={email} />
+          <Text style={styles.cardTitle}>{t.account.accountInfoTitle}</Text>
+          <InfoRow label={t.account.emailLabel} value={email} />
           <View style={styles.rowDivider} />
-          <InfoRow label="로그인 방식" value="이메일" />
+          <InfoRow label={t.account.loginMethodLabel} value={t.account.loginMethodEmail} />
           <View style={styles.rowDivider} />
-          <InfoRow label="가입일" value={createdAt} />
+          <InfoRow label={t.account.joinDateLabel} value={createdAt} />
         </View>
 
         {/* Stats */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>사용 현황</Text>
+          <Text style={styles.cardTitle}>{t.account.usageTitle}</Text>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{personaCount !== null ? personaCount : '—'}</Text>
-              <Text style={styles.statLabel}>담긴 기억</Text>
+              <Text style={styles.statLabel}>{t.account.memoriesSaved}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{conversationCount !== null ? conversationCount : '—'}</Text>
-              <Text style={styles.statLabel}>나눈 대화</Text>
+              <Text style={styles.statLabel}>{t.account.conversationsShared}</Text>
             </View>
           </View>
         </View>
@@ -154,21 +156,21 @@ export default function AccountProfileScreen({ navigation }: Props) {
 
         {/* Danger zone */}
         <View style={styles.dangerSection}>
-          <Text style={styles.dangerNote}>계정을 삭제하면 모든 기억, 대화 기록이 영구 삭제됩니다. 이 작업은 되돌릴 수 없어요.</Text>
+          <Text style={styles.dangerNote}>{t.account.deleteWarning}</Text>
           <TouchableOpacity style={styles.deleteAccountBtn} onPress={() => setDeleteStep(1)} activeOpacity={0.7}>
-            <Text style={styles.deleteAccountText}>계정 삭제</Text>
+            <Text style={styles.deleteAccountText}>{t.account.deleteBtn}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      <ConfirmModal visible={deleteStep === 1} title="계정을 삭제할까요?"
-        message={`모든 기억과 대화 기록이 영구 삭제돼요.\n삭제 후에는 복구할 수 없어요.`}
-        confirmLabel="계속" isDanger onCancel={() => setDeleteStep(0)} onConfirm={() => setDeleteStep(2)} />
-      <ConfirmModal visible={deleteStep === 2} title="정말 삭제할까요?"
-        message="이 작업은 되돌릴 수 없어요." cancelLabel="아니요, 돌아갈게요"
-        confirmLabel="네, 삭제할게요" isDanger loading={deleting}
+      <ConfirmModal visible={deleteStep === 1} title={t.account.deleteStep1Title}
+        message={t.account.deleteStep1Msg}
+        confirmLabel={t.account.deleteStep1Confirm} isDanger onCancel={() => setDeleteStep(0)} onConfirm={() => setDeleteStep(2)} />
+      <ConfirmModal visible={deleteStep === 2} title={t.account.deleteStep2Title}
+        message={t.account.deleteStep2Msg} cancelLabel={t.account.deleteStep2Cancel}
+        confirmLabel={t.account.deleteStep2Confirm} isDanger loading={deleting}
         onCancel={() => setDeleteStep(0)} onConfirm={handleDeleteFinal} />
     </View>
   )

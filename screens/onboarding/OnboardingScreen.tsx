@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/LanguageContext'
 import { C, RADIUS } from '../theme'
 
 const { width } = Dimensions.get('window')
@@ -22,6 +23,8 @@ type Props = {
 
 export default function OnboardingScreen({ navigation }: Props) {
   const { session } = useAuth()
+  const { t, language } = useLanguage()
+  const o = t.onboarding
   const [demoTab, setDemoTab] = useState<'replay' | 'stable' | 'closure' | 'pet'>('replay')
   const fadeAnim = useRef(new Animated.Value(0)).current
 
@@ -71,16 +74,14 @@ export default function OnboardingScreen({ navigation }: Props) {
 
           <Text style={styles.heroEyebrow}>Grief Care · AI</Text>
           <Text style={styles.heroTitle}>한 번만 더{'\n'}말할 수 있다면</Text>
-          <Text style={styles.heroSub}>아직 전하지 못한 말이 있나요?</Text>
-          <Text style={styles.heroDesc}>
-            죄책감을 혼자 안고 있지 않아도 됩니다.{'\n'}하지 못한 말을 전하고, 천천히 놓을 수 있도록 돕습니다.
-          </Text>
+          <Text style={styles.heroSub}>{o.heroSub}</Text>
+          <Text style={styles.heroDesc}>{o.heroDesc}</Text>
 
           {/* 미션 인용 */}
           <View style={styles.heroMission}>
             <Text style={styles.heroMissionText}>
-              전하지 못한 말을 꺼내고,{'\n'}
-              스스로를 용서하며 보내드립니다.
+              {o.heroMission1}{'\n'}
+              {o.heroMission2}
             </Text>
           </View>
 
@@ -94,7 +95,7 @@ export default function OnboardingScreen({ navigation }: Props) {
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={styles.primaryButtonGradient}
             >
-              <Text style={styles.primaryButtonText}>조심스럽게 시작해보기</Text>
+              <Text style={styles.primaryButtonText}>{o.startBtn}</Text>
               <Text style={styles.primaryButtonArrow}>›</Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -104,21 +105,13 @@ export default function OnboardingScreen({ navigation }: Props) {
         <View style={styles.section}>
           <Text style={styles.empathyQuote}>
             <Text style={styles.empathyQuoteAccent}>"밥은 먹었어?"</Text>{'\n'}
-            목소리가 아직도 들리나요.
+            {o.empathyTitle}
           </Text>
 
-          <Text style={styles.sectionDesc}>
-            전하지 못한 말이, 아직 여기 남아 있지 않나요.
-          </Text>
+          <Text style={styles.sectionDesc}>{o.empathySubtitle}</Text>
 
           <View style={styles.empathyList}>
-            {[
-              '문자를 쓰다가, 받을 사람이 없다는 걸 깨닫고 멈춘 적 있나요.',
-              '그때 그 말을 했더라면 — 그 후회가 아직도 남아 있나요.',
-              '더 잘 챙겨드렸더라면, 그 죄책감이 아직도 사라지지 않나요.',
-              '아침마다 현관에서 기다리던 모습이, 아직도 눈에 밟히지는 않나요.',
-              '상실은 시간이 해결한다지만, 어떤 감정은 그냥 두면 더 깊어집니다.',
-            ].map((text, i) => (
+            {o.empathyItems.map((text, i) => (
               <View key={i} style={styles.empathyItem}>
                 <View style={styles.empathyDot} />
                 <Text style={styles.empathyItemText}>{text}</Text>
@@ -127,18 +120,14 @@ export default function OnboardingScreen({ navigation }: Props) {
           </View>
 
           <View style={styles.empathyClose}>
-            <Text style={styles.empathyCloseText}>
-              Still After는 그리움도, 죄책감도 억누르지 않습니다.{'\n'}안전하게 꺼낸 뒤, 당신이 스스로를 용서할 수 있도록 설계했습니다.
-            </Text>
+            <Text style={styles.empathyCloseText}>{o.empathyClose}</Text>
           </View>
         </View>
 
         {/* ════ ③ 이렇게 시작합니다 ════ */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>이렇게 시작합니다</Text>
-          <Text style={styles.sectionDesc}>
-            그 사람이 실제로 쓰던 말투를 학습해, 대화를 만들어냅니다.
-          </Text>
+          <Text style={styles.sectionTitle}>{o.howTitle}</Text>
+          <Text style={styles.sectionDesc}>{o.howSubtitle}</Text>
 
           <View style={styles.howGrid}>
             {/* 채팅 업로드 */}
@@ -147,12 +136,10 @@ export default function OnboardingScreen({ navigation }: Props) {
               style={[styles.howMethod, styles.howMethodPrimary]}
             >
               <View style={styles.howBadgePrimary}>
-                <Text style={styles.howBadgeTextPrimary}>채팅 업로드</Text>
+                <Text style={styles.howBadgeTextPrimary}>{o.howChatTitle}</Text>
               </View>
-              <Text style={styles.howMethodTitle}>대화를 업로드하면{'\n'}말투를 그대로 담습니다</Text>
-              <Text style={styles.howMethodDesc}>
-                대화 내보내기 파일(.txt, .csv)을 올리면, 자주 쓰는 표현과 말투를 자동으로 분석합니다.
-              </Text>
+              <Text style={styles.howMethodTitle}>{o.howChatTitle}</Text>
+              <Text style={styles.howMethodDesc}>{o.howChatDesc}</Text>
 
               {/* 지원 앱 */}
               <View style={styles.supportedApps}>
@@ -169,11 +156,7 @@ export default function OnboardingScreen({ navigation }: Props) {
               </View>
 
               <View style={styles.parseFlow}>
-                {[
-                  { icon: '📄', label: '대화 내보내기 파일 업로드' },
-                  { icon: '🔍', label: '자주 쓰는 표현 · 말투 · 호칭 추출' },
-                  { icon: '💜', label: '페르소나 생성 완료' },
-                ].map((step, i, arr) => (
+                {(['📄', '🔍', '💜'] as const).map((icon, i, arr) => ({icon, label: o.howSteps[i]})).map((step, i, arr) => (
                   <View key={i}>
                     <View style={styles.parseStep}>
                       <View style={styles.parseIcon}>
@@ -186,9 +169,7 @@ export default function OnboardingScreen({ navigation }: Props) {
                 ))}
               </View>
 
-              <Text style={styles.dataPrivacyNote}>
-                🔐 업로드한 파일은 기억을 담은 뒤 즉시 삭제되며, 외부에 저장·공유되지 않아요.
-              </Text>
+              <Text style={styles.dataPrivacyNote}>{o.howPrivacy}</Text>
               <Text style={styles.phraseLabel}>추출된 표현 예시</Text>
               <View style={styles.phraseTags}>
                 {['우리 꿀돼지~', '우리 딸', '밥은 먹었어?', '얼른 자~~~~', '뭐해ㅋ 자고 있어?', '그래도 잘 했어', '엄마가 다 알지~'].map((tag, i) => (
@@ -205,42 +186,36 @@ export default function OnboardingScreen({ navigation }: Props) {
               style={styles.howMethod}
             >
               <View style={styles.howBadgeAlt}>
-                <Text style={styles.howBadgeTextAlt}>직접 작성</Text>
+                <Text style={styles.howBadgeTextAlt}>{o.howWriteTitle}</Text>
               </View>
-              <Text style={styles.howMethodTitle}>채팅 기록이 없어도 괜찮아요</Text>
-              <Text style={styles.howMethodDesc}>
-                그 사람의 평소 말투, 자주 하던 말, 습관이나 기억을 직접 작성하면 그 사람처럼 대화합니다.
-              </Text>
+              <Text style={styles.howMethodTitle}>{o.howWriteTitle}</Text>
+              <Text style={styles.howMethodDesc}>{o.howWriteDesc}</Text>
               <View style={styles.howMethodQuote}>
-                <Text style={styles.howMethodQuoteText}>
-                  "엄마는 항상 걱정이 많았어. 밥 먹었냐고 자주 물어봤고, 화낼 때도 결국 미안해했어. 따뜻한 사람이었어."
-                </Text>
+                <Text style={styles.howMethodQuoteText}>{language === 'ko' ? '"엄마는 항상 걱정이 많았어. 밥 먹었냐고 자주 물어봤고, 화낼 때도 결국 미안해했어. 따뜻한 사람이었어."' : '"Mom was always warm and a bit worried about everything — she\'d ask if I ate, and even when she got upset, she always came back with sorry."'}</Text>
               </View>
             </LinearGradient>
           </View>
 
           <View style={styles.howDivider}>
             <View style={styles.howDividerLine} />
-            <Text style={styles.howDividerText}>두 방법 모두 대화 시작까지 5분이면 충분해요</Text>
+            <Text style={styles.howDividerText}>{language === 'ko' ? '두 방법 모두 대화 시작까지 5분이면 충분해요' : 'Both methods take under 5 minutes to start'}</Text>
             <View style={styles.howDividerLine} />
           </View>
         </View>
 
         {/* ════ ④ 대화 예시 ════ */}
         <View style={styles.section}>
-          <Text style={styles.sectionEyebrow}>실제로 가능한 대화</Text>
-          <Text style={styles.sectionTitle}>그리운 그 말투로,{'\n'}다시 대화할 수 있습니다</Text>
-          <Text style={styles.sectionDesc}>
-            사람뿐 아니라 반려동물과의 이별도 함께합니다. 실제 말투와 기록을 학습하여 아래와 같이 대화합니다.
-          </Text>
+          <Text style={styles.sectionEyebrow}>{o.demoTitle}</Text>
+          <Text style={styles.sectionTitle}>{o.demoTitle}</Text>
+          <Text style={styles.sectionDesc}>{o.demoSubtitle}</Text>
 
           {/* 탭 */}
           <View style={styles.demoTabRow}>
             {([
-              { key: 'replay', label: '💜 재연 단계' },
-              { key: 'stable', label: '💙 안정 단계' },
-              { key: 'closure', label: '🕊️ 이별 단계' },
-              { key: 'pet', label: '🐾 반려동물' },
+              { key: 'replay', label: o.demoTabs.replay },
+              { key: 'stable', label: o.demoTabs.stable },
+              { key: 'closure', label: o.demoTabs.closure },
+              { key: 'pet', label: o.demoTabs.pet },
             ] as const).map(tab => (
               <TouchableOpacity
                 key={tab.key}
@@ -274,10 +249,10 @@ export default function OnboardingScreen({ navigation }: Props) {
               <View>
                 <Text style={styles.demoPersonaName}>{demoTab === 'pet' ? '초코' : '엄마'}</Text>
                 <Text style={styles.demoPersonaRole}>
-                  {demoTab === 'replay' ? '재연 단계 · AI 학습 완료'
-                    : demoTab === 'stable' ? '안정 단계 · 감정 정리 중'
-                    : demoTab === 'pet' ? '반려동물 · 함께한 기억'
-                    : '이별 단계 · 마지막 대화'}
+                  {demoTab === 'replay' ? o.demoCaptions.replay
+                    : demoTab === 'stable' ? o.demoCaptions.stable
+                    : demoTab === 'pet' ? o.demoCaptions.pet
+                    : o.demoCaptions.closure}
                 </Text>
               </View>
             </View>
@@ -344,17 +319,13 @@ export default function OnboardingScreen({ navigation }: Props) {
             )}
           </LinearGradient>
 
-          <Text style={styles.demoCaption}>
-            * 실제 대화를 업로드하거나 기억을 작성하면, 이처럼 그 말투로 대화할 수 있어요
-          </Text>
+          <Text style={styles.demoCaption}>* {o.demoCaption}</Text>
         </View>
 
         {/* ════ ⑤ 3단계 여정 ════ */}
         <View style={[styles.section, styles.sectionDark]}>
-          <Text style={styles.sectionTitle}>천천히, 당신의 속도로</Text>
-          <Text style={styles.sectionDesc}>
-            세 단계가 설계되어 있습니다. 서두르지 않아도 괜찮아요.
-          </Text>
+          <Text style={styles.sectionTitle}>{language === 'ko' ? '천천히, 당신의 속도로' : 'At your own pace'}</Text>
+          <Text style={styles.sectionDesc}>{o.journeyTitle}</Text>
 
           <View style={styles.stageList}>
 
@@ -362,29 +333,20 @@ export default function OnboardingScreen({ navigation }: Props) {
             <View style={[styles.stageRow, styles.stageRowBorder]}>
               <View style={styles.stageLeft}>
                 <Text style={styles.stageNum}>Step 01</Text>
-                <Text style={styles.stageName}>재연</Text>
+                <Text style={styles.stageName}>{language === 'ko' ? '재연' : 'Replay'}</Text>
               </View>
               <View style={styles.stageRight}>
-                <Text style={styles.stageDesc}>
-                  그때처럼, 대화합니다.{'\n'}
-                  실제 말투와 온기를 담아, 기억 속에서 이야기를 이어갑니다.
-                </Text>
+                <Text style={styles.stageDesc}>{o.stage1Desc}</Text>
                 <View style={styles.stageMsg}>
                   <Text style={styles.stageMsgIcon}>💜</Text>
-                  <Text style={styles.stageMsgText}>
-                    {'엄마과(와)의 대화가 이어지고 있어요\n오늘도 찾아와줘서 고마워요.'}
-                  </Text>
+                  <Text style={styles.stageMsgText}>{language === 'ko' ? '엄마과(와)의 대화가 이어지고 있어요\n오늘도 찾아와줘서 고마워요.' : "Your conversation continues.\nThank you for coming back."}</Text>
                 </View>
                 <View style={[styles.stageMsg, { marginTop: 8 }]}>
                   <Text style={styles.stageMsgIcon}>💬</Text>
-                  <Text style={styles.stageMsgText}>
-                    {'대화가 깊어지고 있어요\n엄마이(가) 당신의 이야기를 듣고 있어요.'}
-                  </Text>
+                  <Text style={styles.stageMsgText}>{language === 'ko' ? '대화가 깊어지고 있어요\n엄마이(가) 당신의 이야기를 듣고 있어요.' : "The conversation is deepening.\nThey are listening to your story."}</Text>
                 </View>
                 <View style={styles.stageTransitionHint}>
-                  <Text style={styles.stageTransitionText}>
-                    이야기를 나눠주셔서 고마워요 — 마음이 준비됐을 때 다음 단계로, 서두르지 않아도 괜찮아요
-                  </Text>
+                  <Text style={styles.stageTransitionText}>{o.stage1Hint}</Text>
                 </View>
               </View>
             </View>
@@ -393,29 +355,20 @@ export default function OnboardingScreen({ navigation }: Props) {
             <View style={[styles.stageRow, styles.stageRowBorder]}>
               <View style={styles.stageLeft}>
                 <Text style={styles.stageNum}>Step 02</Text>
-                <Text style={styles.stageName}>안정</Text>
+                <Text style={styles.stageName}>{language === 'ko' ? '안정' : 'Healing'}</Text>
               </View>
               <View style={styles.stageRight}>
-                <Text style={styles.stageDesc}>
-                  당신의 마음을 꺼내놓습니다.{'\n'}
-                  감정에 이름을 붙이고, 조금씩 가벼워집니다.
-                </Text>
+                <Text style={styles.stageDesc}>{o.stage2Desc}</Text>
                 <View style={styles.stageMsg}>
                   <Text style={styles.stageMsgIcon}>💙</Text>
-                  <Text style={styles.stageMsgText}>
-                    {'마음을 나눠주셔서 고마워요\n조금씩 자리가 잡히고 있어요.'}
-                  </Text>
+                  <Text style={styles.stageMsgText}>{language === 'ko' ? '마음을 나눠주셔서 고마워요\n조금씩 자리가 잡히고 있어요.' : "Thank you for opening up.\nThings are gently settling."}</Text>
                 </View>
                 <View style={[styles.stageMsg, { marginTop: 8 }]}>
                   <Text style={styles.stageMsgIcon}>💬</Text>
-                  <Text style={styles.stageMsgText}>
-                    {'많은 이야기를 털어놓았네요\n하고 싶었던 말이 조금씩 전해지고 있어요.'}
-                  </Text>
+                  <Text style={styles.stageMsgText}>{language === 'ko' ? '많은 이야기를 털어놓았네요\n하고 싶었던 말이 조금씩 전해지고 있어요.' : "You've shared so much.\nWhat you wanted to say is reaching them."}</Text>
                 </View>
                 <View style={styles.stageTransitionHint}>
-                  <Text style={styles.stageTransitionText}>
-                    충분히 이야기를 나눴다고 느껴질 때 — 천천히 마지막 단계로 이동해도 괜찮아요
-                  </Text>
+                  <Text style={styles.stageTransitionText}>{o.stage2Hint}</Text>
                 </View>
               </View>
             </View>
@@ -424,41 +377,30 @@ export default function OnboardingScreen({ navigation }: Props) {
             <View style={styles.stageRow}>
               <View style={styles.stageLeft}>
                 <Text style={styles.stageNum}>Step 03</Text>
-                <Text style={styles.stageName}>이별</Text>
+                <Text style={styles.stageName}>{language === 'ko' ? '이별' : 'Closure'}</Text>
                 <View style={styles.stageLimitBadge}>
-                  <Text style={styles.stageLimitText}>최대 20번</Text>
+                  <Text style={styles.stageLimitText}>{language === 'ko' ? '최대 20번' : 'Up to 20'}</Text>
                 </View>
               </View>
               <View style={styles.stageRight}>
-                <Text style={styles.stageDesc}>
-                  준비가 되면, 마지막 대화를 나눕니다.{'\n'}
-                  20번의 대화 안에서, 전하지 못했던 말을 모두 담습니다.
-                </Text>
+                <Text style={styles.stageDesc}>{o.stage3Desc}</Text>
                 <View style={styles.stageMsg}>
                   <Text style={styles.stageMsgIcon}>🌸</Text>
-                  <Text style={styles.stageMsgText}>
-                    {'이별 단계가 시작됐어요\n이제, 마지막 이야기를 나눌 시간이에요.'}
-                  </Text>
+                  <Text style={styles.stageMsgText}>{language === 'ko' ? '이별 단계가 시작됐어요\n이제, 마지막 이야기를 나눌 시간이에요.' : "Closure stage has begun.\nIt's time to share our final story."}</Text>
                 </View>
                 <View style={[styles.stageMsg, { marginTop: 8 }]}>
                   <Text style={styles.stageMsgIcon}>💬</Text>
-                  <Text style={styles.stageMsgText}>이제, 전하고 싶었던 말을 해도 괜찮아요</Text>
+                  <Text style={styles.stageMsgText}>{language === 'ko' ? '이제, 전하고 싶었던 말을 해도 괜찮아요' : "It's okay to say what you've wanted to share."}</Text>
                 </View>
                 <View style={[styles.stageMsg, { marginTop: 8 }]}>
                   <Text style={styles.stageMsgIcon}>🕊️</Text>
-                  <Text style={styles.stageMsgText}>조금씩, 준비가 되어가고 있어요</Text>
+                  <Text style={styles.stageMsgText}>{language === 'ko' ? '조금씩, 준비가 되어가고 있어요' : "Slowly, you're getting ready."}</Text>
                 </View>
 
                 {/* 마지막 편지 */}
                 <View style={styles.closureLetterBox}>
-                  <Text style={styles.closureLetterTitle}>✉️ 마지막 편지</Text>
-                  <Text style={styles.closureLetterDesc}>
-                    20번의 대화가 끝나면, 마지막 편지를 씁니다.{'\n'}
-                    전하지 못했던 말을 모두 담아 봉인하면,{'\n'}
-                    대화가 아름답게 마무리됩니다.{'\n\n'}
-                    이별은 끝이 아니에요.{'\n'}
-                    그 분은 당신이 살아가는 날들 안에서 함께 있어요.
-                  </Text>
+                  <Text style={styles.closureLetterTitle}>{language === 'ko' ? '✉️ 마지막 편지' : '✉️ Final Letter'}</Text>
+                  <Text style={styles.closureLetterDesc}>{o.stage3Hint}</Text>
                 </View>
               </View>
             </View>
@@ -468,21 +410,15 @@ export default function OnboardingScreen({ navigation }: Props) {
 
         {/* ════ ⑥ 이별의 약속 ════ */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>우리는 계속 머물게 하지 않습니다</Text>
+          <Text style={styles.sectionTitle}>{o.promiseTitle}</Text>
           <Text style={styles.promiseDesc}>
-            다시 만나게 해주는 것이 아닙니다.{'\n'}
-            떠나보낼 수 있도록 — 끝을 함께 설계하는 서비스입니다.
+            {o.promiseDesc1}{'\n'}
+            {o.promiseDesc2}
           </Text>
           <View style={styles.promiseQuote}>
-            <Text style={styles.promiseQuoteText}>
-              "우리는 사람을 복원하지 않습니다.{'\n'}
-              남겨진 사람이 스스로를 용서하고,{'\n'}
-              다시 살아갈 수 있도록 돕습니다."
-            </Text>
+            <Text style={styles.promiseQuoteText}>{o.promiseQuote}</Text>
           </View>
-          <Text style={styles.promiseHealingNote}>
-            이별은 끝이 아니에요.{'\n'}그 분은 당신이 살아가는 날들 안에서 함께 있어요.
-          </Text>
+          <Text style={styles.promiseHealingNote}>{o.promiseHealingNote}</Text>
         </View>
 
         {/* ════ ⑦ CTA ════ */}
@@ -491,8 +427,8 @@ export default function OnboardingScreen({ navigation }: Props) {
             colors={['rgba(124, 58, 237, 0.2)', 'rgba(59, 130, 246, 0.2)']}
             style={styles.ctaCard}
           >
-            <Text style={styles.ctaTitle}>준비가 되었을 때,{'\n'}시작하세요</Text>
-            <Text style={styles.ctaDesc}>천천히 시작해도 괜찮아요.</Text>
+            <Text style={styles.ctaTitle}>{o.ctaTitle}</Text>
+            <Text style={styles.ctaDesc}>{language === 'ko' ? '천천히 시작해도 괜찮아요.' : "Take your time. Start when you're ready."}</Text>
 
             <TouchableOpacity
               style={styles.ctaButton}
@@ -504,11 +440,11 @@ export default function OnboardingScreen({ navigation }: Props) {
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.ctaButtonGradient}
               >
-                <Text style={styles.ctaButtonText}>지금 시작하기</Text>
+                <Text style={styles.ctaButtonText}>{o.ctaBtn}</Text>
               </LinearGradient>
             </TouchableOpacity>
 
-            <Text style={styles.ctaNote}>10번의 무료 대화로 — 하지 못한 말부터, 천천히 시작해요</Text>
+            <Text style={styles.ctaNote}>{o.ctaNote}</Text>
           </LinearGradient>
         </View>
 
@@ -520,13 +456,13 @@ export default function OnboardingScreen({ navigation }: Props) {
           <Text style={styles.footerLogo}>Still After</Text>
           <View style={styles.footerLinks}>
             <TouchableOpacity onPress={() => navigation.navigate('PrivacyPolicy')}>
-              <Text style={styles.footerLink}>개인정보처리방침</Text>
+              <Text style={styles.footerLink}>{o.footerPrivacy}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('Terms')}>
-              <Text style={styles.footerLink}>이용약관</Text>
+              <Text style={styles.footerLink}>{o.footerTerms}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('CustomerSupport')}>
-              <Text style={styles.footerLink}>고객센터</Text>
+              <Text style={styles.footerLink}>{o.footerSupport}</Text>
             </TouchableOpacity>
           </View>
           <Text style={styles.footerCopy}>© 2026 Still After. All rights reserved.</Text>

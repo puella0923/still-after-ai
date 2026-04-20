@@ -10,6 +10,7 @@ import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { updatePersona, uploadPersonaPhoto } from '../../services/personaService'
 import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/LanguageContext'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'PersonaEdit'>
@@ -30,6 +31,7 @@ const glass = Platform.OS === 'web' ? { backdropFilter: 'blur(16px)', WebkitBack
 export default function PersonaEditScreen({ navigation, route }: Props) {
   const { personaId, personaName, currentPhotoUrl, currentNickname, currentRelationship } = route.params
   const { user } = useAuth()
+  const { t } = useLanguage()
 
   const [photoUri, setPhotoUri] = useState<string | null>(currentPhotoUrl ?? null)
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null)
@@ -59,7 +61,7 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
     try {
       const ImagePicker = await import('expo-image-picker')
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-      if (status !== 'granted') { Alert.alert('권한 필요', '사진 접근 권한이 필요해요.'); return }
+      if (status !== 'granted') { Alert.alert(t.personaEdit.alertPermissionTitle, t.personaEdit.alertPermissionMsg); return }
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [1, 1], quality: 0.8,
       })
@@ -79,7 +81,7 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
           setPhotoBlob(new Blob([new Uint8Array(byteNums)], { type: 'image/jpeg' }))
         } catch { setPhotoBlob(null) }
       }
-    } catch { Alert.alert('오류', '사진을 불러올 수 없어요.') }
+    } catch { Alert.alert(t.personaEdit.alertPhotoErrorTitle, t.personaEdit.alertPhotoErrorMsg) }
   }
 
   const handlePickPhoto = () => Platform.OS === 'web' ? handlePickPhotoWeb() : handlePickPhotoNative()
@@ -89,7 +91,7 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
     if (!user) return
     const trimmedName = name.trim()
     if (!trimmedName) {
-      Alert.alert('이름을 입력해주세요', '이 사람을 어떻게 부를지 알려주세요.')
+      Alert.alert(t.personaEdit.alertNameRequired, t.personaEdit.alertNameMsg)
       return
     }
     setLoading(true)
@@ -105,7 +107,7 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
         ...(relationship.trim() && relationship !== currentRelationship ? { relationship: relationship.trim() } : {}),
       })
       navigation.goBack()
-    } catch (err) { Alert.alert('저장 실패', err instanceof Error ? err.message : '잠시 후 다시 시도해주세요.') }
+    } catch (err) { Alert.alert(t.personaEdit.alertSaveError, err instanceof Error ? err.message : t.home.retryMsg) }
     finally { setLoading(false) }
   }
 
@@ -124,12 +126,12 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Text style={styles.backIcon}>‹</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{(name || personaName)} 수정</Text>
+          <Text style={styles.headerTitle}>{(name || personaName)} {t.personaEdit.headerSuffix}</Text>
           <TouchableOpacity style={[styles.saveBtn, loading && { opacity: 0.6 }]} onPress={handleSave} disabled={loading}>
             {loading
               ? <ActivityIndicator size="small" color="#FFFFFF" />
               : <LinearGradient colors={['#a855f7', '#db2777']} style={styles.saveBtnGrad}>
-                  <Text style={styles.saveBtnText}>저장</Text>
+                  <Text style={styles.saveBtnText}>{t.personaEdit.saveBtn}</Text>
                 </LinearGradient>
             }
           </TouchableOpacity>
@@ -149,31 +151,31 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
               <Text style={styles.photoEditIcon}>📷</Text>
             </View>
           </TouchableOpacity>
-          <Text style={styles.photoHint}>사진을 눌러 변경하거나 추가하세요</Text>
+          <Text style={styles.photoHint}>{t.personaEdit.changePhotoHint}</Text>
           {photoUri && (
             <TouchableOpacity onPress={handleRemovePhoto}>
-              <Text style={styles.photoRemove}>사진 지우기</Text>
+              <Text style={styles.photoRemove}>{t.personaEdit.removePhoto}</Text>
             </TouchableOpacity>
           )}
         </View>
 
         {/* Name */}
         <View style={styles.section}>
-          <Text style={styles.label}>이 사람을 어떻게 부를까요?</Text>
+          <Text style={styles.label}>{t.personaEdit.nameLabel}</Text>
           <TextInput
             style={styles.input}
-            placeholder='예: 엄마, 지수, 준혁'
+            placeholder={t.personaEdit.namePlaceholder}
             value={name}
             onChangeText={setName}
             maxLength={20}
             placeholderTextColor="rgba(255,255,255,0.25)"
           />
-          <Text style={styles.inputHint}>대화 목록과 말풍선에 이 이름이 표시돼요</Text>
+          <Text style={styles.inputHint}>{t.personaEdit.nameHint}</Text>
         </View>
 
         {/* Relationship */}
         <View style={styles.section}>
-          <Text style={styles.label}>{(name || personaName)}과의 관계</Text>
+          <Text style={styles.label}>{t.personaEdit.relationLabel(name || personaName)}</Text>
           <View style={styles.chipRow}>
             {RELATIONS.map(rel => {
               const selected = relationship === rel
@@ -199,33 +201,27 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
               )
             })}
           </View>
-          <Text style={styles.inputHint}>관계를 바꾸면 AI가 그에 맞는 어투로 대화해요</Text>
+          <Text style={styles.inputHint}>{t.personaEdit.relationHint}</Text>
         </View>
 
         {/* Nickname */}
         <View style={styles.section}>
-          <Text style={styles.label}>
-            {(name || personaName)}이(가) 나를 뭐라고 불렀나요?
-            <Text style={styles.labelOptional}> (선택)</Text>
-          </Text>
+          <Text style={styles.label}>{t.personaEdit.myNameLabel(name || personaName)}</Text>
           <TextInput
             style={styles.input}
-            placeholder='예: 연수야, 자기야, 우리 딸'
+            placeholder={t.personaEdit.myNamePlaceholder}
             value={nickname}
             onChangeText={setNickname}
             maxLength={20}
             placeholderTextColor="rgba(255,255,255,0.25)"
           />
-          <Text style={styles.inputHint}>입력하면 대화에서 {(name || personaName)}이(가) 이 이름으로 불러줘요</Text>
+          <Text style={styles.inputHint}>{t.personaEdit.myNameHint(name || personaName)}</Text>
         </View>
 
         {/* 학습 데이터 안내 */}
         <View style={styles.lockedSection}>
-          <Text style={styles.lockedTitle}>대화 학습 내용은 바꿀 수 없어요</Text>
-          <Text style={styles.lockedText}>
-            카카오톡 대화나 작성한 설명은 이 사람의 말투 그 자체예요.{'\n'}
-            다시 만들고 싶다면 새 기억을 만들어 주세요.
-          </Text>
+          <Text style={styles.lockedTitle}>{t.personaEdit.lockedLabel}</Text>
+          <Text style={styles.lockedText}>{t.personaEdit.lockedDesc}</Text>
         </View>
 
         <View style={{ height: 40 }} />

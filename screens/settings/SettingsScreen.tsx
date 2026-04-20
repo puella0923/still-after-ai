@@ -11,6 +11,7 @@ import { RootStackParamList } from '../../navigation/RootNavigator'
 import { supabase } from '../../services/supabase'
 import { useAuth } from '../../context/AuthContext'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useLanguage } from '../../context/LanguageContext'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Settings'>
@@ -126,6 +127,7 @@ function SettingRow({ label, value, onPress, danger = false, rightEl, isFirst = 
 // ─── Main ───────────────────────────────────────────────────────────────────
 export default function SettingsScreen({ navigation }: Props) {
   const { user, signOut } = useAuth()
+  const { t, language, toggleLanguage } = useLanguage()
   const [notifEnabled, setNotifEnabled] = useState(false)
   const [personaCount, setPersonaCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -156,7 +158,7 @@ export default function SettingsScreen({ navigation }: Props) {
         if (Notifications) {
           const { status } = await Notifications.requestPermissionsAsync()
           if (status !== 'granted') {
-            setResultModal({ title: '알림 권한 필요', message: '기기 설정에서 Still After의 알림을 허용해주세요.' })
+            setResultModal({ title: t.settings.notificationPermissionNeeded, message: t.settings.notificationPermissionDesc })
             Linking.openSettings().catch(() => {})
             return
           }
@@ -164,7 +166,7 @@ export default function SettingsScreen({ navigation }: Props) {
       } catch {}
     }
     if (val && Platform.OS === 'web') {
-      setResultModal({ title: '앱에서 알림을 받을 수 있어요', message: '앱을 설치하면 기기 알림을 받을 수 있어요.\n지금은 웹 미리보기 중이에요.' })
+      setResultModal({ title: t.settings.notificationEnabled, message: t.settings.notificationWebNote })
       return
     }
     setNotifEnabled(val)
@@ -172,7 +174,7 @@ export default function SettingsScreen({ navigation }: Props) {
   }
 
   const logoutSteps: ConfirmStep[] = [{
-    title: '로그아웃', message: '로그아웃해도 기억과 대화 기록은\n그대로 유지돼요.', confirmLabel: '로그아웃', isDanger: false,
+    title: t.settings.logout, message: t.settings.logoutNote, confirmLabel: t.settings.logout, isDanger: false,
   }]
 
   const handleLogoutConfirm = async () => {
@@ -182,7 +184,7 @@ export default function SettingsScreen({ navigation }: Props) {
       await signOut()
       // 네비게이션은 App.tsx의 key 변경으로 자동 처리
     } catch {
-      setResultModal({ title: '오류', message: '로그아웃에 실패했어요. 다시 시도해주세요.' })
+      setResultModal({ title: t.settings.errorTitle, message: t.settings.errorLogout })
     } finally {
       setLoading(false)
     }
@@ -207,7 +209,7 @@ export default function SettingsScreen({ navigation }: Props) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} activeOpacity={0.7}>
             <Text style={styles.backIcon}>‹</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>설정</Text>
+          <Text style={styles.headerTitle}>{t.settings.header}</Text>
           <View style={{ width: 36 }} />
         </View>
 
@@ -215,7 +217,7 @@ export default function SettingsScreen({ navigation }: Props) {
         <View style={styles.banner}>
           <Text style={styles.bannerIcon}>💜</Text>
           <Text style={styles.bannerText}>
-            Still After는 실제 인물을 대체하지 않아요. 감정을 조심스럽게 이어가는 공간이에요.
+            {t.settings.banner}
           </Text>
         </View>
 
@@ -225,44 +227,64 @@ export default function SettingsScreen({ navigation }: Props) {
             <Text style={styles.accountAvatarText}>{user?.email?.charAt(0).toUpperCase() ?? '?'}</Text>
           </LinearGradient>
           <View style={styles.accountInfo}>
-            <Text style={styles.accountEmail}>{user?.email ?? '로그인 필요'}</Text>
-            <Text style={styles.accountMeta}>기억 {personaCount !== null ? personaCount : '—'}개 저장됨</Text>
+            <Text style={styles.accountEmail}>{user?.email ?? t.settings.loginRequired}</Text>
+            <Text style={styles.accountMeta}>{t.settings.memoriesSaved(personaCount)}</Text>
           </View>
           <Text style={styles.accountChevron}>›</Text>
         </TouchableOpacity>
 
         {/* Notification Section */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>알림</Text>
-          <SettingRow label="대화 알림" isFirst rightEl={
+          <Text style={styles.sectionTitle}>{t.settings.notificationTitle}</Text>
+          <SettingRow label={t.settings.notificationLabel} isFirst rightEl={
             <Switch value={notifEnabled} onValueChange={handleNotifToggle}
               trackColor={{ false: 'rgba(255,255,255,0.15)', true: '#a855f7' }} thumbColor="#FFFFFF" />
           } />
           {notifEnabled && (
             <View style={styles.infoNote}>
-              <Text style={styles.infoNoteText}>앱이 설치된 기기에서 대화 리마인더 알림을 받을 수 있어요.</Text>
+              <Text style={styles.infoNoteText}>{t.settings.notificationDesc}</Text>
             </View>
           )}
         </View>
 
         {/* Data Section */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>데이터 관리</Text>
-          <SettingRow label="기억 관리" isFirst onPress={() => navigation.navigate('PersonaList')} />
+          <Text style={styles.sectionTitle}>{t.settings.dataTitle}</Text>
+          <SettingRow label={t.settings.memoryManage} isFirst onPress={() => navigation.navigate('PersonaList')} />
+        </View>
+
+        {/* Language Section */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>{t.settings.languageTitle}</Text>
+          <SettingRow
+            label={t.settings.languageLabel}
+            isFirst
+            rightEl={
+              <TouchableOpacity onPress={toggleLanguage} activeOpacity={0.7}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 6,
+                  backgroundColor: 'rgba(168,85,247,0.15)', borderRadius: 20,
+                  paddingHorizontal: 12, paddingVertical: 5,
+                  borderWidth: 1, borderColor: 'rgba(168,85,247,0.35)' }}>
+                <Text style={{ fontSize: 13, color: language === 'ko' ? '#c084fc' : 'rgba(255,255,255,0.4)', fontWeight: language === 'ko' ? '600' : '400' }}>한</Text>
+                <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>|</Text>
+                <Text style={{ fontSize: 13, color: language === 'en' ? '#c084fc' : 'rgba(255,255,255,0.4)', fontWeight: language === 'en' ? '600' : '400' }}>EN</Text>
+              </TouchableOpacity>
+            }
+          />
         </View>
 
         {/* Info Section */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>정보</Text>
-          <SettingRow label="개인정보 처리방침" isFirst onPress={() => navigation.navigate('PrivacyPolicy')} />
-          <SettingRow label="이용약관" onPress={() => navigation.navigate('Terms')} />
-          <SettingRow label="고객 지원" onPress={() => navigation.navigate('CustomerSupport')} />
-          <SettingRow label="앱 버전" value={APP_VERSION} />
+          <Text style={styles.sectionTitle}>{t.settings.infoTitle}</Text>
+          <SettingRow label={t.settings.privacyPolicy} isFirst onPress={() => navigation.navigate('PrivacyPolicy')} />
+          <SettingRow label={t.settings.terms} onPress={() => navigation.navigate('Terms')} />
+          <SettingRow label={t.settings.support} onPress={() => navigation.navigate('CustomerSupport')} />
+          <SettingRow label={t.settings.appVersion} value={APP_VERSION} />
         </View>
 
         {/* Logout */}
         <TouchableOpacity style={styles.logoutBtn} onPress={() => { setModalStep(0); setActiveModal('logout') }} activeOpacity={0.8}>
-          <Text style={styles.logoutText}>로그아웃</Text>
+          <Text style={styles.logoutText}>{t.settings.logout}</Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />

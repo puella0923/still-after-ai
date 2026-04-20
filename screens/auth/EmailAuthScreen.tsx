@@ -25,6 +25,7 @@ import {
 } from '../../services/authService'
 import { useAuth } from '../../context/AuthContext'
 import { C, RADIUS } from '../theme'
+import { useLanguage } from '../../context/LanguageContext'
 
 const { width } = Dimensions.get('window')
 
@@ -48,6 +49,7 @@ const STARS = Array.from({ length: 35 }, (_, i) => ({
 
 export default function EmailAuthScreen({ navigation }: Props) {
   const { session } = useAuth()
+  const { t } = useLanguage()
 
   // OAuth 콜백으로 돌아왔을 때 세션이 있으면 바로 Main으로 이동
   useEffect(() => {
@@ -88,26 +90,26 @@ export default function EmailAuthScreen({ navigation }: Props) {
 
   const validateLogin = (): boolean => {
     const errs: Record<string, string> = {}
-    if (!email.trim()) errs.email = '이메일을 입력해주세요.'
-    else if (!isValidEmail(email)) errs.email = '올바른 이메일 형식을 입력해주세요.'
-    if (!password) errs.password = '비밀번호를 입력해주세요.'
+    if (!email.trim()) errs.email = t.auth.errorEmailRequired
+    else if (!isValidEmail(email)) errs.email = t.auth.errorEmailInvalid
+    if (!password) errs.password = t.auth.errorPasswordRequired
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
 
   const validateSignup = (): boolean => {
     const errs: Record<string, string> = {}
-    if (!email.trim()) errs.email = '이메일을 입력해주세요.'
-    else if (!isValidEmail(email)) errs.email = '올바른 이메일 형식을 입력해주세요.'
-    if (!nickname.trim()) errs.nickname = '닉네임을 입력해주세요.'
-    else if (!isValidNickname(nickname)) errs.nickname = '닉네임은 2~10자, 한글/영문/숫자만 가능합니다.'
-    if (!password) errs.password = '비밀번호를 입력해주세요.'
-    else if (!isValidPassword(password)) errs.password = '8자 이상, 영문과 숫자를 조합해주세요.'
-    if (!passwordConfirm) errs.passwordConfirm = '비밀번호 확인을 입력해주세요.'
-    else if (password !== passwordConfirm) errs.passwordConfirm = '비밀번호가 일치하지 않습니다.'
-    if (!agreeTerms) errs.terms = '서비스 이용약관에 동의해주세요.'
-    if (!agreePrivacy) errs.privacy = '개인정보 처리방침에 동의해주세요.'
-    if (!agreeAge) errs.age = '만 14세 이상 확인이 필요합니다.'
+    if (!email.trim()) errs.email = t.auth.errorEmailRequired
+    else if (!isValidEmail(email)) errs.email = t.auth.errorEmailInvalid
+    if (!nickname.trim()) errs.nickname = t.auth.errorNicknameRequired
+    else if (!isValidNickname(nickname)) errs.nickname = t.auth.errorNicknameInvalid
+    if (!password) errs.password = t.auth.errorPasswordRequired
+    else if (!isValidPassword(password)) errs.password = t.auth.errorPasswordWeak
+    if (!passwordConfirm) errs.passwordConfirm = t.auth.errorPasswordConfirmRequired
+    else if (password !== passwordConfirm) errs.passwordConfirm = t.auth.errorPasswordMismatch
+    if (!agreeTerms) errs.terms = t.auth.errorTermsRequired
+    if (!agreePrivacy) errs.privacy = t.auth.errorPrivacyRequired
+    if (!agreeAge) errs.age = t.auth.errorAgeRequired
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -119,16 +121,16 @@ export default function EmailAuthScreen({ navigation }: Props) {
     try {
       const result = await signInWithEmail(email.trim(), password)
       if (result.success) {
-        setSuccessMsg('로그인 성공!')
+        setSuccessMsg(t.auth.successLogin)
         setTimeout(() => {
           navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
         }, 800)
       } else if (result.needsConfirmation) {
         setNeedsConfirmation(true)
         setPendingEmail(email.trim())
-        setConfirmMessage(result.error ?? '이메일 인증이 필요합니다.')
+        setConfirmMessage(result.error ?? t.auth.errorEmailVerificationRequired)
       } else {
-        setErrors({ general: result.error ?? '로그인에 실패했습니다.' })
+        setErrors({ general: result.error ?? t.auth.errorLoginFailed })
       }
     } finally {
       setLoading(false)
@@ -144,14 +146,14 @@ export default function EmailAuthScreen({ navigation }: Props) {
       if (result.success && result.needsConfirmation) {
         setPendingEmail(email.trim())
         setNeedsConfirmation(true)
-        setConfirmMessage(`${email.trim()}로 인증 메일을 보냈습니다.\n메일함을 확인하고 링크를 클릭해주세요.`)
+        setConfirmMessage(t.auth.successVerificationSent(email.trim()))
       } else if (result.success) {
-        setSuccessMsg('회원가입 완료!')
+        setSuccessMsg(t.auth.successSignup)
         setTimeout(() => {
           navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
         }, 800)
       } else {
-        setErrors({ general: result.error ?? '회원가입에 실패했습니다.' })
+        setErrors({ general: result.error ?? t.auth.errorSignupFailed })
       }
     } finally {
       setLoading(false)
@@ -163,9 +165,9 @@ export default function EmailAuthScreen({ navigation }: Props) {
     try {
       const result = await resendConfirmationEmail(pendingEmail)
       if (result.success) {
-        Alert.alert('발송 완료', '인증 메일을 재발송했습니다.\n메일함을 확인해주세요.')
+        Alert.alert(t.auth.alertResendTitle, t.auth.alertResendMsg)
       } else {
-        Alert.alert('발송 실패', result.error ?? '잠시 후 다시 시도해주세요.')
+        Alert.alert(t.auth.alertResendFailTitle, result.error ?? t.auth.alertResendFailMsg)
       }
     } finally {
       setLoading(false)
@@ -174,16 +176,16 @@ export default function EmailAuthScreen({ navigation }: Props) {
 
   const handleForgotPassword = async () => {
     if (!email.trim() || !isValidEmail(email)) {
-      setErrors({ email: '비밀번호 재설정을 위해 이메일을 먼저 입력해주세요.' })
+      setErrors({ email: t.auth.errorPasswordResetEmailRequired })
       return
     }
     setLoading(true)
     try {
       const result = await sendPasswordReset(email.trim())
       if (result.success) {
-        Alert.alert('메일 발송', `${email.trim()}로 비밀번호 재설정 링크를 보냈습니다.`)
+        Alert.alert(t.auth.alertResetTitle, t.auth.alertResetMsg(email.trim()))
       } else {
-        Alert.alert('발송 실패', result.error ?? '잠시 후 다시 시도해주세요.')
+        Alert.alert(t.auth.alertResendFailTitle, result.error ?? t.auth.alertResendFailMsg)
       }
     } finally {
       setLoading(false)
@@ -217,28 +219,28 @@ export default function EmailAuthScreen({ navigation }: Props) {
                 style={styles.confirmCardGradient}
               >
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                  <Text style={styles.backBtnText}>← 뒤로</Text>
+                  <Text style={styles.backBtnText}>{t.common.back}</Text>
                 </TouchableOpacity>
                 <View style={styles.confirmIconWrap}>
                   <Text style={styles.confirmIcon}>✉️</Text>
                 </View>
-                <Text style={styles.confirmTitle}>메일함을 확인해주세요</Text>
+                <Text style={styles.confirmTitle}>{t.auth.checkInbox}</Text>
                 <Text style={styles.confirmDesc}>{confirmMessage}</Text>
                 <View style={styles.confirmEmailBox}>
                   <Text style={styles.confirmEmail}>{pendingEmail}</Text>
                 </View>
-                <Text style={styles.confirmSub}>메일이 오지 않았나요? 스팸함도 확인해주세요.</Text>
+                <Text style={styles.confirmSub}>{t.auth.spamNote}</Text>
                 <TouchableOpacity style={styles.resendButton} onPress={handleResendEmail} disabled={loading}>
                   {loading
                     ? <ActivityIndicator color={C.TEXT} />
-                    : <Text style={styles.resendButtonText}>인증 메일 재발송</Text>
+                    : <Text style={styles.resendButtonText}>{t.auth.resendEmail}</Text>
                   }
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.confirmLoginBtn}
                   onPress={() => { setNeedsConfirmation(false); setTab('login'); setPassword('') }}
                 >
-                  <Text style={styles.confirmLoginText}>인증 완료 후 로그인하기</Text>
+                  <Text style={styles.confirmLoginText}>{t.auth.loginAfterVerify}</Text>
                 </TouchableOpacity>
               </LinearGradient>
             </View>
@@ -290,7 +292,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
                     </LinearGradient>
                   </View>
                   <Text style={styles.title}>Still After</Text>
-                  <Text style={styles.tagline}>당신 곁을 여전히</Text>
+                  <Text style={styles.tagline}>{t.login.brand}</Text>
                 </View>
 
                 {/* Mode Toggle - Pill style */}
@@ -305,10 +307,10 @@ export default function EmailAuthScreen({ navigation }: Props) {
                         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                         style={styles.toggleBtnGradient}
                       >
-                        <Text style={styles.toggleTextActive}>로그인</Text>
+                        <Text style={styles.toggleTextActive}>{t.auth.tabLogin}</Text>
                       </LinearGradient>
                     ) : (
-                      <Text style={styles.toggleText}>로그인</Text>
+                      <Text style={styles.toggleText}>{t.auth.tabLogin}</Text>
                     )}
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -321,10 +323,10 @@ export default function EmailAuthScreen({ navigation }: Props) {
                         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                         style={styles.toggleBtnGradient}
                       >
-                        <Text style={styles.toggleTextActive}>회원가입</Text>
+                        <Text style={styles.toggleTextActive}>{t.auth.tabSignup}</Text>
                       </LinearGradient>
                     ) : (
-                      <Text style={styles.toggleText}>회원가입</Text>
+                      <Text style={styles.toggleText}>{t.auth.tabSignup}</Text>
                     )}
                   </TouchableOpacity>
                 </View>
@@ -346,14 +348,14 @@ export default function EmailAuthScreen({ navigation }: Props) {
                 {/* Signup: Nickname */}
                 {tab === 'signup' && (
                   <>
-                    <Text style={styles.label}>닉네임</Text>
+                    <Text style={styles.label}>{t.auth.labelNickname}</Text>
                     <View style={[styles.inputWrap, errors.nickname ? styles.inputError : null]}>
                       <Text style={styles.inputIcon}>👤</Text>
                       <TextInput
                         style={styles.inputField}
                         value={nickname}
                         onChangeText={setNickname}
-                        placeholder="2~10자 (한글, 영문, 숫자)"
+                        placeholder={t.auth.placeholderNickname}
                         placeholderTextColor="rgba(167, 139, 250, 0.5)"
                         maxLength={10}
                         autoCapitalize="none"
@@ -365,14 +367,14 @@ export default function EmailAuthScreen({ navigation }: Props) {
                 )}
 
                 {/* Email */}
-                <Text style={styles.label}>이메일</Text>
+                <Text style={styles.label}>{t.auth.labelEmail}</Text>
                 <View style={[styles.inputWrap, errors.email ? styles.inputError : null]}>
                   <Text style={styles.inputIcon}>✉️</Text>
                   <TextInput
                     style={styles.inputField}
                     value={email}
                     onChangeText={(v) => { setEmail(v); if (errors.email) setErrors(prev => { const { email: _, ...rest } = prev; return rest }) }}
-                    placeholder="your@email.com"
+                    placeholder={t.auth.placeholderEmail}
                     placeholderTextColor="rgba(167, 139, 250, 0.5)"
                     keyboardType="email-address"
                     autoCapitalize="none"
@@ -382,14 +384,14 @@ export default function EmailAuthScreen({ navigation }: Props) {
                 {errors.email ? <Text style={styles.fieldError}>{errors.email}</Text> : null}
 
                 {/* Password */}
-                <Text style={styles.label}>비밀번호</Text>
+                <Text style={styles.label}>{t.auth.labelPassword}</Text>
                 <View style={[styles.inputWrap, errors.password ? styles.inputError : null]}>
                   <Text style={styles.inputIcon}>🔒</Text>
                   <TextInput
                     style={styles.inputField}
                     value={password}
                     onChangeText={setPassword}
-                    placeholder={tab === 'signup' ? '8자 이상, 영문+숫자 조합' : '••••••••'}
+                    placeholder={tab === 'signup' ? t.auth.placeholderPasswordSignup : t.auth.placeholderPasswordLogin}
                     placeholderTextColor="rgba(167, 139, 250, 0.5)"
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
@@ -404,14 +406,14 @@ export default function EmailAuthScreen({ navigation }: Props) {
                 {/* Signup: Password confirm + Terms */}
                 {tab === 'signup' && (
                   <>
-                    <Text style={styles.label}>비밀번호 확인</Text>
+                    <Text style={styles.label}>{t.auth.labelPasswordConfirm}</Text>
                     <View style={[styles.inputWrap, errors.passwordConfirm ? styles.inputError : null]}>
                       <Text style={styles.inputIcon}>🔒</Text>
                       <TextInput
                         style={styles.inputField}
                         value={passwordConfirm}
                         onChangeText={setPasswordConfirm}
-                        placeholder="비밀번호 재입력"
+                        placeholder={t.auth.placeholderPasswordConfirm}
                         placeholderTextColor="rgba(167, 139, 250, 0.5)"
                         secureTextEntry={!showPasswordConfirm}
                         autoCapitalize="none"
@@ -429,13 +431,13 @@ export default function EmailAuthScreen({ navigation }: Props) {
                         <View style={[styles.checkbox, allAgreed && styles.checkboxChecked]}>
                           {allAgreed && <Text style={styles.checkmark}>✓</Text>}
                         </View>
-                        <Text style={styles.agreeAllText}>전체 동의</Text>
+                        <Text style={styles.agreeAllText}>{t.auth.agreeAll}</Text>
                       </TouchableOpacity>
                       <View style={styles.agreeDivider} />
                       {[
-                        { key: 'terms', val: agreeTerms, set: setAgreeTerms, label: '[필수] 서비스 이용약관 동의', screen: 'Terms' as const },
-                        { key: 'privacy', val: agreePrivacy, set: setAgreePrivacy, label: '[필수] 개인정보 처리방침 동의', screen: 'PrivacyPolicy' as const },
-                        { key: 'age', val: agreeAge, set: setAgreeAge, label: '[필수] 만 14세 이상입니다', screen: null },
+                        { key: 'terms', val: agreeTerms, set: setAgreeTerms, label: t.auth.agreeTerms, screen: 'Terms' as const },
+                        { key: 'privacy', val: agreePrivacy, set: setAgreePrivacy, label: t.auth.agreePrivacy, screen: 'PrivacyPolicy' as const },
+                        { key: 'age', val: agreeAge, set: setAgreeAge, label: t.auth.agreeAge, screen: null },
                       ].map(({ key, val, set, label, screen }) => (
                         <React.Fragment key={key}>
                           <View style={styles.agreeRowWrap}>
@@ -447,7 +449,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
                             </TouchableOpacity>
                             {screen && (
                               <TouchableOpacity onPress={() => navigation.navigate(screen)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                                <Text style={styles.viewFullText}>전문보기</Text>
+                                <Text style={styles.viewFullText}>{t.auth.viewFull}</Text>
                               </TouchableOpacity>
                             )}
                           </View>
@@ -472,28 +474,27 @@ export default function EmailAuthScreen({ navigation }: Props) {
                   >
                     {loading
                       ? <ActivityIndicator color="#FFFFFF" />
-                      : <Text style={styles.submitBtnText}>{tab === 'login' ? '로그인' : '회원가입'}</Text>
+                      : <Text style={styles.submitBtnText}>{tab === 'login' ? t.auth.tabLogin : t.auth.tabSignup}</Text>
                     }
                   </LinearGradient>
                 </TouchableOpacity>
 
                 {tab === 'login' && (
                   <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotBtn}>
-                    <Text style={styles.forgotText}>비밀번호를 잊으셨나요?</Text>
+                    <Text style={styles.forgotText}>{t.auth.forgotPassword}</Text>
                   </TouchableOpacity>
                 )}
 
                 {/* Info box */}
                 <View style={styles.infoBox}>
                   <Text style={styles.infoText}>
-                    💳 카드 등록 없이 바로 시작할 수 있습니다.{'\n'}
-                    10회 이후 결제 화면으로 이동합니다.
+                    {t.auth.noCreditCard}
                   </Text>
                 </View>
 
                 {/* Back */}
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                  <Text style={styles.backBtnText}>← 돌아가기</Text>
+                  <Text style={styles.backBtnText}>{t.common.goBack}</Text>
                 </TouchableOpacity>
               </LinearGradient>
             </Animated.View>

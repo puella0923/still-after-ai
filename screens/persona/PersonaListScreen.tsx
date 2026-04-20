@@ -20,6 +20,7 @@ import { RootStackParamList } from '../../navigation/RootNavigator'
 import { getPersonas, getArchivedPersonas, deletePersona, Persona } from '../../services/personaService'
 import { supabase } from '../../services/supabase'
 import { C, RADIUS } from '../theme'
+import { useLanguage } from '../../context/LanguageContext'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -48,6 +49,7 @@ type ModalState =
   | { type: 'closure_confirm'; persona: Persona }
 
 export default function PersonaListScreen({ navigation }: Props) {
+  const { t } = useLanguage()
   const [personas, setPersonas] = useState<Persona[]>([])
   const [archivedPersonas, setArchivedPersonas] = useState<Persona[]>([])
   const [loading, setLoading] = useState(true)
@@ -164,7 +166,7 @@ export default function PersonaListScreen({ navigation }: Props) {
                   onPress={(e) => { e.stopPropagation(); setOpenMenuId(null); handleEdit(item) }}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.dropdownItemText}>✎ 수정</Text>
+                  <Text style={styles.dropdownItemText}>{t.personaList.menuEdit}</Text>
                 </TouchableOpacity>
                 <View style={styles.dropdownDivider} />
                 <TouchableOpacity
@@ -172,7 +174,7 @@ export default function PersonaListScreen({ navigation }: Props) {
                   onPress={(e) => { e.stopPropagation(); setOpenMenuId(null); handleDelete(item) }}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.dropdownItemText, { color: '#FCA5A5' }]}>✕ 삭제</Text>
+                  <Text style={[styles.dropdownItemText, { color: '#FCA5A5' }]}>{t.personaList.menuDelete}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -200,11 +202,11 @@ export default function PersonaListScreen({ navigation }: Props) {
 
           {/* Status */}
           {isArchived ? (
-            <Text style={styles.statusText}>🌸 이별 완료 · 기록 보기</Text>
+            <Text style={styles.statusText}>{t.personaList.closureComplete}</Text>
           ) : isPaid ? (
-            <Text style={[styles.statusText, { color: '#86EFAC' }]}>✓ 무제한 대화</Text>
+            <Text style={[styles.statusText, { color: '#86EFAC' }]}>{t.personaList.unlimited}</Text>
           ) : usedCount > 0 ? (
-            <Text style={styles.statusText}>대화 {usedCount}회 / {FREE_MESSAGE_LIMIT}회</Text>
+            <Text style={styles.statusText}>{t.personaList.usageCount(usedCount, FREE_MESSAGE_LIMIT)}</Text>
           ) : null}
         </LinearGradient>
       </TouchableOpacity>
@@ -231,15 +233,15 @@ export default function PersonaListScreen({ navigation }: Props) {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backText}>← 뒤로</Text>
+            <Text style={styles.backText}>{t.common.back}</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>기억 목록</Text>
+          <Text style={styles.headerTitle}>{t.personaList.header}</Text>
           <View style={{ width: 60 }} />
         </View>
 
         {/* AI Banner */}
         <View style={styles.aiBanner}>
-          <Text style={styles.aiBannerText}>⚠️ 이 서비스는 실제 인물을 대체하지 않아요. 감정 회복을 위한 공간이에요.</Text>
+          <Text style={styles.aiBannerText}>{t.personaList.aiBanner}</Text>
         </View>
 
         <FlatList
@@ -254,8 +256,8 @@ export default function PersonaListScreen({ navigation }: Props) {
             <View style={styles.emptyCard}>
               <LinearGradient colors={['rgba(88, 28, 135, 0.3)', 'rgba(30, 58, 138, 0.3)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.emptyCardGradient}>
                 <Text style={styles.emptyEmoji}>💜</Text>
-                <Text style={styles.emptyTitle}>아직 담긴 기억이 없어요</Text>
-                <Text style={styles.emptyDesc}>카카오톡 대화를 올리거나{'\n'}그 분의 이야기를 적어서 기억을 담아보세요.</Text>
+                <Text style={styles.emptyTitle}>{t.personaList.emptyTitle}</Text>
+                <Text style={styles.emptyDesc}>{t.personaList.emptyDesc}</Text>
               </LinearGradient>
             </View>
           }
@@ -265,8 +267,8 @@ export default function PersonaListScreen({ navigation }: Props) {
               {/* Archived section */}
               {archivedPersonas.length > 0 && (
                 <View style={styles.archivedSection}>
-                  <Text style={styles.archivedSectionTitle}>지난 기억</Text>
-                  <Text style={styles.archivedSectionDesc}>이별을 마무리한 기억이에요. 대화 기록과 편지를 다시 읽을 수 있어요.</Text>
+                  <Text style={styles.archivedSectionTitle}>{t.personaList.archivedSection}</Text>
+                  <Text style={styles.archivedSectionDesc}>{t.personaList.archivedDesc}</Text>
                   {archivedPersonas.map(item => {
                     const stageInfo = STAGE_INFO.closure
                     return (
@@ -281,8 +283,8 @@ export default function PersonaListScreen({ navigation }: Props) {
                           </View>
                           <View style={styles.archivedInfo}>
                             <Text style={styles.archivedName}>{item.name}</Text>
-                            <Text style={styles.archivedMeta}>{item.relationship} · 이별 완료</Text>
-                            <Text style={styles.archivedHint}>편지 & 대화 기록 보기 →</Text>
+                            <Text style={styles.archivedMeta}>{t.personaList.closureStatus(item.relationship)}</Text>
+                            <Text style={styles.archivedHint}>{t.personaList.viewRecord}</Text>
                           </View>
                         </LinearGradient>
                       </TouchableOpacity>
@@ -295,7 +297,7 @@ export default function PersonaListScreen({ navigation }: Props) {
               <View style={styles.footer}>
                 <TouchableOpacity onPress={() => navigation.navigate('PersonaCreate')} activeOpacity={0.85}>
                   <LinearGradient colors={['#7C3AED', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.newBtn}>
-                    <Text style={styles.newBtnText}>+ 새 기억 만들기</Text>
+                    <Text style={styles.newBtnText}>{t.personaList.createNew}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -311,25 +313,25 @@ export default function PersonaListScreen({ navigation }: Props) {
             <LinearGradient colors={['rgba(88, 28, 135, 0.8)', 'rgba(30, 58, 138, 0.8)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.modalCard}>
               {modal.type === 'delete_step1' && (
                 <>
-                  <Text style={styles.modalTitle}>기억을 지울까요?</Text>
-                  <Text style={styles.modalDesc}>'{modal.persona.name}'과의 대화 기록이 모두 사라져요.{'\n'}정말 삭제하시겠어요?</Text>
+                  <Text style={styles.modalTitle}>{t.personaList.deleteStep1Title}</Text>
+                  <Text style={styles.modalDesc}>{t.personaList.deleteStep1Msg(modal.persona.name)}</Text>
                   <View style={styles.modalBtns}>
-                    <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal({ type: 'none' })}><Text style={styles.modalBtnSecondaryText}>취소</Text></TouchableOpacity>
+                    <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal({ type: 'none' })}><Text style={styles.modalBtnSecondaryText}>{t.common.cancel}</Text></TouchableOpacity>
                     <TouchableOpacity onPress={handleDeleteStep2}>
-                      <LinearGradient colors={['#DC2626', '#DB2777']} style={styles.modalBtnDanger}><Text style={styles.modalBtnPrimaryText}>다음</Text></LinearGradient>
+                      <LinearGradient colors={['#DC2626', '#DB2777']} style={styles.modalBtnDanger}><Text style={styles.modalBtnPrimaryText}>{t.common.next}</Text></LinearGradient>
                     </TouchableOpacity>
                   </View>
                 </>
               )}
               {modal.type === 'delete_step2' && (
                 <>
-                  <Text style={styles.modalTitle}>마지막 확인이에요</Text>
-                  <Text style={styles.modalDesc}>삭제하면 '{modal.persona.name}'의 기억과{'\n'}모든 대화 기록이 복구되지 않아요.{'\n\n'}그래도 지우시겠어요?</Text>
+                  <Text style={styles.modalTitle}>{t.personaList.deleteStep2Title}</Text>
+                  <Text style={styles.modalDesc}>{t.personaList.deleteStep2Msg(modal.persona.name)}</Text>
                   <View style={styles.modalBtns}>
-                    <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal({ type: 'none' })} disabled={modalLoading}><Text style={styles.modalBtnSecondaryText}>취소</Text></TouchableOpacity>
+                    <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal({ type: 'none' })} disabled={modalLoading}><Text style={styles.modalBtnSecondaryText}>{t.common.cancel}</Text></TouchableOpacity>
                     <TouchableOpacity onPress={handleDeleteConfirm} disabled={modalLoading}>
                       <LinearGradient colors={['#DC2626', '#DB2777']} style={styles.modalBtnDanger}>
-                        {modalLoading ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Text style={styles.modalBtnPrimaryText}>삭제하기</Text>}
+                        {modalLoading ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Text style={styles.modalBtnPrimaryText}>{t.personaList.deleteBtnFinal}</Text>}
                       </LinearGradient>
                     </TouchableOpacity>
                   </View>
@@ -337,13 +339,13 @@ export default function PersonaListScreen({ navigation }: Props) {
               )}
               {modal.type === 'closure_confirm' && (
                 <>
-                  <Text style={styles.modalTitle}>이별을 준비할게요</Text>
-                  <Text style={styles.modalDesc}>'{modal.persona.name}'과의 마지막 대화를{'\n'}함께 마무리할 준비가 되셨나요?{'\n\n'}이별 단계로 전환되면{'\n'}다시 이전 단계로 돌아올 수 없어요.</Text>
+                  <Text style={styles.modalTitle}>{t.personaList.closureConfirmTitle}</Text>
+                  <Text style={styles.modalDesc}>{t.personaList.closureConfirmMsg(modal.persona.name)}</Text>
                   <View style={styles.modalBtns}>
-                    <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal({ type: 'none' })} disabled={modalLoading}><Text style={styles.modalBtnSecondaryText}>아직은요</Text></TouchableOpacity>
+                    <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal({ type: 'none' })} disabled={modalLoading}><Text style={styles.modalBtnSecondaryText}>{t.personaList.closureConfirmCancel}</Text></TouchableOpacity>
                     <TouchableOpacity onPress={handleClosureConfirm} disabled={modalLoading}>
                       <LinearGradient colors={['#7C3AED', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalBtnPrimary}>
-                        {modalLoading ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Text style={styles.modalBtnPrimaryText}>준비됐어요</Text>}
+                        {modalLoading ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Text style={styles.modalBtnPrimaryText}>{t.personaList.closureConfirmOk}</Text>}
                       </LinearGradient>
                     </TouchableOpacity>
                   </View>

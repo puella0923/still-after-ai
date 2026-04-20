@@ -22,6 +22,7 @@ import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../services/supabase'
 import { deletePersona } from '../../services/personaService'
 import { C, RADIUS } from '../theme'
+import { useLanguage } from '../../context/LanguageContext'
 
 const { width } = Dimensions.get('window')
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList>
@@ -42,12 +43,8 @@ const STAGE_INFO: Record<string, { label: string; colors: [string, string]; bord
   closure: { label: '이별', colors: ['rgba(99, 102, 241, 0.3)', 'rgba(168, 85, 247, 0.3)'], borderColor: 'rgba(129, 140, 248, 0.3)', textColor: '#A5B4FC' },
 }
 
-const FILTER_OPTIONS: { key: StageFilter; label: string }[] = [
-  { key: 'all', label: '모두' },
-  { key: 'replay', label: '재연' },
-  { key: 'stable', label: '안정' },
-  { key: 'closure', label: '이별' },
-]
+// Filter labels will be set from translations in the component
+const FILTER_KEYS: StageFilter[] = ['all', 'replay', 'stable', 'closure']
 
 // Stars
 const STARS = Array.from({ length: 30 }, (_, i) => ({
@@ -60,6 +57,7 @@ const STARS = Array.from({ length: 30 }, (_, i) => ({
 export default function HomeScreen() {
   const navigation = useNavigation<HomeNavProp>()
   const { user, signOut } = useAuth()
+  const { t } = useLanguage()
   const [personas, setPersonas] = useState<Persona[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<StageFilter>('all')
@@ -125,24 +123,24 @@ export default function HomeScreen() {
 
   const handleDeletePersona = (persona: Persona) => {
     setOpenMenuId(null)
-    const title = '기억을 지울까요?'
-    const msg = `"${persona.name}"과(와)의 대화와 기록이 모두 사라져요.\n이 작업은 되돌릴 수 없어요.`
+    const title = t.home.deleteTitle
+    const msg = t.home.deleteMsg(persona.name)
     const doDelete = async () => {
       try {
         await deletePersona(persona.id)
         setPersonas(prev => prev.filter(p => p.id !== persona.id))
       } catch (err) {
-        const m = err instanceof Error ? err.message : '잠시 후 다시 시도해주세요.'
-        if (Platform.OS === 'web') window.alert(`삭제 실패: ${m}`)
-        else Alert.alert('삭제 실패', m)
+        const m = err instanceof Error ? err.message : t.home.retryMsg
+        if (Platform.OS === 'web') window.alert(`${t.home.deleteError}: ${m}`)
+        else Alert.alert(t.home.deleteError, m)
       }
     }
     if (Platform.OS === 'web') {
       if (window.confirm(`${title}\n\n${msg}`)) doDelete()
     } else {
       Alert.alert(title, msg, [
-        { text: '취소', style: 'cancel' },
-        { text: '지우기', style: 'destructive', onPress: doDelete },
+        { text: t.common.cancel, style: 'cancel' },
+        { text: t.home.deleteBtn, style: 'destructive', onPress: doDelete },
       ])
     }
   }
@@ -198,23 +196,23 @@ export default function HomeScreen() {
               isLoggingOut && styles.logoutBtnDisabled,
             ]}
           >
-            <Text style={styles.logoutText}>{isLoggingOut ? '로그아웃 중...' : '🚪 로그아웃'}</Text>
+            <Text style={styles.logoutText}>{isLoggingOut ? t.home.logoutLoading : t.home.logoutBtn}</Text>
           </Pressable>
         </View>
 
         {/* AI Disclosure Banner */}
         <View style={styles.aiBanner}>
           <Text style={styles.aiBannerText}>
-            ⚠️ 이 서비스의 모든 대화 상대는 기술 기반 서비스입니다. 실제 인물이 아닙니다.
+            {t.home.aiBanner}
           </Text>
         </View>
 
         {/* Section Header */}
         <Animated.View style={[styles.sectionHeader, { opacity: fadeAnim }]}>
           <View>
-            <Text style={styles.sectionTitle}>소중한 기억들</Text>
+            <Text style={styles.sectionTitle}>{t.home.sectionTitle}</Text>
             <Text style={styles.sectionCount}>
-              {filteredPersonas.length}개의 대화가 저장되어 있습니다.
+              {t.home.savedCount(filteredPersonas.length)}
             </Text>
           </View>
           <TouchableOpacity
@@ -228,35 +226,38 @@ export default function HomeScreen() {
               style={styles.createBtnGradient}
             >
               <Text style={styles.createBtnIcon}>+</Text>
-              <Text style={styles.createBtnText}>새로운 기억 만들기</Text>
+              <Text style={styles.createBtnText}>{t.home.createNew}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
 
         {/* Stage Filter Pills */}
         <View style={styles.filterRow}>
-          {FILTER_OPTIONS.map(opt => (
-            <TouchableOpacity
-              key={opt.key}
-              onPress={() => setFilter(opt.key)}
-              activeOpacity={0.85}
-              style={styles.filterPillWrap}
-            >
-              {filter === opt.key ? (
-                <LinearGradient
-                  colors={['#7C3AED', '#3B82F6']}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={styles.filterPillActive}
-                >
-                  <Text style={styles.filterPillTextActive}>{opt.label}</Text>
-                </LinearGradient>
-              ) : (
-                <View style={styles.filterPill}>
-                  <Text style={styles.filterPillText}>{opt.label}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
+          {FILTER_KEYS.map(key => {
+            const label = key === 'all' ? t.home.filterAll : key === 'replay' ? t.home.filterReplay : key === 'stable' ? t.home.filterStable : t.home.filterClosure
+            return (
+              <TouchableOpacity
+                key={key}
+                onPress={() => setFilter(key)}
+                activeOpacity={0.85}
+                style={styles.filterPillWrap}
+              >
+                {filter === key ? (
+                  <LinearGradient
+                    colors={['#7C3AED', '#3B82F6']}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    style={styles.filterPillActive}
+                  >
+                    <Text style={styles.filterPillTextActive}>{label}</Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={styles.filterPill}>
+                    <Text style={styles.filterPillText}>{label}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            )
+          })}
         </View>
 
         {/* Content */}
@@ -266,7 +267,7 @@ export default function HomeScreen() {
           </View>
         ) : error ? (
           <TouchableOpacity style={styles.errorCard} onPress={fetchData} activeOpacity={0.7}>
-            <Text style={styles.errorText}>대화 목록을 불러오지 못했어요. 탭하면 다시 시도해요.</Text>
+            <Text style={styles.errorText}>{t.home.loadError}</Text>
           </TouchableOpacity>
         ) : filteredPersonas.length === 0 ? (
           /* Empty State */
@@ -277,10 +278,8 @@ export default function HomeScreen() {
               style={styles.emptyCardGradient}
             >
               <Text style={styles.emptyEmoji}>💜</Text>
-              <Text style={styles.emptyTitle}>아직 대화가 없네요</Text>
-              <Text style={styles.emptyDesc}>
-                카카오톡 대화를 업로드하면{'\n'}그 사람과 다시 대화할 수 있습니다.
-              </Text>
+              <Text style={styles.emptyTitle}>{t.home.emptyTitle}</Text>
+              <Text style={styles.emptyDesc}>{t.home.emptyDesc}</Text>
               <TouchableOpacity
                 onPress={() => navigation.navigate('PersonaCreate')}
                 activeOpacity={0.85}
@@ -290,7 +289,7 @@ export default function HomeScreen() {
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                   style={styles.emptyBtn}
                 >
-                  <Text style={styles.emptyBtnText}>+ 새로운 기억 만들기</Text>
+                  <Text style={styles.emptyBtnText}>{t.home.createNewPlus}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </LinearGradient>
@@ -339,7 +338,7 @@ export default function HomeScreen() {
 
                       {/* Conversation count */}
                       {count !== undefined && (
-                        <Text style={styles.countText}>대화 {count}회</Text>
+                        <Text style={styles.countText}>{t.home.conversationCount(count)}</Text>
                       )}
 
                       {/* Date */}
@@ -365,14 +364,14 @@ export default function HomeScreen() {
                               style={styles.dropdownItem}
                               onPress={(e) => { e.stopPropagation?.(); handleEditPersona(persona) }}
                             >
-                              <Text style={styles.dropdownItemText}>✎ 수정</Text>
+                              <Text style={styles.dropdownItemText}>{t.home.menuEdit}</Text>
                             </TouchableOpacity>
                             <View style={styles.dropdownDivider} />
                             <TouchableOpacity
                               style={styles.dropdownItem}
                               onPress={(e) => { e.stopPropagation?.(); handleDeletePersona(persona) }}
                             >
-                              <Text style={[styles.dropdownItemText, { color: '#FCA5A5' }]}>✕ 삭제</Text>
+                              <Text style={[styles.dropdownItemText, { color: '#FCA5A5' }]}>{t.home.menuDelete}</Text>
                             </TouchableOpacity>
                           </View>
                         )}
@@ -392,7 +391,7 @@ export default function HomeScreen() {
                             colors={['rgba(99, 102, 241, 0.4)', 'rgba(168, 85, 247, 0.4)']}
                             style={styles.closureLetterBtn}
                           >
-                            <Text style={styles.closureLetterBtnText}>🌸 마지막 편지 쓰기</Text>
+                            <Text style={styles.closureLetterBtnText}>{t.home.closureBtn}</Text>
                           </LinearGradient>
                         </TouchableOpacity>
                       )}

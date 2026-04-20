@@ -17,6 +17,7 @@ import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useAuth } from '../../context/AuthContext'
 import { C, RADIUS } from '../theme'
 import { signInWithGoogle } from '../../services/authService'
+import { useLanguage } from '../../context/LanguageContext'
 
 const { width, height } = Dimensions.get('window')
 
@@ -34,6 +35,7 @@ const STARS = Array.from({ length: 40 }, (_, i) => ({
 
 export default function LoginScreen({ navigation }: Props) {
   const { session } = useAuth()
+  const { t } = useLanguage()
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(30)).current
   const iconScale = useRef(new Animated.Value(0)).current
@@ -41,7 +43,7 @@ export default function LoginScreen({ navigation }: Props) {
   const handleGoogleSignIn = async (): Promise<void> => {
     const result = await signInWithGoogle()
     if (!result.success) {
-      Alert.alert('구글 로그인', result.error ?? '구글 로그인에 실패했습니다.')
+      Alert.alert('구글 로그인', result.error ?? t.login.googleError)
     }
   }
 
@@ -142,7 +144,7 @@ export default function LoginScreen({ navigation }: Props) {
                   </LinearGradient>
                 </Animated.View>
                 <Text style={styles.title}>Still After</Text>
-                <Text style={styles.tagline}>당신 곁을 여전히</Text>
+                <Text style={styles.tagline}>{t.login.brand}</Text>
               </View>
 
               {/* Google login button */}
@@ -153,7 +155,7 @@ export default function LoginScreen({ navigation }: Props) {
               >
                 <View style={styles.googleButtonInner}>
                   <Text style={styles.googleButtonIcon}>G</Text>
-                  <Text style={styles.googleButtonText}>구글로 시작하기</Text>
+                  <Text style={styles.googleButtonText}>{t.login.googleBtn}</Text>
                 </View>
               </TouchableOpacity>
 
@@ -170,21 +172,21 @@ export default function LoginScreen({ navigation }: Props) {
                   style={styles.emailButtonGradient}
                 >
                   <Text style={styles.emailButtonIcon}>✉️</Text>
-                  <Text style={styles.emailButtonText}>이메일로 시작하기</Text>
+                  <Text style={styles.emailButtonText}>{t.login.emailBtn}</Text>
                 </LinearGradient>
               </TouchableOpacity>
 
               {/* Free trial notice */}
               <View style={styles.infoBox}>
                 <Text style={styles.infoText}>
-                  💳 카드 등록 없이 바로 시작할 수 있어요{'\n'}
-                  <Text style={styles.infoTextHighlight}>첫 10번의 대화는 무료예요</Text>
+                  {t.login.noCreditCard}{'\n'}
+                  <Text style={styles.infoTextHighlight}>{t.login.freeTrial}</Text>
                 </Text>
               </View>
 
               {/* AI Notice */}
               <Text style={styles.aiNotice}>
-                Still After는 실제 인물을 복원하지 않아요.{'\n'}감정이 자연스럽게 자리 잡을 수 있도록{'\n'}조심스럽게 함께하는 공간이에요.
+                {t.login.disclaimer}
               </Text>
 
               {/* Back */}
@@ -195,7 +197,7 @@ export default function LoginScreen({ navigation }: Props) {
                 }}
                 style={styles.backButton}
               >
-                <Text style={styles.backText}>← 돌아가기</Text>
+                <Text style={styles.backText}>{t.common.goBack}</Text>
               </TouchableOpacity>
             </LinearGradient>
           </Animated.View>

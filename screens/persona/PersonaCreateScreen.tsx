@@ -10,6 +10,7 @@ import { RootStackParamList } from '../../navigation/RootNavigator'
 import { parseKakaoChat, generateSystemPrompt, generatePetSystemPrompt, ParsedKakaoChat } from '../../services/kakaoParser'
 import { createPersona, uploadPersonaPhoto } from '../../services/personaService'
 import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/LanguageContext'
 import { C, RADIUS } from '../theme'
 
 type Props = {
@@ -36,6 +37,7 @@ function getCallingForm(name: string): string {
 
 export default function PersonaCreateScreen({ navigation }: Props) {
   const { user } = useAuth()
+  const { t } = useLanguage()
   const [name, setName] = useState('')
   const [userNickname, setUserNickname] = useState('')  // 페르소나가 나를 부르던 애칭
   const [relationship, setRelationship] = useState('')
@@ -68,7 +70,7 @@ export default function PersonaCreateScreen({ navigation }: Props) {
 
     try {
       if (!rawText || rawText.trim().length === 0) {
-        throw new Error('빈 파일입니다.')
+        throw new Error(t.personaCreate.errorEmptyFile)
       }
 
       const parsed = parseKakaoChat(rawText, name.trim() || undefined)
@@ -82,7 +84,7 @@ export default function PersonaCreateScreen({ navigation }: Props) {
         setName(parsed.partnerName)
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : '파일을 분석할 수 없습니다.'
+      const message = error instanceof Error ? error.message : t.personaCreate.errorCannotAnalyze
       setErrorMsg(message)
       setKakaoRawText('')
       setFileName('')
@@ -142,7 +144,7 @@ export default function PersonaCreateScreen({ navigation }: Props) {
         document.body.removeChild(input)
       }
       reader.onerror = () => {
-        setErrorMsg('파일을 읽을 수 없습니다. 다시 시도해주세요.')
+        setErrorMsg(t.personaCreate.errorCannotRead)
         setIsParsing(false)
         document.body.removeChild(input)
       }
@@ -164,7 +166,7 @@ export default function PersonaCreateScreen({ navigation }: Props) {
       const content = await FileSystem.readAsStringAsync(result.assets[0].uri, { encoding: 'utf8' as any })
       processKakaoFile(content, result.assets[0].name)
     } catch {
-      setErrorMsg('파일을 읽을 수 없습니다. 다시 시도해주세요.')
+      setErrorMsg(t.personaCreate.errorCannotRead)
     }
   }
 
@@ -193,7 +195,7 @@ export default function PersonaCreateScreen({ navigation }: Props) {
       const ImagePicker = await import('expo-image-picker')
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
       if (status !== 'granted') {
-        Alert.alert('권한 필요', '사진 접근 권한이 필요해요.')
+        Alert.alert(t.personaCreate.alertPermissionTitle, t.personaCreate.alertPermissionMsg)
         return
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -236,7 +238,7 @@ export default function PersonaCreateScreen({ navigation }: Props) {
         }
       }
     } catch {
-      Alert.alert('오류', '사진을 불러올 수 없어요.')
+      Alert.alert(t.personaCreate.alertPhotoErrorTitle, t.personaCreate.alertPhotoErrorMsg)
     }
   }
 
@@ -262,28 +264,28 @@ export default function PersonaCreateScreen({ navigation }: Props) {
 
   const handleCreate = async () => {
     if (!user) {
-      Alert.alert('로그인이 필요해요', '다시 로그인 후 기억 만들기를 진행해주세요.', [
-        { text: '확인', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Login' }] }) },
+      Alert.alert(t.personaCreate.alertLoginTitle, t.personaCreate.alertLoginMsg, [
+        { text: t.common.confirm, onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Login' }] }) },
       ])
       return
     }
     if (!canSubmit()) {
       setCreateErrorMsg(
         !name.trim()
-          ? '이름을 입력해주세요.'
+          ? t.personaCreate.errorNameRequired
           : !relationship
-          ? '관계를 선택해주세요.'
+          ? t.personaCreate.errorRelationRequired
           : relationship === '기타' && !customRelationship.trim()
-          ? '관계를 직접 입력해주세요.'
+          ? t.personaCreate.errorRelationCustomRequired
           : relationship === '반려동물' && !resolvedAnimalType
-          ? '어떤 동물이었는지 선택해주세요.'
+          ? t.personaCreate.errorPetTypeRequired
           : activeTab === 'kakao' && !parseResult
-          ? '카카오톡 파일을 먼저 업로드해주세요.'
+          ? t.personaCreate.errorKakaoRequired
           : activeTab === 'manual' && manualText.trim().length < 20
-          ? '기억을 20자 이상 입력해주세요.'
+          ? t.personaCreate.errorMemoryTooShort
           : !agreedToService
-          ? '서비스 동의가 필요해요.'
-          : '입력 정보를 다시 확인해주세요.'
+          ? t.personaCreate.errorConsentRequired
+          : t.personaCreate.errorCheckInput
       )
       return
     }
@@ -300,7 +302,7 @@ export default function PersonaCreateScreen({ navigation }: Props) {
         const parsed = parseKakaoChat(kakaoRawText, name.trim() || undefined)
         systemPrompt = generateSystemPrompt(parsed, resolvedRelationship)
       } else if (activeTab === 'kakao') {
-        throw new Error('카카오톡 파일 분석 결과가 없어 기억을 만들 수 없어요. 파일을 다시 업로드해주세요.')
+        throw new Error(t.personaCreate.errorKakaoRequired)
       } else if (relationship === '반려동물') {
         // 반려동물 전용 프롬프트 (펫로스 특화)
         systemPrompt = generatePetSystemPrompt(name.trim(), resolvedAnimalType, manualText.trim())
@@ -347,9 +349,9 @@ ${manualText.trim()}
       navigation.replace('AIGenerating', { name: name.trim(), personaId })
     } catch (err: unknown) {
       console.error('[PersonaCreate] 생성 오류:', err)
-      const message = err instanceof Error ? err.message : '기억을 담는 중 문제가 생겼어요.'
+      const message = err instanceof Error ? err.message : t.personaCreate.errorCheckInput
       setCreateErrorMsg(message)
-      Alert.alert('잠시 멈췄어요', message)
+      Alert.alert(t.personaCreate.alertPausedTitle, message)
     } finally {
       setLoading(false)
     }
@@ -378,14 +380,14 @@ ${manualText.trim()}
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>기억 만들기</Text>
+          <Text style={styles.headerTitle}>{t.personaCreate.headerTitle}</Text>
           <View style={styles.headerRight} />
         </View>
 
         {/* 안내 */}
         <View style={styles.banner}>
           <Text style={styles.bannerText}>
-            ⚠️ 그 분의 말투와 온기를 담지만, 실제 인물을 대체하지 않아요.
+            {t.personaCreate.aiBanner}
           </Text>
         </View>
 
@@ -397,24 +399,24 @@ ${manualText.trim()}
             ) : (
               <View style={styles.photoPlaceholder}>
                 <Text style={styles.photoIcon}>📷</Text>
-                <Text style={styles.photoHint}>사진 추가</Text>
-                <Text style={styles.photoHintSub}>선택 사항이에요</Text>
+                <Text style={styles.photoHint}>{t.personaCreate.addPhoto}</Text>
+                <Text style={styles.photoHintSub}>{t.personaCreate.photoOptional}</Text>
               </View>
             )}
           </TouchableOpacity>
           {photoUri && (
             <TouchableOpacity onPress={() => { setPhotoUri(null); setPhotoBlob(null) }}>
-              <Text style={styles.photoRemove}>사진 지우기</Text>
+              <Text style={styles.photoRemove}>{t.personaCreate.removePhoto}</Text>
             </TouchableOpacity>
           )}
         </View>
 
         {/* 이름 입력 */}
         <View style={styles.section}>
-          <Text style={styles.label}>{relationship === '반려동물' ? '이름이 뭐였나요?' : '어떻게 불렀나요?'}</Text>
+          <Text style={styles.label}>{relationship === '반려동물' ? t.personaCreate.nameLabelPet : t.personaCreate.nameLabelHuman}</Text>
           <TextInput
             style={styles.input}
-            placeholder={relationship === '반려동물' ? '예: 초코, 보리, 콩이' : '예: 엄마, 지수, 준혁'}
+            placeholder={relationship === '반려동물' ? t.personaCreate.namePlaceholderPet : t.personaCreate.namePlaceholderHuman}
             value={name}
             onChangeText={setName}
             maxLength={20}
@@ -425,25 +427,24 @@ ${manualText.trim()}
         {/* 애칭 입력 (선택) */}
         <View style={styles.section}>
           <Text style={styles.label}>
-            그 분이 나를 뭐라고 불렀나요?
-            <Text style={styles.labelOptional}> (선택)</Text>
+            {t.personaCreate.myNameLabel}
           </Text>
           <TextInput
             style={styles.input}
-            placeholder='예: 연수야, 자기야, 우리 딸'
+            placeholder={t.personaCreate.myNamePlaceholder}
             value={userNickname}
             onChangeText={setUserNickname}
             maxLength={20}
             placeholderTextColor="#B0A89E"
           />
           <Text style={styles.inputHint}>
-            입력하면 대화에서 그 분이 이 이름으로 불러드려요
+            {t.personaCreate.myNameHint}
           </Text>
         </View>
 
         {/* 관계 선택 */}
         <View style={styles.section}>
-          <Text style={styles.label}>그리운 분과 어떤 사이였나요?</Text>
+          <Text style={styles.label}>{t.personaCreate.relationLabel}</Text>
           <View style={styles.relationRow}>
             {RELATIONS.map(rel => (
               <TouchableOpacity
@@ -460,7 +461,7 @@ ${manualText.trim()}
           {relationship === '기타' && (
             <TextInput
               style={[styles.input, { marginTop: 12 }]}
-              placeholder="예: 선생님, 직장동료, 이웃"
+              placeholder={t.personaCreate.relationOtherPlaceholder}
               value={customRelationship}
               onChangeText={setCustomRelationship}
               maxLength={20}
@@ -472,7 +473,7 @@ ${manualText.trim()}
         {/* 반려동물 종류 선택 */}
         {relationship === '반려동물' && (
           <View style={styles.section}>
-            <Text style={styles.label}>어떤 동물이었나요?</Text>
+            <Text style={styles.label}>{t.personaCreate.petTypeLabel}</Text>
             <View style={styles.relationRow}>
               {PET_TYPES.map(pt => (
                 <TouchableOpacity
@@ -487,7 +488,7 @@ ${manualText.trim()}
             {animalType === '다른 동물' && (
               <TextInput
                 style={[styles.input, { marginTop: 12 }]}
-                placeholder='예: 도마뱀, 거북이, 금붕어'
+                placeholder={t.personaCreate.petOtherPlaceholder}
                 value={customAnimal}
                 onChangeText={setCustomAnimal}
                 maxLength={20}
@@ -500,7 +501,7 @@ ${manualText.trim()}
         {/* 탭 */}
         <View style={styles.section}>
           <Text style={styles.label}>
-            {name ? `"${name}"을(를) 기억할 수 있게 알려주세요` : '기억을 알려주세요'}
+            {name ? t.personaCreate.memoryTitleWithName(name) : t.personaCreate.memoryTitle}
           </Text>
           <View style={styles.tabRow}>
             <Pressable
@@ -508,7 +509,7 @@ ${manualText.trim()}
               onPress={() => setActiveTab('manual')}
             >
               <Text style={[styles.tabText, activeTab === 'manual' && styles.tabTextActive]}>
-                ✏️ 직접 작성
+                {t.personaCreate.tabWrite}
               </Text>
             </Pressable>
             <Pressable
@@ -516,7 +517,7 @@ ${manualText.trim()}
               onPress={() => setActiveTab('kakao')}
             >
               <Text style={[styles.tabText, activeTab === 'kakao' && styles.tabTextActive]}>
-                📱 카카오톡 업로드
+                {t.personaCreate.tabKakao}
               </Text>
             </Pressable>
           </View>
@@ -525,7 +526,7 @@ ${manualText.trim()}
             <View>
               <TextInput
                 style={styles.manualInput}
-                placeholder={`${name || '그분'}의 말투, 자주 하던 말, 기억에 남는 순간들을\n자유롭게 적어주세요.\n\n예: 엄마는 항상 걱정이 많고 따뜻했어.\n밥 먹었냐고 자주 물어봤고,\n가끔 전화해서 잘 지내냐고 짧게 물어보곤 했지.`}
+                placeholder={`${t.personaCreate.writePlaceholder(name || '그분')}\n\n${t.personaCreate.writeExample}`}
                 value={manualText}
                 onChangeText={setManualText}
                 multiline
@@ -534,22 +535,22 @@ ${manualText.trim()}
                 textAlignVertical="top"
               />
               <Text style={styles.charCount}>
-                {manualText.length}자 {manualText.length < 20 ? '(20자 이상 입력해주세요)' : '✓'}
+                {manualText.length}자 {manualText.length < 20 ? t.personaCreate.charCountHint : '✓'}
               </Text>
             </View>
           ) : (
             <View>
               <Text style={styles.kakaoGuide}>
-                함께 나눈 카카오톡 대화를 올려주세요.{'\n'}그 분만의 말투와 온기를 조심스럽게 담아낼게요.
+                {t.personaCreate.kakaoDesc}
               </Text>
               <Text style={styles.kakaoGuideSub}>
-                카카오톡 앱 → 채팅방 → 우측 상단 메뉴(≡) → 대화 내보내기 → .txt 또는 .csv 파일 선택
+                {t.personaCreate.kakaoInstructions}
               </Text>
               <Text style={[styles.kakaoGuideSub, { color: '#F59E0B', marginTop: 4 }]}>
-                ⚠️ 1:1 대화방만 지원돼요. 단체 채팅방은 분석할 수 없어요.
+                {t.personaCreate.kakaoOnlyDirect}
               </Text>
               <Text style={styles.dataDeleteNote}>
-                🔐 업로드한 파일은 기억을 담은 뒤 즉시 삭제되며, 외부에 저장·공유되지 않아요.
+                {t.personaCreate.dataDeleteNote}
               </Text>
               <Pressable
                 style={[styles.uploadBtn, parseResult && styles.uploadBtnDone]}
@@ -559,11 +560,11 @@ ${manualText.trim()}
                 {isParsing ? (
                   <View style={styles.uploadBtnRow}>
                     <ActivityIndicator size="small" color="#2C2C2C" />
-                    <Text style={styles.uploadBtnText}>대화 파일 분석 중...</Text>
+                    <Text style={styles.uploadBtnText}>{t.personaCreate.analyzing}</Text>
                   </View>
                 ) : (
                   <Text style={styles.uploadBtnText}>
-                    {fileName ? `📄 ${fileName}` : '📂 .txt / .csv 파일 선택'}
+                    {fileName ? `📄 ${fileName}` : t.personaCreate.uploadBtn}
                   </Text>
                 )}
               </Pressable>
@@ -578,29 +579,29 @@ ${manualText.trim()}
               {/* 파싱 성공 미리보기 */}
               {parseResult && (
                 <View style={styles.parseResultBox}>
-                  <Text style={styles.parseResultTitle}>✓ 기억이 담겼어요</Text>
+                  <Text style={styles.parseResultTitle}>{t.personaCreate.memorySuccess}</Text>
                   <View style={styles.parseResultRow}>
-                    <Text style={styles.parseResultLabel}>대화 상대</Text>
+                    <Text style={styles.parseResultLabel}>{t.personaCreate.parseResultPartner}</Text>
                     <Text style={styles.parseResultValue}>{parseResult.parsed.partnerName}</Text>
                   </View>
                   <View style={styles.parseResultRow}>
-                    <Text style={styles.parseResultLabel}>전체 메시지</Text>
-                    <Text style={styles.parseResultValue}>{parseResult.parsed.totalMessages}개</Text>
+                    <Text style={styles.parseResultLabel}>{t.personaCreate.parseResultTotal}</Text>
+                    <Text style={styles.parseResultValue}>{t.personaCreate.parseResultCount(parseResult.parsed.totalMessages)}</Text>
                   </View>
                   <View style={styles.parseResultRow}>
-                    <Text style={styles.parseResultLabel}>{parseResult.parsed.partnerName}의 메시지</Text>
-                    <Text style={styles.parseResultValue}>{parseResult.parsed.partnerMessageCount}개</Text>
+                    <Text style={styles.parseResultLabel}>{t.personaCreate.parseResultFrom(parseResult.parsed.partnerName)}</Text>
+                    <Text style={styles.parseResultValue}>{t.personaCreate.parseResultCount(parseResult.parsed.partnerMessageCount)}</Text>
                   </View>
                   {parseResult.parsed.commonPhrases.length > 0 && (
                     <View style={styles.parseResultRow}>
-                      <Text style={styles.parseResultLabel}>자주 쓰는 표현</Text>
+                      <Text style={styles.parseResultLabel}>{t.personaCreate.parseResultPhrases}</Text>
                       <Text style={styles.parseResultValue}>
                         {parseResult.parsed.commonPhrases.slice(0, 8).join(', ')}
                       </Text>
                     </View>
                   )}
                   <Text style={styles.parseResultHint}>
-                    다른 파일로 바꾸려면 위 버튼을 다시 눌러주세요.
+                    {t.personaCreate.parseResultChangeHint}
                   </Text>
                 </View>
               )}
@@ -618,7 +619,7 @@ ${manualText.trim()}
               {agreedToService && <Text style={styles.checkmark}>✓</Text>}
             </View>
             <Text style={styles.consentText}>
-              이 서비스는 실제 인물을 대체하지 않으며, 감정 회복을 위한 공간임을 이해해요. 나눈 대화와 사진은 기억을 담는 데만 사용되며 외부에 공유되지 않아요.
+              {t.personaCreate.consentLabel}
             </Text>
           </Pressable>
         </View>
@@ -645,11 +646,11 @@ ${manualText.trim()}
             {loading ? (
               <View style={styles.uploadBtnRow}>
                 <ActivityIndicator color="#FFFFFF" />
-                <Text style={[styles.submitBtnText, { marginLeft: 8 }]}>기억 생성 중...</Text>
+                <Text style={[styles.submitBtnText, { marginLeft: 8 }]}>{t.personaCreate.submitting}</Text>
               </View>
             ) : (
               <Text style={styles.submitBtnText}>
-                {canSubmit() ? '기억 만들기 →' : !name.trim() ? '이름을 입력해주세요' : !relationship ? '관계를 선택해주세요' : activeTab === 'kakao' && !parseResult ? '카카오톡 파일을 업로드해주세요' : activeTab === 'manual' && manualText.trim().length < 20 ? '기억을 20자 이상 적어주세요' : !agreedToService ? '서비스 동의가 필요해요' : '기억 만들기 →'}
+                {canSubmit() ? t.personaCreate.submitBtn : !name.trim() ? t.personaCreate.errorNameRequired : !relationship ? t.personaCreate.errorRelationRequired : activeTab === 'kakao' && !parseResult ? t.personaCreate.errorKakaoRequired : activeTab === 'manual' && manualText.trim().length < 20 ? t.personaCreate.errorMemoryTooShort : !agreedToService ? t.personaCreate.errorConsentRequired : t.personaCreate.submitBtn}
               </Text>
             )}
           </LinearGradient>

@@ -6,6 +6,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
+import { useLanguage } from '../../context/LanguageContext'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'CareSelect'>
@@ -21,6 +22,7 @@ const STAR_DOTS = Array.from({ length: 25 }, (_, i) => ({
 }))
 
 export default function CareSelectScreen({ navigation }: Props) {
+  const { t } = useLanguage()
   const handleSelect = (careType: 'person' | 'pet') => {
     navigation.navigate('RelationSetup', { careType })
   }
@@ -36,9 +38,9 @@ export default function CareSelectScreen({ navigation }: Props) {
 
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>누구를 그리워하시나요?</Text>
+          <Text style={styles.title}>{t.careSelect.title}</Text>
           <Text style={styles.subtitle}>
-            소중한 분의 기억을 담고,{'\n'}천천히 마음을 정리할 수 있도록 함께할게요.
+            {t.careSelect.subtitle}
           </Text>
         </View>
 
@@ -46,22 +48,22 @@ export default function CareSelectScreen({ navigation }: Props) {
           <TouchableOpacity style={styles.card} onPress={() => handleSelect('person')} activeOpacity={0.85}>
             <LinearGradient colors={['rgba(168, 85, 247, 0.15)', 'rgba(219, 39, 119, 0.1)']} style={styles.cardGrad}>
               <Text style={styles.cardEmoji}>🧑‍🤝‍🧑</Text>
-              <Text style={styles.cardTitle}>사람</Text>
-              <Text style={styles.cardDesc}>가족, 친구, 연인</Text>
+              <Text style={styles.cardTitle}>{t.careSelect.humanLabel}</Text>
+              <Text style={styles.cardDesc}>{t.careSelect.humanSub}</Text>
             </LinearGradient>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.card} onPress={() => handleSelect('pet')} activeOpacity={0.85}>
             <LinearGradient colors={['rgba(168, 85, 247, 0.15)', 'rgba(219, 39, 119, 0.1)']} style={styles.cardGrad}>
               <Text style={styles.cardEmoji}>🐾</Text>
-              <Text style={styles.cardTitle}>반려동물</Text>
-              <Text style={styles.cardDesc}>함께한 가족</Text>
+              <Text style={styles.cardTitle}>{t.careSelect.petLabel}</Text>
+              <Text style={styles.cardDesc}>{t.careSelect.petSub}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
 
         <Text style={styles.notice}>
-          이 서비스는 실제 인물·동물을 대체하지 않아요.{'\n'}감정 회복을 위한 공간이에요.
+          {t.careSelect.notice}
         </Text>
       </View>
     </View>

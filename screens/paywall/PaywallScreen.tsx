@@ -8,6 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { supabase } from '../../services/supabase'
+import { useLanguage } from '../../context/LanguageContext'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Paywall'>
@@ -17,7 +18,7 @@ type Props = {
 const FREE_LIMIT = 10
 const PRODUCT_PRICE = 19900
 
-// íì¤í¸/ê°ë° ê³ì  Paywall ì°í
+// 테스트/개발 계정 Paywall 우회
 const TEST_EMAILS = ['dev@stillafter.com', 'test@stillafter.com', 'stillafter.test@gmail.com']
 const isTestAccount = (email?: string | null) => !!email && TEST_EMAILS.includes(email.toLowerCase())
 
@@ -30,6 +31,7 @@ const STAR_DOTS = Array.from({ length: 30 }, (_, i) => ({
 
 export default function PaywallScreen({ navigation, route }: Props) {
   const { personaId, stage } = route.params
+  const { t } = useLanguage()
   const [freeUsed, setFreeUsed] = useState(0)
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(true)
@@ -38,7 +40,7 @@ export default function PaywallScreen({ navigation, route }: Props) {
 
   useEffect(() => { loadFreeUsage() }, [])
 
-  // ê²°ì ì°½ ì´ë¦° í ì± ë³µê· ê°ì§ (ëª¨ë°ì¼/ì¹ ê³µíµ)
+  // 결제창 열린 후 앱 복귀 감지 (모바일/웹 공통)
   useEffect(() => {
     if (paymentStep !== 'waiting') return
     const handleFocus = () => {
@@ -75,53 +77,53 @@ export default function PaywallScreen({ navigation, route }: Props) {
     setLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { Alert.alert('ë¡ê·¸ì¸ íì', 'ë¡ê·¸ì¸ í ì´ì©í  ì ìì´ì.'); return }
+      if (!user) { Alert.alert(t.paywall.loginRequiredTitle, t.paywall.loginRequiredMsg); return }
       navigation.replace('Chat', { personaId })
-    } catch { Alert.alert('ì¤ë¥', 'ì ì í ë¤ì ìëí´ì£¼ì¸ì.') }
+    } catch { Alert.alert(t.paywall.errorTitle, t.home.retryMsg) }
     finally { setLoading(false) }
   }
 
-  // íì´ì± ê²°ì  ìì
+  // 페이앱 결제 시작
   const handlePayment = async () => {
     setLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { Alert.alert('ë¡ê·¸ì¸ íì', 'ë¡ê·¸ì¸ í ì´ì©í  ì ìì´ì.'); return }
+      if (!user) { Alert.alert(t.paywall.loginRequiredTitle, t.paywall.loginRequiredMsg); return }
 
-      // Vercel API ë¼ì°í¸ë¡ íì´ì± ê²°ì  ìì²­ ì´ê¸°í
+      // Vercel API 라우트로 페이앱 결제 요청 초기화
       const resp = await fetch('/api/payapp-init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           personaId,
           userId: user.id,
-          userPhone: '',  // ì íì¬í­
+          userPhone: '',  // 선택사항
         }),
       })
 
       if (!resp.ok) {
         const err = await resp.json()
-        throw new Error(err.error || 'ê²°ì  ìì²­ ì¤í¨')
+        throw new Error(err.error || '결제 요청 실패')
       }
 
       const { shopkey: sk, payurl } = await resp.json()
       setShopkey(sk)
       setPaymentStep('waiting')
 
-      // ê²°ì  íì´ì§ë¡ ì´ë (ì¹: ì í­, ì±: ë¸ë¼ì°ì  ì´ê¸°)
+      // 결제 페이지로 이동 (웹: 새 탭, 앱: 브라우저 열기)
       if (Platform.OS === 'web') {
         window.open(payurl, '_blank')
       } else {
         await Linking.openURL(payurl)
       }
     } catch (err: any) {
-      Alert.alert('ê²°ì  ì¤ë¥', err.message || 'ì ì í ë¤ì ìëí´ì£¼ì¸ì.')
+      Alert.alert(t.paywall.paymentErrorTitle, err.message || t.home.retryMsg)
     } finally {
       setLoading(false)
     }
   }
 
-  // ê²°ì  ìë£ í ê²ì¦
+  // 결제 완료 후 검증
   const verifyPayment = useCallback(async () => {
     if (!shopkey || paymentStep !== 'waiting') return
     setPaymentStep('verifying')
@@ -136,13 +138,13 @@ export default function PaywallScreen({ navigation, route }: Props) {
       if (resp.ok && data.success) {
         navigation.replace('Chat', { personaId })
       } else {
-        // ê²°ì  ë¯¸ìë£ ëë ì·¨ì
+        // 결제 미완료 또는 취소
         setPaymentStep('idle')
-        Alert.alert('ê²°ì  ë¯¸ìë£', 'ê²°ì ê° ìë£ëì§ ììì´ì. ê²°ì ì°½ì ë«ì¼ì¨ëì?')
+        Alert.alert(t.paywall.incompleteTitle, t.paywall.incompleteMsg)
       }
     } catch {
       setPaymentStep('idle')
-      Alert.alert('ì¤ë¥', 'ê²°ì  íì¸ ì¤ ë¬¸ì ê° ë°ìíì´ì.')
+      Alert.alert(t.paywall.errorTitle, t.paywall.paymentErrorMsg)
     }
   }, [shopkey, paymentStep, personaId])
 
@@ -170,28 +172,28 @@ export default function PaywallScreen({ navigation, route }: Props) {
         <Text style={styles.title}>Still After</Text>
 
         {paymentStep === 'waiting' ? (
-          // ê²°ì ì°½ ì´ë¦¼ ëê¸° ìí
+          // 결제창 열림 대기 상태
           <View style={styles.waitingBox}>
             <ActivityIndicator color="#a855f7" size="large" style={{ marginBottom: 20 }} />
-            <Text style={styles.waitingTitle}>ê²°ì ì°½ìì ì§íí´ì£¼ì¸ì</Text>
-            <Text style={styles.waitingDesc}>ê²°ì ë¥¼ ìë£íë©´ ìëì¼ë¡ ì´ì´ì ¸ì.{'\n'}ì°½ì ë«ì¼ì¨ë¤ë©´ ìë ë²í¼ì ëë¬ì£¼ì¸ì.</Text>
+            <Text style={styles.waitingTitle}>{t.paywall.paymentWaiting}</Text>
+            <Text style={styles.waitingDesc}>{t.paywall.paymentWaitingDesc}</Text>
             <TouchableOpacity style={styles.checkBtn} onPress={verifyPayment} disabled={paymentStep as string === 'verifying'}>
               <Text style={styles.checkBtnText}>
-                {paymentStep === 'verifying' ? 'íì¸ ì¤...' : 'ê²°ì  ìë£íì´ì â'}
+                {paymentStep === 'verifying' ? t.paywall.verifying : t.paywall.paymentCompleteBtn}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.cancelBtn} onPress={() => { setPaymentStep('idle'); setShopkey(null) }}>
-              <Text style={styles.cancelBtnText}>ì·¨ì</Text>
+              <Text style={styles.cancelBtnText}>{t.common.cancel}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
-            <Text style={styles.subtitle}>ì´ì¼ê¸°ë¥¼ ì´ì´ê°ë ê´ì°®ìì.{'\n'}ì²ì²í, ì¤ë¹ë  ë í¨ê»í ê²ì.</Text>
+            <Text style={styles.subtitle}>{t.paywall.subtitle}</Text>
 
             {remaining > 0 && (
               <View style={styles.freeInfo}>
                 <Text style={styles.freeInfoText}>
-                  ìì§ ë¬´ë£ë¡ <Text style={styles.freeCount}>{remaining}ë²</Text> ë ëíí  ì ìì´ì
+                  {t.paywall.freeRemaining(remaining)}
                 </Text>
               </View>
             )}
@@ -200,20 +202,20 @@ export default function PaywallScreen({ navigation, route }: Props) {
               <TouchableOpacity style={styles.freeButton} onPress={handleFreeTrial} disabled={loading} activeOpacity={0.85}>
                 {loading ? <ActivityIndicator color="#fff" /> : (
                   <>
-                    <Text style={styles.freeButtonText}>ì´ì´ì ëííê¸°</Text>
-                    <Text style={styles.freeButtonSub}>{remaining}ë² ë ì´ì¼ê¸°í  ì ìì´ì</Text>
+                    <Text style={styles.freeButtonText}>{t.paywall.continueBtn}</Text>
+                    <Text style={styles.freeButtonSub}>{t.paywall.continueBtnSub(remaining)}</Text>
                   </>
                 )}
               </TouchableOpacity>
             ) : (
               <View style={styles.freeExhausted}>
-                <Text style={styles.exhaustedText}>ð¬ ë¬´ë£ 10í ëíë¥¼ ëª¨ë ì¬ì©íì´ì</Text>
+                <Text style={styles.exhaustedText}>{t.paywall.exhaustedMsg}</Text>
               </View>
             )}
 
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>ëë</Text>
+              <Text style={styles.dividerText}>{t.paywall.orDivider}</Text>
               <View style={styles.dividerLine} />
             </View>
 
@@ -222,27 +224,27 @@ export default function PaywallScreen({ navigation, route }: Props) {
               <View style={styles.payButtonContent} pointerEvents="none">
                 {loading ? <ActivityIndicator color="#fff" /> : (
                   <>
-                    <Text style={styles.payButtonText}>ê²°ì íê³  ë¬´ì í ëííê¸°</Text>
-                    <Text style={styles.payButtonSub}>íë¥´ìëë¹ {PRODUCT_PRICE.toLocaleString()}ì (1í ê²°ì ) Â· íì´ì±</Text>
+                    <Text style={styles.payButtonText}>{t.paywall.premiumBtn}</Text>
+                    <Text style={styles.payButtonSub}>{t.paywall.premiumBtnSub(PRODUCT_PRICE)}</Text>
                   </>
                 )}
               </View>
             </TouchableOpacity>
 
             <View style={styles.benefitRow}>
-              {['â ë¬´ì í ëí', 'â 1í ê²°ì ', 'â íë¶ ë³´ì¥'].map(b => (
+              {[t.paywall.benefitUnlimited, t.paywall.benefitOneTime, t.paywall.benefitRefund].map(b => (
                 <Text key={b} style={styles.benefitText}>{b}</Text>
               ))}
             </View>
 
             <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-              <Text style={styles.backText}>ëìê°ê¸°</Text>
+              <Text style={styles.backText}>{t.paywall.backBtn}</Text>
             </TouchableOpacity>
           </>
         )}
 
         <Text style={styles.notice}>
-          ì´ ìë¹ì¤ë ì¤ì  ì¸ë¬¼ì ëì²´íì§ ììì. ê°ì  íë³µì ìí ê³µê°ì´ìì.
+          {t.paywall.notice}
         </Text>
       </View>
     </View>
@@ -290,7 +292,7 @@ const styles = StyleSheet.create({
   benefitText: { fontSize: 12, color: 'rgba(255,255,255,0.4)' },
   backButton: { padding: 12 },
   backText: { fontSize: 14, color: 'rgba(255,255,255,0.5)' },
-  // ê²°ì  ëê¸° ìí
+  // 결제 대기 상태
   waitingBox: { alignItems: 'center', width: '100%' },
   waitingTitle: { fontSize: 20, fontWeight: '600', color: '#fff', marginBottom: 12 },
   waitingDesc: { fontSize: 14, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 22, marginBottom: 32 },

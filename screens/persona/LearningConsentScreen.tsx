@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
+import { useLanguage } from '../../context/LanguageContext'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'LearningConsent'>
@@ -24,6 +25,7 @@ const glass = Platform.OS === 'web' ? { backdropFilter: 'blur(16px)', WebkitBack
 
 export default function LearningConsentScreen({ navigation, route }: Props) {
   const { name, fileName } = route.params
+  const { t } = useLanguage()
   const [agreed, setAgreed] = useState(false)
 
   const handleNext = () => {
@@ -42,15 +44,15 @@ export default function LearningConsentScreen({ navigation, route }: Props) {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>← 뒤로</Text>
+          <Text style={styles.backText}>{t.common.back}</Text>
         </TouchableOpacity>
 
         <View style={styles.header}>
-          <Text style={styles.title}>나눈 이야기를{'\n'}어떻게 사용하나요?</Text>
+          <Text style={styles.title}>{t.learningConsent.title}</Text>
         </View>
 
         <View style={styles.fileConfirm}>
-          <Text style={styles.fileConfirmLabel}>업로드된 파일</Text>
+          <Text style={styles.fileConfirmLabel}>{t.learningConsent.uploadedFile}</Text>
           <View style={styles.fileRow}>
             <Text style={styles.fileEmoji}>📄</Text>
             <Text style={styles.fileNameText}>{fileName}</Text>
@@ -58,11 +60,11 @@ export default function LearningConsentScreen({ navigation, route }: Props) {
         </View>
 
         <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>📋 이야기를 어떻게 담나요</Text>
+          <Text style={styles.infoTitle}>{t.learningConsent.infoTitle}</Text>
 
           <View style={styles.infoSection}>
-            <Text style={styles.infoSectionTitle}>담는 것</Text>
-            {[`${name}의 말투와 표현 방식`, '자주 쓰던 단어·문체 패턴', '대화 주제·관심사'].map((item, i) => (
+            <Text style={styles.infoSectionTitle}>{t.learningConsent.capturesTitle}</Text>
+            {[(t.learningConsent.capturesItems[0] as (name: string) => string)(name), t.learningConsent.capturesItems[1] as string, t.learningConsent.capturesItems[2] as string].map((item, i) => (
               <Text key={i} style={styles.infoItem}>• {item}</Text>
             ))}
           </View>
@@ -70,8 +72,8 @@ export default function LearningConsentScreen({ navigation, route }: Props) {
           <View style={styles.divider} />
 
           <View style={styles.infoSection}>
-            <Text style={styles.infoSectionTitle}>하지 않는 것</Text>
-            {['제3자 공유 또는 판매', '광고·마케팅 목적 사용', '원본 대화 내용 외부 노출'].map((item, i) => (
+            <Text style={styles.infoSectionTitle}>{t.learningConsent.notCapturesTitle}</Text>
+            {(t.learningConsent.notCapturesItems as string[]).map((item, i) => (
               <Text key={i} style={[styles.infoItem, styles.infoItemNeg]}>• {item}</Text>
             ))}
           </View>
@@ -79,8 +81,7 @@ export default function LearningConsentScreen({ navigation, route }: Props) {
           <View style={styles.divider} />
 
           <Text style={styles.infoRetention}>
-            🗑 이야기는 서비스 이용 기간 동안 안전하게 보관돼요.{'\n'}
-            계정 삭제 또는 요청 시 즉시 삭제돼요.
+            {t.learningConsent.storageNote}
           </Text>
         </View>
       </ScrollView>
@@ -90,17 +91,17 @@ export default function LearningConsentScreen({ navigation, route }: Props) {
           <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
             {agreed && <Text style={styles.checkMark}>✓</Text>}
           </View>
-          <Text style={styles.agreeText}>나눈 이야기가 기억을 담는 데만 사용된다는 걸 이해했어요.</Text>
+          <Text style={styles.agreeText}>{t.learningConsent.consentLabel}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={handleNext} disabled={!agreed} activeOpacity={0.85}
           style={[styles.nextButton, !agreed && styles.nextButtonDisabled]}>
           {agreed ? (
             <LinearGradient colors={['#a855f7', '#db2777']} style={styles.nextGrad}>
-              <Text style={styles.nextButtonText}>{name}의 기억 담기</Text>
+              <Text style={styles.nextButtonText}>{t.learningConsent.nextBtn(name)}</Text>
             </LinearGradient>
           ) : (
-            <Text style={[styles.nextButtonText, { color: 'rgba(255,255,255,0.3)' }]}>확인 후 진행할 수 있어요</Text>
+            <Text style={[styles.nextButtonText, { color: 'rgba(255,255,255,0.3)' }]}>{t.learningConsent.nextBtnDisabled}</Text>
           )}
         </TouchableOpacity>
       </View>

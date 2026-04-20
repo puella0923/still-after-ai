@@ -10,6 +10,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { supabase } from '../../services/supabase'
+import { useLanguage } from '../../context/LanguageContext'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'ClosureCeremony'>
@@ -39,6 +40,7 @@ const DRAFT_KEY_PREFIX = '@stillafter/closure_draft_'
 
 export default function ClosureCeremonyScreen({ navigation, route }: Props) {
   const { personaId, personaName, aiFarewell } = route.params
+  const { t } = useLanguage()
   const draftKey = `${DRAFT_KEY_PREFIX}${personaId}`
 
   const [letter, setLetter] = useState('')
@@ -186,21 +188,14 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
           {completed && (
             <Animated.View style={[styles.completedContainer, { opacity: completedOpacity }]}>
               <Text style={styles.completedEmoji}>🌸</Text>
-              <Text style={styles.completedTitle}>잘 해내셨어요</Text>
-              <Text style={styles.completedSub}>
-                그 분과 함께한 모든 순간은 당신 안에 남아있어요.{'\n'}
-                담아두셨던 마음을 꺼내준 것만으로도 충분해요.{'\n\n'}
-                이제 조금 더 가볍게, 오늘을 살아가도 괜찮아요.{'\n'}
-                편지와 대화 기록은 언제든 다시 읽을 수 있어요.
-              </Text>
+              <Text style={styles.completedTitle}>{t.closure.completedTitle}</Text>
+              <Text style={styles.completedSub}>{t.closure.completedSub}</Text>
               <TouchableOpacity onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Main' }] })} activeOpacity={0.85}>
                 <LinearGradient colors={['#6366f1', '#a855f7']} style={styles.homeBtn}>
-                  <Text style={styles.homeBtnText}>홈으로 돌아가기</Text>
+                  <Text style={styles.homeBtnText}>{t.closure.homeBtn}</Text>
                 </LinearGradient>
               </TouchableOpacity>
-              <Text style={styles.healingNote}>
-                이별은 끝이 아니에요.{'\n'}그 분은 당신이 살아가는 날들 안에서 함께 있어요.
-              </Text>
+              <Text style={styles.healingNote}>{t.closure.healingNote}</Text>
             </Animated.View>
           )}
         </Animated.View>
@@ -223,35 +218,31 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Text style={styles.backIcon}>‹</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>마지막 편지</Text>
+          <Text style={styles.headerTitle}>{t.closure.header}</Text>
           <View style={{ width: 36 }} />
         </View>
 
         <View style={styles.content}>
           {!!aiFarewell && (
             <View style={styles.farewellCard}>
-              <Text style={styles.farewellLabel}>{personaName}의 마지막 말</Text>
+              <Text style={styles.farewellLabel}>{t.closure.aiLetterLabel(personaName)}</Text>
               <Text style={styles.farewellText}>"{aiFarewell}"</Text>
             </View>
           )}
 
-          <Text style={styles.intro}>
-            이제 당신이 답할 차례예요.{'\n'}
-            담아두셨던 말씀을 꺼내보세요.{'\n'}
-            서두르지 않아도 돼요. 준비될 때 써주세요.
-          </Text>
+          <Text style={styles.intro}>{t.closure.intro}</Text>
 
           <TextInput
             style={styles.letterInput}
             multiline
             numberOfLines={12}
-            placeholder={`사랑하는 ${personaName}에게,\n\n...`}
+            placeholder={t.closure.placeholder(personaName)}
             placeholderTextColor="rgba(255,255,255,0.25)"
             value={letter}
             onChangeText={setLetter}
             textAlignVertical="top"
           />
-          <Text style={styles.charCount}>{letter.length}자</Text>
+          <Text style={styles.charCount}>{t.closure.charCount(letter.length)}</Text>
 
           <TouchableOpacity
             onPress={() => setShowConfirm(true)}
@@ -261,17 +252,14 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
           >
             {letter.trim().length >= 10 ? (
               <LinearGradient colors={['#6366f1', '#a855f7']} style={styles.completeBtnGrad}>
-                <Text style={styles.completeBtnText}>편지 봉인하기 — 작별 인사 🌸</Text>
+                <Text style={styles.completeBtnText}>{t.closure.sealBtn}</Text>
               </LinearGradient>
             ) : (
-              <Text style={[styles.completeBtnText, { color: 'rgba(255,255,255,0.3)' }]}>편지 봉인하기 — 작별 인사 🌸</Text>
+              <Text style={[styles.completeBtnText, { color: 'rgba(255,255,255,0.3)' }]}>{t.closure.sealBtn}</Text>
             )}
           </TouchableOpacity>
 
-          <Text style={styles.notice}>
-            편지를 봉인하면 새 대화는 마무리되지만,{'\n'}
-            기록과 편지는 언제든 다시 읽을 수 있어요.
-          </Text>
+          <Text style={styles.notice}>{t.closure.sealNote}</Text>
         </View>
       </ScrollView>
 
@@ -280,20 +268,15 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
         <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setShowConfirm(false)}>
           <TouchableOpacity style={styles.modalBox} activeOpacity={1} onPress={() => {}}>
             <Text style={styles.modalEmoji}>🌸</Text>
-            <Text style={styles.modalTitle}>천천히 보내드릴게요</Text>
-            <Text style={styles.modalMessage}>
-              {personaName}에게 쓴 편지를 간직하고{'\n'}
-              대화를 조심스럽게 마무리할게요.{'\n\n'}
-              봉인 후에도 편지와 대화 기록은{'\n'}
-              언제든 다시 읽을 수 있어요.
-            </Text>
+            <Text style={styles.modalTitle}>{t.closure.modalTitle}</Text>
+            <Text style={styles.modalMessage}>{t.closure.modalMsg(personaName)}</Text>
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowConfirm(false)} activeOpacity={0.7}>
-                <Text style={styles.modalCancelText}>아직은 아니에요</Text>
+                <Text style={styles.modalCancelText}>{t.closure.modalCancel}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalConfirmBtn} onPress={runFarewellAnimation} activeOpacity={0.85}>
                 <LinearGradient colors={['#6366f1', '#a855f7']} style={styles.modalConfirmGrad}>
-                  <Text style={styles.modalConfirmText}>네, 잘 보내드릴게요</Text>
+                  <Text style={styles.modalConfirmText}>{t.closure.modalConfirm}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>

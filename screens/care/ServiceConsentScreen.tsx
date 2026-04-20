@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
+import { useLanguage } from '../../context/LanguageContext'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'ServiceConsent'>
@@ -15,11 +16,8 @@ type Props = {
 
 type CheckKey = 'terms' | 'privacy' | 'aiContent'
 
-const CONSENT_ITEMS: { key: CheckKey; label: string; required: boolean }[] = [
-  { key: 'terms',     label: '서비스 이용약관 동의',       required: true },
-  { key: 'privacy',   label: '개인정보 처리방침 동의',     required: true },
-  { key: 'aiContent', label: '서비스 생성 콘텐츠 고지 확인', required: true },
-]
+// Labels will be set from t.consent in the component body
+const CONSENT_KEYS: CheckKey[] = ['terms', 'privacy', 'aiContent']
 
 const STAR_DOTS = Array.from({ length: 25 }, (_, i) => ({
   top: `${(i * 37 + 13) % 100}%`,
@@ -29,9 +27,16 @@ const STAR_DOTS = Array.from({ length: 25 }, (_, i) => ({
 }))
 
 export default function ServiceConsentScreen({ navigation, route }: Props) {
+  const { t } = useLanguage()
   const { name } = route.params
   const [checked, setChecked] = useState<Record<CheckKey, boolean>>({ terms: false, privacy: false, aiContent: false })
   const allChecked = Object.values(checked).every(Boolean)
+
+  const CONSENT_ITEMS: { key: CheckKey; label: string; required: boolean }[] = [
+    { key: 'terms',     label: t.consent.agreeTerms,   required: true },
+    { key: 'privacy',   label: t.consent.agreePrivacy, required: true },
+    { key: 'aiContent', label: t.consent.agreeAI,      required: true },
+  ]
 
   const toggleItem = (key: CheckKey) => setChecked((p) => ({ ...p, [key]: !p[key] }))
   const toggleAll = () => { const n = !allChecked; setChecked({ terms: n, privacy: n, aiContent: n }) }
@@ -52,26 +57,19 @@ export default function ServiceConsentScreen({ navigation, route }: Props) {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>← 뒤로</Text>
+          <Text style={styles.backText}>{t.common.back}</Text>
         </TouchableOpacity>
 
         <View style={styles.header}>
-          <Text style={styles.title}>함께하기 전에{'\n'}잠깐 확인해주세요.</Text>
+          <Text style={styles.title}>{t.consent.title}</Text>
         </View>
 
         {/* Info box */}
         <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>📋 시작 전 안내</Text>
+          <Text style={styles.infoTitle}>{t.consent.infoTitle}</Text>
           <Text style={styles.infoBody}>
-            Still After는{' '}
-            <Text style={styles.bold}>{name}</Text>
-            {' '}의 기억을 담아 그리움을 조심스럽게 이어갈 수 있도록 돕는{' '}
-            <Text style={styles.bold}>감정 회복 서비스</Text>예요.{'\n\n'}
-            • 대화는 실제 인물·동물이 아닌, <Text style={styles.bold}>기억을 바탕으로 한 응답</Text>이에요.{'\n'}
-            • 이 서비스의 응답은 실제 그 분의 생각이나 말이 아니에요.{'\n'}
-            • 심리치료나 의료 서비스를 대체하지 않아요.{'\n'}
-            • 많이 힘드실 때는 전문 상담사와 연결해드릴게요.{'\n'}
-            • 나눈 대화는 기억을 담는 데만 사용되며, 요청 시 즉시 삭제돼요.
+            {t.consent.infoDesc(name)}{'\n\n'}
+            {t.consent.bullets.map((b, i) => `• ${b}`).join('\n')}
           </Text>
         </View>
 
@@ -81,7 +79,7 @@ export default function ServiceConsentScreen({ navigation, route }: Props) {
             <View style={[styles.checkbox, allChecked && styles.checkboxChecked]}>
               {allChecked && <Text style={styles.checkMark}>✓</Text>}
             </View>
-            <Text style={styles.allConsentText}>전체 동의</Text>
+            <Text style={styles.allConsentText}>{t.consent.agreeAll}</Text>
           </TouchableOpacity>
 
           <View style={styles.divider} />
@@ -93,7 +91,7 @@ export default function ServiceConsentScreen({ navigation, route }: Props) {
               </View>
               <View style={styles.consentLabelRow}>
                 <Text style={styles.consentText}>{item.label}</Text>
-                {item.required && <Text style={styles.requiredBadge}>필수</Text>}
+                {item.required && <Text style={styles.requiredBadge}>{t.consent.requiredLabel}</Text>}
               </View>
             </TouchableOpacity>
           ))}
@@ -106,10 +104,10 @@ export default function ServiceConsentScreen({ navigation, route }: Props) {
           style={[styles.startButton, !allChecked && styles.startButtonDisabled]}>
           {allChecked ? (
             <LinearGradient colors={['#a855f7', '#db2777']} style={styles.startGrad}>
-              <Text style={styles.startButtonText}>{name}의 기억 담기</Text>
+              <Text style={styles.startButtonText}>{t.consent.startBtn(name)}</Text>
             </LinearGradient>
           ) : (
-            <Text style={[styles.startButtonText, { color: 'rgba(255,255,255,0.3)' }]}>모두 확인 후 시작할 수 있어요</Text>
+            <Text style={[styles.startButtonText, { color: 'rgba(255,255,255,0.3)' }]}>{t.consent.startBtnDisabled}</Text>
           )}
         </TouchableOpacity>
       </View>

@@ -10,6 +10,7 @@ import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { buildDefaultPersona } from '../../types/persona'
 import { savePersona } from '../../services/personaStorage'
+import { useLanguage } from '../../context/LanguageContext'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'RelationSetup'>
@@ -27,6 +28,7 @@ const STAR_DOTS = Array.from({ length: 25 }, (_, i) => ({
 }))
 
 export default function RelationSetupScreen({ navigation, route }: Props) {
+  const { t } = useLanguage()
   const { careType } = route.params
   const isPerson = careType === 'person'
   const [selectedRelation, setSelectedRelation] = useState<string | null>(null)
@@ -56,13 +58,13 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backText}>← 뒤로</Text>
+            <Text style={styles.backText}>{t.common.back}</Text>
           </TouchableOpacity>
 
           <View style={styles.header}>
-            <Text style={styles.title}>{isPerson ? '어떤 관계인가요?' : '어떤 반려동물인가요?'}</Text>
+            <Text style={styles.title}>{isPerson ? t.relation.titleHuman : t.relation.titlePet}</Text>
             <Text style={styles.subtitle}>
-              {isPerson ? '그리운 분과 어떤 사이였나요?\n천천히 기억해보세요.' : '함께했던 친구에 대해 알려주세요.'}
+              {isPerson ? t.relation.subtitleHuman : t.relation.subtitlePet}
             </Text>
           </View>
 
@@ -84,10 +86,10 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
 
           {/* Name input */}
           <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>{isPerson ? '어떻게 불렀나요?' : '이름이 무엇인가요?'}</Text>
+            <Text style={styles.inputLabel}>{isPerson ? t.relation.nameLabel : t.relation.nameLabelPet}</Text>
             <TextInput
               style={styles.textInput}
-              placeholder={isPerson ? '예) 엄마, 김민준' : '예) 초코, 뭉치'}
+              placeholder={isPerson ? t.relation.namePlaceholderHuman : t.relation.namePlaceholderPet}
               placeholderTextColor="rgba(255,255,255,0.3)"
               value={name}
               onChangeText={setName}
@@ -102,10 +104,10 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
             style={[styles.nextButton, !canProceed && styles.nextButtonDisabled]}>
             {canProceed ? (
               <LinearGradient colors={['#a855f7', '#db2777']} style={styles.nextGrad}>
-                <Text style={styles.nextButtonText}>다음</Text>
+                <Text style={styles.nextButtonText}>{t.relation.nextBtn}</Text>
               </LinearGradient>
             ) : (
-              <Text style={[styles.nextButtonText, { color: 'rgba(255,255,255,0.3)' }]}>다음</Text>
+              <Text style={[styles.nextButtonText, { color: 'rgba(255,255,255,0.3)' }]}>{t.relation.nextBtn}</Text>
             )}
           </TouchableOpacity>
         </View>
