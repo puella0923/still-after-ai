@@ -152,7 +152,7 @@ export default function AccountProfileScreen({ navigation }: Props) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>{t.common.back}</Text>
+          <Text style={[styles.backText, Platform.OS === 'web' ? { whiteSpace: 'nowrap' } as any : {}]}>{t.common.back}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t.account.header}</Text>
         <LanguageToggle style={styles.langToggle} />
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   backBtn: { height: 36, minWidth: 60, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' as any },
+  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '600', color: '#fff' },
   langToggle: { minWidth: 100, alignItems: 'flex-end' },
 

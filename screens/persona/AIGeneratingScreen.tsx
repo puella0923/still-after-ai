@@ -159,11 +159,11 @@ export default function AIGeneratingScreen({ navigation, route }: Props) {
 
         {/* Main text */}
         <Text style={styles.mainText}>
-          {(t.aiGenerating.steps[0] as (name: string) => string)(name)}
+          {typeof t.aiGenerating.steps[0] === 'function' ? (t.aiGenerating.steps[0] as (name: string) => string)(name) : String(t.aiGenerating.steps[0])}
         </Text>
 
         {/* Step text */}
-        <Text style={styles.stepText}>{STEPS[currentStep]}</Text>
+        <Text style={styles.stepText}>{typeof STEPS[currentStep] === 'function' ? (STEPS[currentStep] as (name: string) => string)(name) : String(STEPS[currentStep] ?? '')}</Text>
 
         {/* Dot animation */}
         <View style={styles.dotsRow}>

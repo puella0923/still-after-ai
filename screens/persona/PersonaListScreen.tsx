@@ -296,7 +296,7 @@ export default function PersonaListScreen({ navigation }: Props) {
 
               {/* New button */}
               <View style={styles.footer}>
-                <TouchableOpacity onPress={() => navigation.navigate('PersonaCreate')} activeOpacity={0.85}>
+                <TouchableOpacity onPress={() => navigation.navigate('CareSelect')} activeOpacity={0.85}>
                   <LinearGradient colors={['#7C3AED', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.newBtn}>
                     <Text style={styles.newBtnText}>{t.personaList.createNew}</Text>
                   </LinearGradient>

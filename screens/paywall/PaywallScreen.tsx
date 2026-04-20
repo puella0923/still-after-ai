@@ -179,7 +179,7 @@ export default function PaywallScreen({ navigation, route }: Props) {
             <Text style={styles.waitingDesc}>{t.paywall.paymentWaitingDesc}</Text>
             <TouchableOpacity style={styles.checkBtn} onPress={verifyPayment} disabled={paymentStep as string === 'verifying'}>
               <Text style={styles.checkBtnText}>
-                {paymentStep === 'verifying' ? t.paywall.verifying : t.paywall.paymentCompleteBtn}
+                {(paymentStep as string) === 'verifying' ? t.paywall.verifying : t.paywall.paymentCompleteBtn}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.cancelBtn} onPress={() => { setPaymentStep('idle'); setShopkey(null) }}>
