@@ -59,8 +59,11 @@ function AppContent() {
   }
   const initialRoute: keyof RootStackParamList = isAuthed ? 'Main' : 'Onboarding'
 
-  // 비인증 상태에서는 딥링크로 인증 필요 화면에 진입하지 않도록
-  // linking 설정을 비활성화 (URL이 /Main 등일 때 로그아웃 후에도 Main으로 이동하는 문제 방지)
+  // Strip /ko or /en language prefix from URL path before routing
+  // e.g.  /ko/Login → /Login,  /en/AccountProfile → /AccountProfile
+  const stripLangPrefix = (path: string) =>
+    path.replace(/^\/(ko|en)(\/|$)/, '/').replace(/^\/\//, '/') || '/'
+
   // 인증 상태별 딥링크 설정
   // - 로그인됨: 루트 URL('') → Main, Login/Onboarding URL 접근 시에도 Main으로
   // - 비인증: 루트 URL('') → Onboarding, 인증 화면만 URL 접근 허용
@@ -70,6 +73,8 @@ function AppContent() {
       screens: {
         Main: { path: '', screens: { Home: '' } },
         PersonaList: 'PersonaList',
+        CareSelect: 'CareSelect',
+        RelationSetup: 'RelationSetup',
         PersonaCreate: 'PersonaCreate',
         PersonaEdit: 'PersonaEdit',
         AIGenerating: 'AIGenerating',
@@ -84,6 +89,8 @@ function AppContent() {
         // Login, EmailAuth, Onboarding 제외 → URL로 접근해도 Main으로 이동
       },
     },
+    getStateFromPath: (path: string, options: any) =>
+      defaultGetStateFromPath(stripLangPrefix(path), options),
   } : {
     ...linking,
     config: {
@@ -98,9 +105,10 @@ function AppContent() {
     },
     // /Login 직접 접근 시 navigation 스택에 Onboarding을 앞에 삽입
     // → 브라우저/하드웨어 뒤로가기 시 Onboarding으로 이동 (탭/앱 종료 방지)
-    getStateFromPath: (path, options) => {
-      const state = defaultGetStateFromPath(path, options)
-      if (path === '/Login' || path === 'Login') {
+    getStateFromPath: (path: string, options: any) => {
+      const clean = stripLangPrefix(path)
+      const state = defaultGetStateFromPath(clean, options)
+      if (clean === '/Login' || clean === 'Login') {
         return {
           routes: [{ name: 'Onboarding' }, { name: 'Login' }],
           index: 1,

@@ -23,6 +23,7 @@ import { supabase } from '../../services/supabase'
 import { deletePersona } from '../../services/personaService'
 import { C, RADIUS } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
+import LanguageToggle from '../../components/LanguageToggle'
 
 const { width } = Dimensions.get('window')
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList>
@@ -56,14 +57,13 @@ const STARS = Array.from({ length: 30 }, (_, i) => ({
 
 export default function HomeScreen() {
   const navigation = useNavigation<HomeNavProp>()
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
   const { t } = useLanguage()
   const [personas, setPersonas] = useState<Persona[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<StageFilter>('all')
   const [conversationCounts, setConversationCounts] = useState<Record<string, number>>({})
   const [error, setError] = useState(false)
-  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   const fadeAnim = useRef(new Animated.Value(0)).current
@@ -145,20 +145,6 @@ export default function HomeScreen() {
     }
   }
 
-  const handleLogout = async () => {
-    if (isLoggingOut) return
-    setIsLoggingOut(true)
-    try {
-      await signOut()
-      // NavigationContainer의 key 변경으로 자동 Onboarding 이동
-      // (navigation.reset은 key 변경 후 stale reference라 무효)
-    } catch (e) {
-      console.error('[Logout] 실패:', e)
-    } finally {
-      setIsLoggingOut(false)
-    }
-  }
-
 
   const filteredPersonas = filter === 'all'
     ? personas
@@ -187,17 +173,22 @@ export default function HomeScreen() {
             <Text style={styles.headerTitle}>Still After</Text>
             <Text style={styles.headerEmail}>{user?.email}</Text>
           </View>
-          <Pressable
-            onPress={handleLogout}
-            disabled={isLoggingOut}
-            style={({ pressed }) => [
-              styles.logoutBtn,
-              pressed && styles.logoutBtnPressed,
-              isLoggingOut && styles.logoutBtnDisabled,
-            ]}
-          >
-            <Text style={styles.logoutText}>{isLoggingOut ? t.home.logoutLoading : t.home.logoutBtn}</Text>
-          </Pressable>
+          <View style={styles.headerRight}>
+            <LanguageToggle />
+            <Pressable
+              onPress={() => navigation.navigate('AccountProfile')}
+              style={({ pressed }) => [styles.profileBtn, pressed && { opacity: 0.7 }]}
+            >
+              <LinearGradient
+                colors={['rgba(168,85,247,0.4)', 'rgba(219,39,119,0.3)']}
+                style={styles.profileAvatar}
+              >
+                <Text style={styles.profileAvatarText}>
+                  {(user?.email ?? 'U').charAt(0).toUpperCase()}
+                </Text>
+              </LinearGradient>
+            </Pressable>
+          </View>
         </View>
 
         {/* AI Disclosure Banner */}
@@ -432,13 +423,13 @@ const styles = StyleSheet.create({
     fontSize: 22, fontWeight: '700', color: C.TEXT, letterSpacing: 1,
   },
   headerEmail: { fontSize: 12, color: 'rgba(196, 181, 253, 0.6)', marginTop: 2 },
-  logoutBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.MD,
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  profileBtn: {},
+  profileAvatar: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
   },
-  logoutBtnPressed: { opacity: 0.7 },
-  logoutBtnDisabled: { opacity: 0.6 },
-  logoutText: { fontSize: 13, color: 'rgba(196, 181, 253, 0.8)' },
+  profileAvatarText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 
   // AI Banner
   aiBanner: {

@@ -396,6 +396,7 @@ const ko = {
     createNewPlus: '+ 새로운 기억 만들기',
     logoutLoading: '로그아웃 중...',
     logoutBtn: '🚪 로그아웃',
+    profileBtn: '프로필',
   },
 
   // ── Chat ──
@@ -588,6 +589,30 @@ const ko = {
     deleteStep2Msg: '이 작업은 되돌릴 수 없어요.',
     deleteStep2Cancel: '아니요, 돌아갈게요',
     deleteStep2Confirm: '네, 삭제할게요',
+    // Delete reason
+    deleteReasonTitle: '떠나시는 이유를 알려주세요',
+    deleteReasonSubtitle: '더 나은 서비스를 위해 소중히 반영할게요.',
+    deleteReasons: [
+      '서비스가 마음에 들지 않아요',
+      '너무 많이 사용하는 것 같아요',
+      '개인정보가 걱정돼요',
+      '더 이상 필요하지 않아요',
+      '기타',
+    ] as string[],
+    deleteReasonOtherPlaceholder: '직접 입력해주세요',
+    deleteReasonNext: '다음',
+    // Feedback
+    feedbackTitle: '피드백 남기기',
+    feedbackCardDesc: '앱에 대한 건의사항이나 제안이 있으신가요?',
+    feedbackPlaceholder: '서비스 개선이나 원하는 기능을 자유롭게 적어주세요.',
+    feedbackSend: '보내기',
+    feedbackSent: '소중한 의견 감사해요 💜',
+    // Logout (moved from settings)
+    logoutBtn: '로그아웃',
+    logoutConfirmTitle: '로그아웃 할까요?',
+    logoutConfirmMsg: '기억과 대화 기록은 안전하게 보관돼요.',
+    logoutConfirm: '로그아웃',
+    logoutCancel: '취소',
   },
 
   // ── Paywall ──

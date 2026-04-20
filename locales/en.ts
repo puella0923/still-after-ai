@@ -399,6 +399,7 @@ const en: Translations = {
     createNewPlus: '+ Create new memory',
     logoutLoading: 'Logging out...',
     logoutBtn: '🚪 Log out',
+    profileBtn: 'Profile',
   },
 
   // ── Chat ──
@@ -591,6 +592,30 @@ const en: Translations = {
     deleteStep2Msg: 'This action cannot be undone.',
     deleteStep2Cancel: 'No, go back',
     deleteStep2Confirm: 'Yes, delete',
+    // Delete reason
+    deleteReasonTitle: 'Why are you leaving?',
+    deleteReasonSubtitle: 'Your feedback helps us improve.',
+    deleteReasons: [
+      'Not satisfied with the service',
+      "I think I'm using it too much",
+      'Concerned about my privacy',
+      'No longer need it',
+      'Other',
+    ] as string[],
+    deleteReasonOtherPlaceholder: 'Please describe...',
+    deleteReasonNext: 'Next',
+    // Feedback
+    feedbackTitle: 'Leave Feedback',
+    feedbackCardDesc: 'Have suggestions or ideas about the app?',
+    feedbackPlaceholder: "Share your thoughts on improvements or features you'd like to see.",
+    feedbackSend: 'Send',
+    feedbackSent: 'Thank you for your feedback 💜',
+    // Logout (moved from settings)
+    logoutBtn: 'Log Out',
+    logoutConfirmTitle: 'Log out?',
+    logoutConfirmMsg: 'Your memories and conversation records are kept safely.',
+    logoutConfirm: 'Log Out',
+    logoutCancel: 'Cancel',
   },
 
   // ── Paywall ──
