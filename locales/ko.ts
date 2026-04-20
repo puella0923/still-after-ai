@@ -472,6 +472,7 @@ const ko = {
     completedTitle: '잘 해내셨어요',
     completedSub: '그 분과 함께한 모든 순간은 당신 안에 남아있어요.\n담아두셨던 마음을 꺼내준 것만으로도 충분해요.\n\n이제 조금 더 가볍게, 오늘을 살아가도 괜찮아요.\n편지와 대화 기록은 언제든 다시 읽을 수 있어요.',
     homeBtn: '홈으로 돌아가기',
+    memoryBtn: '기록 보러가기 →',
     healingNote: '이별은 끝이 아니에요.\n그 분은 당신이 살아가는 날들 안에서 함께 있어요.',
     // Pet-specific overrides
     petAiLetterLabel: (name: string) => `${name}이/가 남긴 온기`,

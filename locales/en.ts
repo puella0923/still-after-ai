@@ -475,6 +475,7 @@ const en: Translations = {
     completedTitle: 'You did it.',
     completedSub: "Every moment spent with them lives on inside you.\nThe fact that you let it out — that's enough.\n\nIt's okay to go on a little lighter from here.\nYou can always come back to read the letter and conversation.",
     homeBtn: 'Return Home',
+    memoryBtn: 'View my memories →',
     healingNote: "Goodbye is not the end.\nThey live on in every day you keep going.",
     // Pet-specific overrides
     petAiLetterLabel: (name: string) => `The warmth ${name} left behind`,

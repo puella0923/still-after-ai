@@ -192,11 +192,20 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
               <Text style={styles.completedEmoji}>{isPet ? t.closure.petCompletedEmoji : '🌸'}</Text>
               <Text style={styles.completedTitle}>{t.closure.completedTitle}</Text>
               <Text style={styles.completedSub}>{isPet ? t.closure.petCompletedSub : t.closure.completedSub}</Text>
-              <TouchableOpacity onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Main' }] })} activeOpacity={0.85}>
-                <LinearGradient colors={['#6366f1', '#a855f7']} style={styles.homeBtn}>
-                  <Text style={styles.homeBtnText}>{t.closure.homeBtn}</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+              <View style={styles.completedActions}>
+                <TouchableOpacity onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Main' }] })} activeOpacity={0.85}>
+                  <LinearGradient colors={['#6366f1', '#a855f7']} style={styles.homeBtn}>
+                    <Text style={styles.homeBtnText}>{t.closure.homeBtn}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => navigation.reset({ index: 0, routes: [{ name: 'PersonaList' }] })}
+                  activeOpacity={0.75}
+                  style={styles.memoryBtn}
+                >
+                  <Text style={styles.memoryBtnText}>{t.closure.memoryBtn}</Text>
+                </TouchableOpacity>
+              </View>
               <Text style={styles.healingNote}>{isPet ? t.closure.petHealingNote : t.closure.healingNote}</Text>
             </Animated.View>
           )}
@@ -375,7 +384,14 @@ const styles = StyleSheet.create({
   completedEmoji: { fontSize: 72 },
   completedTitle: { fontSize: 30, fontWeight: '300', color: 'rgba(255,255,255,0.95)', letterSpacing: 0.5 },
   completedSub: { fontSize: 16, color: 'rgba(200, 180, 255, 0.75)', textAlign: 'center', lineHeight: 27 },
-  homeBtn: { borderRadius: 14, paddingVertical: 14, paddingHorizontal: 32, marginTop: 12 },
+  completedActions: { alignItems: 'center', gap: 12, marginTop: 12 },
+  homeBtn: { borderRadius: 14, paddingVertical: 14, paddingHorizontal: 32 },
   homeBtnText: { color: '#fff', fontSize: 15, fontWeight: '500' },
+  memoryBtn: {
+    paddingVertical: 10, paddingHorizontal: 24,
+    borderRadius: 10, borderWidth: 1, borderColor: 'rgba(168, 85, 247, 0.35)',
+    backgroundColor: 'rgba(168, 85, 247, 0.1)',
+  },
+  memoryBtnText: { color: 'rgba(196, 150, 255, 0.85)', fontSize: 14, fontWeight: '500' },
   healingNote: { fontSize: 13, color: 'rgba(180, 160, 240, 0.55)', textAlign: 'center', lineHeight: 22, marginTop: 24 },
 })
