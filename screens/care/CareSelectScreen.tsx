@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useLanguage } from '../../context/LanguageContext'
+import LanguageToggle from '../../components/LanguageToggle'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'CareSelect'>
@@ -34,6 +35,8 @@ export default function CareSelectScreen({ navigation }: Props) {
       {STAR_DOTS.map((s, i) => (
         <View key={i} style={{ position: 'absolute', top: s.top as any, left: s.left as any, width: s.size, height: s.size, borderRadius: s.size / 2, backgroundColor: '#fff', opacity: s.opacity }} />
       ))}
+
+      <LanguageToggle style={{ position: 'absolute', top: 56, right: 20, zIndex: 100 }} />
 
       <View style={styles.container}>
         <View style={styles.header}>

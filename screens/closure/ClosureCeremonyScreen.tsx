@@ -11,6 +11,7 @@ import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { supabase } from '../../services/supabase'
 import { useLanguage } from '../../context/LanguageContext'
+import LanguageToggle from '../../components/LanguageToggle'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'ClosureCeremony'>
@@ -219,7 +220,7 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
             <Text style={styles.backIcon}>‹</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t.closure.header}</Text>
-          <View style={{ width: 36 }} />
+          <LanguageToggle />
         </View>
 
         <View style={styles.content}>

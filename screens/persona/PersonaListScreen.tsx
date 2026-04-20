@@ -21,6 +21,7 @@ import { getPersonas, getArchivedPersonas, deletePersona, Persona } from '../../
 import { supabase } from '../../services/supabase'
 import { C, RADIUS } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
+import LanguageToggle from '../../components/LanguageToggle'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -236,7 +237,7 @@ export default function PersonaListScreen({ navigation }: Props) {
             <Text style={styles.backText}>{t.common.back}</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t.personaList.header}</Text>
-          <View style={{ width: 60 }} />
+          <LanguageToggle />
         </View>
 
         {/* AI Banner */}

@@ -12,6 +12,7 @@ import { supabase } from '../../services/supabase'
 import { useAuth } from '../../context/AuthContext'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useLanguage } from '../../context/LanguageContext'
+import LanguageToggle from '../../components/LanguageToggle'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Settings'>
@@ -210,7 +211,7 @@ export default function SettingsScreen({ navigation }: Props) {
             <Text style={styles.backIcon}>‹</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t.settings.header}</Text>
-          <View style={{ width: 36 }} />
+          <LanguageToggle />
         </View>
 
         {/* AI Banner */}

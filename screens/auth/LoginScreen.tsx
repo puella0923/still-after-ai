@@ -18,6 +18,7 @@ import { useAuth } from '../../context/AuthContext'
 import { C, RADIUS } from '../theme'
 import { signInWithGoogle } from '../../services/authService'
 import { useLanguage } from '../../context/LanguageContext'
+import LanguageToggle from '../../components/LanguageToggle'
 
 const { width, height } = Dimensions.get('window')
 
@@ -109,6 +110,9 @@ export default function LoginScreen({ navigation }: Props) {
           ]}
         />
       ))}
+
+      {/* Language toggle — absolute top-right */}
+      <LanguageToggle style={{ position: 'absolute', top: 56, right: 20, zIndex: 100 }} />
 
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.centerWrap}>

@@ -27,6 +27,7 @@ import { getChatResponse, detectDanger, ClosurePhase } from '../../services/open
 import { supabase } from '../../services/supabase'
 import { C, RADIUS } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
+import LanguageToggle from '../../components/LanguageToggle'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const FREE_MESSAGE_LIMIT = 10
@@ -516,6 +517,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
             </View>
           </View>
           <View style={styles.headerRight}>
+            <LanguageToggle />
             <Text style={styles.headerCount}>{userMessageCount}</Text>
           </View>
         </View>

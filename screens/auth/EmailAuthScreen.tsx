@@ -26,6 +26,7 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import { C, RADIUS } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
+import LanguageToggle from '../../components/LanguageToggle'
 
 const { width } = Dimensions.get('window')
 
@@ -262,6 +263,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
         <View key={i} style={[styles.star, { left: `${star.left}%`, top: `${star.top}%`, width: star.size, height: star.size, opacity: star.opacity, borderRadius: star.size }]} />
       ))}
 
+      <LanguageToggle style={{ position: 'absolute', top: 56, right: 20, zIndex: 100 }} />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView
