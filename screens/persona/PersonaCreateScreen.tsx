@@ -13,6 +13,7 @@ import { createPersona, uploadPersonaPhoto } from '../../services/personaService
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
+import StepIndicator from '../../components/StepIndicator'
 import { C, RADIUS } from '../theme'
 
 type Props = {
@@ -56,6 +57,13 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
   const [errorMsg, setErrorMsg] = useState('')
   const [createErrorMsg, setCreateErrorMsg] = useState('')
   const [agreedToService, setAgreedToService] = useState(false)
+  // 에러 스낵바 자동 3초 후 숨김
+  React.useEffect(() => {
+    if (!createErrorMsg) return
+    const t = setTimeout(() => setCreateErrorMsg(''), 3500)
+    return () => clearTimeout(t)
+  }, [createErrorMsg])
+
   // 반려동물 종류 (RelationSetup에서 pre-filled)
   const [animalType, setAnimalType] = useState(isPet ? (routeRelation ?? '') : '')
   const [customAnimal, setCustomAnimal] = useState('')
@@ -412,6 +420,7 @@ ${manualText.trim()}
           <Text style={styles.headerTitle}>{t.personaCreate.headerTitle}</Text>
           <LanguageToggle />
         </View>
+        <StepIndicator current={4} total={4} style={{ alignSelf: "center", marginTop: 8, marginBottom: 4 }} />
 
         {/* 안내 */}
         <View style={styles.banner}>
@@ -713,12 +722,7 @@ ${manualText.trim()}
           </Pressable>
         </View>
 
-        {/* 생성 중 에러 메시지 */}
-        {createErrorMsg ? (
-          <View style={[styles.errorBox, { marginHorizontal: 24 }]}>
-            <Text style={styles.errorText}>{createErrorMsg}</Text>
-          </View>
-        ) : null}
+
 
         {/* 제출 */}
         <TouchableOpacity
@@ -754,12 +758,27 @@ ${manualText.trim()}
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
+
+      {/* 에러 스낵바 — 화면 하단 고정 */}
+      {!!createErrorMsg && (
+        <View style={styles.snackbar}>
+          <Text style={styles.snackbarText}>⚠️ {createErrorMsg}</Text>
+        </View>
+      )}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   rootWrap: { flex: 1, backgroundColor: '#0a0118' },
+  snackbar: {
+    position: 'absolute', bottom: 32, left: 24, right: 24,
+    backgroundColor: 'rgba(239,68,68,0.92)', borderRadius: 12,
+    paddingVertical: 14, paddingHorizontal: 18, zIndex: 999,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 10,
+  },
+  snackbarText: { color: '#fff', fontSize: 14, fontWeight: '500', textAlign: 'center' },
   orbContainer: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
   orb: { position: 'absolute', width: 384, height: 384, borderRadius: 192 },
   star: { position: 'absolute', backgroundColor: '#E9D5FF' },

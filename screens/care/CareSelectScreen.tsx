@@ -7,6 +7,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
+import StepIndicator from '../../components/StepIndicator'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'CareSelect'>
@@ -37,6 +38,14 @@ export default function CareSelectScreen({ navigation }: Props) {
       ))}
 
       <LanguageToggle style={{ position: 'absolute', top: 56, right: 20, zIndex: 100 }} />
+
+      {/* 뒤로가기 */}
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Text style={styles.backText}>{t.common.back}</Text>
+      </TouchableOpacity>
+
+      {/* 스텝 인디케이터 */}
+      <StepIndicator current={1} total={4} style={styles.stepIndicator} />
 
       <View style={styles.container}>
         <View style={styles.header}>
@@ -77,7 +86,10 @@ const styles = StyleSheet.create({
   orb: { position: 'absolute', borderRadius: 999 },
   orb1: { width: 280, height: 280, top: '5%', right: '-15%', backgroundColor: 'rgba(168, 85, 247, 0.12)' },
   orb2: { width: 220, height: 220, bottom: '15%', left: '-10%', backgroundColor: 'rgba(219, 39, 119, 0.08)' },
-  container: { flex: 1, paddingHorizontal: 28, paddingTop: 80, paddingBottom: 40, justifyContent: 'space-between' },
+  backButton: { position: 'absolute', top: 58, left: 20, zIndex: 100 },
+  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
+  stepIndicator: { position: 'absolute', top: 62, left: 0, right: 0, zIndex: 90 },
+  container: { flex: 1, paddingHorizontal: 28, paddingTop: 110, paddingBottom: 40, justifyContent: 'space-between' },
   header: { alignItems: 'center', gap: 14 },
   title: { fontSize: 26, fontWeight: '300', color: '#fff', letterSpacing: 0.5, textAlign: 'center' },
   subtitle: { fontSize: 15, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 24 },

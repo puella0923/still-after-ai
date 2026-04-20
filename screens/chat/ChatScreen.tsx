@@ -113,7 +113,7 @@ function makeId() { msgCounter += 1; return `m-${msgCounter}` }
 
 export default function ChatScreen({ navigation, route }: Props) {
   const personaId = route.params?.personaId
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
 
   const [persona, setPersona] = useState<Persona | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -127,6 +127,7 @@ export default function ChatScreen({ navigation, route }: Props) {
   const [isPaidUser, setIsPaidUser] = useState(false)
   const [closureLetter, setClosureLetter] = useState<{ content: string; ai_farewell: string } | null>(null)
   const [showDangerModal, setShowDangerModal] = useState(false)
+  const [stageConfirmTarget, setStageConfirmTarget] = useState<'stable' | 'closure' | null>(null)
   const [showPaywall, setShowPaywall] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const isReadOnly = !!(persona?.is_archived)
@@ -480,6 +481,53 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         <View key={i} style={[styles.star, { left: `${star.left}%` as any, top: `${star.top}%` as any, width: star.size, height: star.size, opacity: star.opacity, borderRadius: star.size }]} />
       ))}
 
+
+      {/* Stage Transition Confirm Modal */}
+      <Modal visible={stageConfirmTarget !== null} transparent animationType="fade" onRequestClose={() => setStageConfirmTarget(null)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalEmoji}>{stageConfirmTarget === 'stable' ? '🌿' : '🌸'}</Text>
+            <Text style={styles.modalTitle}>
+              {stageConfirmTarget === 'stable'
+                ? (language === 'ko' ? '안정 단계로 전환할까요?' : 'Move to Stable Stage?')
+                : (language === 'ko' ? '이별 단계로 전환할까요?' : 'Move to Closure Stage?')}
+            </Text>
+            <Text style={styles.modalDesc}>
+              {stageConfirmTarget === 'stable'
+                ? (language === 'ko'
+                    ? '안정 단계에서는 감정을 조금씩 정리하고\n표현하는 시간을 가져요.\n충분히 이야기 나눈 것 같다면\n다음 단계로 넘어가 볼게요.'
+                    : 'In the stable stage, you\'ll slowly process and express your emotions.\nWhen you feel ready, move forward.')
+                : (language === 'ko'
+                    ? '이별 단계에서는 마지막 인사를 나누고\n조심스럽게 작별을 준비해요.\n대화가 마무리되면 편지를 남길 수 있어요.'
+                    : 'In the closure stage, you\'ll exchange final words and\ngently prepare to say goodbye.\nYou can write a letter when it\'s time.')}
+            </Text>
+            <View style={styles.warningRow}>
+              <Text style={styles.warningText}>
+                {language === 'ko' ? '⚠️ 이전 단계로 돌아올 수 없어요' : '⚠️ This cannot be undone'}
+              </Text>
+            </View>
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setStageConfirmTarget(null)} activeOpacity={0.7}>
+                <Text style={styles.modalBtnSecondaryText}>{language === 'ko' ? '아직은요' : 'Not yet'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  const target = stageConfirmTarget
+                  setStageConfirmTarget(null)
+                  if (target === 'stable') handleStableTransition()
+                  else if (target === 'closure') handleClosureTransition()
+                }}
+                activeOpacity={0.85}
+                style={styles.modalBtnPrimary}
+              >
+                <LinearGradient colors={['#7C3AED', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalBtnPrimaryGrad}>
+                  <Text style={styles.modalBtnPrimaryText}>{language === 'ko' ? '네, 전환할게요' : 'Yes, let\'s continue'}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
       {/* Danger Modal */}
       <Modal visible={showDangerModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
@@ -615,7 +663,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
               if (item.role === 'system') {
                 const hasCta = item.action === 'goto_stable' || item.action === 'goto_closure'
                 const ctaLabel = item.action === 'goto_stable' ? t.chat.gotoStableBtn : t.chat.gotoClosureBtn
-                const ctaHandler = item.action === 'goto_stable' ? handleStableTransition : handleClosureTransition
+                const ctaHandler = item.action === 'goto_stable' ? () => setStageConfirmTarget('stable') : () => setStageConfirmTarget('closure')
                 return (
                   <View style={styles.systemCardWrap}>
                     <View style={styles.systemAvatar}><Text style={styles.systemAvatarText}>✦</Text></View>
@@ -912,4 +960,15 @@ const styles = StyleSheet.create({
   },
   closureUserLetterLabel: { fontSize: 11, color: '#818CF8', marginBottom: 8, fontWeight: '600', letterSpacing: 0.3 },
   closureUserLetterText: { fontSize: 15, color: '#F3E8FF', lineHeight: 26 },
+
+  warningRow: {
+    backgroundColor: 'rgba(239,68,68,0.12)', borderRadius: 8,
+    paddingVertical: 8, paddingHorizontal: 14, width: '100%', alignItems: 'center',
+  },
+  warningText: { fontSize: 13, color: '#FCA5A5', fontWeight: '700', textAlign: 'center' },
+  modalDesc: { fontSize: 14, color: 'rgba(255,255,255,0.65)', textAlign: 'center', lineHeight: 22 },
+  modalBtnRow: { flexDirection: 'row', gap: 10, width: '100%', marginTop: 4 },
+  modalBtnPrimary: { flex: 1, borderRadius: 12, overflow: 'hidden' },
+  modalBtnPrimaryGrad: { paddingVertical: 12, alignItems: 'center', borderRadius: 12 },
+  modalBtnPrimaryText: { fontSize: 14, fontWeight: '600', color: '#fff' },
 })

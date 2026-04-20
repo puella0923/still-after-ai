@@ -6,6 +6,7 @@ import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
+import StepIndicator from '../../components/StepIndicator'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'TimingCheck'>
@@ -50,6 +51,7 @@ export default function TimingCheckScreen({ navigation, route }: Props) {
       ))}
 
       <LanguageToggle style={{ position: 'absolute', top: 56, right: 20, zIndex: 100 }} />
+      <StepIndicator current={3} total={4} style={{ position: 'absolute', top: 62, left: 0, right: 0, zIndex: 90 }} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
