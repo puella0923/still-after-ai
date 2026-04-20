@@ -983,9 +983,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8, paddingHorizontal: 14, width: '100%', alignItems: 'center',
   },
   warningText: { fontSize: 13, color: '#FCA5A5', fontWeight: '700', textAlign: 'center' },
-  modalDesc: { fontSize: 14, color: 'rgba(255,255,255,0.65)', textAlign: 'center', lineHeight: 22 },
   modalBtnRow: { flexDirection: 'row', gap: 10, width: '100%', marginTop: 4 },
-  modalBtnPrimary: { flex: 1, borderRadius: 12, overflow: 'hidden' },
   modalBtnPrimaryGrad: { paddingVertical: 12, alignItems: 'center', borderRadius: 12 },
   modalBtnPrimaryText: { fontSize: 14, fontWeight: '600', color: '#fff' },
 })

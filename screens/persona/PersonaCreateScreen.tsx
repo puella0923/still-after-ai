@@ -26,6 +26,7 @@ type KakaoParseResult = {
 }
 
 const RELATIONS = ['부모님', '배우자', '연인', '친구', '형제/자매', '자녀', '기타']
+const PET_TYPES = ['강아지', '고양이', '앵무새', '햄스터', '토끼', '물고기', '기타']
 
 /** 이름 마지막 글자 받침 유무에 따라 "이름아/이름야" 반환 */
 function getCallingForm(name: string): string {
@@ -820,7 +821,6 @@ const styles = StyleSheet.create({
     borderRadius: 14, padding: 14, fontSize: 16, color: '#FFFFFF',
     ...(({ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }) as any),
   },
-  labelOptional: { fontSize: 13, fontWeight: '400', color: 'rgba(167, 139, 250, 0.7)' },
   inputHint: { fontSize: 12, color: 'rgba(167, 139, 250, 0.6)', marginTop: 6 },
   relationRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   relationBtn: {
