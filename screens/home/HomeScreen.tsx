@@ -12,6 +12,7 @@ import {
   Dimensions,
   Alert,
   Platform,
+  Modal,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation } from '@react-navigation/native'
@@ -68,6 +69,7 @@ export default function HomeScreen() {
   const [conversationCounts, setConversationCounts] = useState<Record<string, number>>({})
   const [error, setError] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Persona | null>(null)
 
   const fadeAnim = useRef(new Animated.Value(0)).current
 
@@ -136,25 +138,20 @@ export default function HomeScreen() {
 
   const handleDeletePersona = (persona: Persona) => {
     setOpenMenuId(null)
-    const title = t.home.deleteTitle
-    const msg = t.home.deleteMsg(persona.name)
-    const doDelete = async () => {
-      try {
-        await deletePersona(persona.id)
-        setPersonas(prev => prev.filter(p => p.id !== persona.id))
-      } catch (err) {
-        const m = err instanceof Error ? err.message : t.home.retryMsg
-        if (Platform.OS === 'web') window.alert(`${t.home.deleteError}: ${m}`)
-        else Alert.alert(t.home.deleteError, m)
-      }
-    }
-    if (Platform.OS === 'web') {
-      if (window.confirm(`${title}\n\n${msg}`)) doDelete()
-    } else {
-      Alert.alert(title, msg, [
-        { text: t.common.cancel, style: 'cancel' },
-        { text: t.home.deleteBtn, style: 'destructive', onPress: doDelete },
-      ])
+    setDeleteTarget(persona)
+  }
+
+  const doDeleteConfirmed = async () => {
+    if (!deleteTarget) return
+    const target = deleteTarget
+    setDeleteTarget(null)
+    try {
+      await deletePersona(target.id)
+      setPersonas(prev => prev.filter(p => p.id !== target.id))
+    } catch (err) {
+      const m = err instanceof Error ? err.message : t.home.retryMsg
+      if (Platform.OS === 'web') window.alert(`${t.home.deleteError}: ${m}`)
+      else Alert.alert(t.home.deleteError, m)
     }
   }
 
@@ -178,6 +175,25 @@ export default function HomeScreen() {
       {openMenuId !== null && (
         <Pressable style={StyleSheet.absoluteFillObject} onPress={() => setOpenMenuId(null)} />
       )}
+
+      {/* 삭제 확인 모달 */}
+      <Modal visible={!!deleteTarget} transparent animationType="fade" onRequestClose={() => setDeleteTarget(null)}>
+        <TouchableOpacity style={styles.deleteModalBackdrop} activeOpacity={1} onPress={() => setDeleteTarget(null)}>
+          <TouchableOpacity style={styles.deleteModalBox} activeOpacity={1} onPress={() => {}}>
+            <Text style={styles.deleteModalEmoji}>💜</Text>
+            <Text style={styles.deleteModalTitle}>{t.home.deleteTitle}</Text>
+            <Text style={styles.deleteModalMsg}>{deleteTarget ? t.home.deleteMsg(deleteTarget.name) : ''}</Text>
+            <View style={styles.deleteModalActions}>
+              <TouchableOpacity style={styles.deleteModalCancel} onPress={() => setDeleteTarget(null)} activeOpacity={0.7}>
+                <Text style={styles.deleteModalCancelText}>{t.common.cancel}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.deleteModalConfirm} onPress={doDeleteConfirmed} activeOpacity={0.85}>
+                <Text style={styles.deleteModalConfirmText}>{t.home.deleteBtn}</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
@@ -647,6 +663,28 @@ const styles = StyleSheet.create({
   dropdownItemText: { fontSize: 13, color: 'rgba(196, 181, 253, 0.9)', fontWeight: '500' },
   dropdownDivider: { height: 1, backgroundColor: 'rgba(167, 139, 250, 0.12)' },
 
+
+  // Delete confirm modal
+  deleteModalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
+  deleteModalBox: {
+    width: '84%', maxWidth: 380, borderRadius: 20, padding: 28, alignItems: 'center', gap: 10,
+    backgroundColor: 'rgba(18, 8, 35, 0.97)',
+    borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.2)',
+  },
+  deleteModalEmoji: { fontSize: 36 },
+  deleteModalTitle: { fontSize: 17, fontWeight: '700', color: '#fff', textAlign: 'center' },
+  deleteModalMsg: { fontSize: 14, color: 'rgba(196, 181, 253, 0.7)', textAlign: 'center', lineHeight: 22, marginBottom: 4 },
+  deleteModalActions: { flexDirection: 'row', gap: 10, marginTop: 8, width: '100%' },
+  deleteModalCancel: {
+    flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  deleteModalCancelText: { fontSize: 14, color: 'rgba(255,255,255,0.6)' },
+  deleteModalConfirm: {
+    flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.3)', borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.4)',
+  },
+  deleteModalConfirmText: { fontSize: 14, fontWeight: '600', color: '#FCA5A5' },
 
   // 지난 기억 (Archived personas)
   archivedSection: { marginTop: 32, paddingHorizontal: 20 },
