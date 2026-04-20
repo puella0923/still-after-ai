@@ -227,7 +227,7 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
       <ScrollView style={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backIcon}>‹</Text>
+            <Text style={styles.backText}>← 뒤로</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t.closure.header}</Text>
           <LanguageToggle />
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  backIcon: { fontSize: 32, color: '#fff', lineHeight: 36, marginTop: -4 },
+  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '600', color: '#fff' },
   content: { padding: 28, gap: 16 },
 

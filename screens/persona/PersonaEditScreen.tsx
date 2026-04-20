@@ -124,7 +124,7 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backIcon}>‹</Text>
+            <Text style={styles.backText}>← 뒤로</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{(name || personaName)} {t.personaEdit.headerSuffix}</Text>
           <TouchableOpacity style={[styles.saveBtn, loading && { opacity: 0.6 }]} onPress={handleSave} disabled={loading}>
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   backBtn: { width: 44, height: 36, alignItems: 'center', justifyContent: 'center' },
-  backIcon: { fontSize: 32, color: '#fff', lineHeight: 36, marginTop: -4 },
+  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '600', color: '#fff' },
   saveBtn: { borderRadius: 10, overflow: 'hidden', minWidth: 52 },
   saveBtnGrad: { paddingHorizontal: 16, paddingVertical: 8, alignItems: 'center', borderRadius: 10 },
