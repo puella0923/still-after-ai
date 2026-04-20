@@ -308,11 +308,11 @@ const en: Translations = {
     tabWrite: '✏️ Write it yourself',
     tabKakao: '📱 Upload chat',
     writePlaceholder: (name: string) =>
-      `Write freely about ${name}'s way of speaking, favorite phrases, and memorable moments.`,
-    writeExample: "e.g. Mom was always warm and a little worried about everything...",
+      `Write freely about ${name}'s speaking style, favorite phrases, personality, and moments you shared.\nThe more specific you are, the better we can capture who they were.`,
+    writeExample: "e.g. Mom always asked \"Did you eat?\" at least three times before hanging up the phone. She worried about everything, but it always felt warm. Whenever I was struggling, she'd say \"It'll all be okay — I'm here.\" She never raised her voice, even when upset. I think about her making kimchi stew every weekend, and how she'd quietly sit beside me and pat my back when I cried.",
     writePlaceholderPet: (name: string) =>
-      `Write freely about ${name}'s personality, favorite things, special moments you shared, and adorable habits.`,
-    writeExamplePet: "e.g. Coco always wagged their tail like crazy on walks. They'd stare at me every time I ate...",
+      `Write freely about ${name}'s personality, favorite things, special moments you shared, and adorable habits.\nThe more specific you are, the better we can capture who they were.`,
+    writeExamplePet: "e.g. Coco would sprint from anywhere in the house the moment she heard the front door open. She'd spin in circles and whimper when she saw the leash. Every time I ate, she'd sit right by my feet and stare up at me with those eyes. She always climbed onto my stomach before bed, and when she was happy her ears would go flat and her eyes would go soft. She'd tilt her head whenever I called her name — it was the cutest thing.",
     charCountHint: '(Please enter at least 20 characters)',
     kakaoDesc: "Upload your chat history together. We'll carefully capture their unique tone and warmth.",
     kakaoInstructions: 'KakaoTalk → Chat room → Menu (≡) → Export chat → Select .txt or .csv file',

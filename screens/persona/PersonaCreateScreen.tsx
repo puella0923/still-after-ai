@@ -629,9 +629,11 @@ ${manualText.trim()}
             <View>
               <TextInput
                 style={styles.manualInput}
-                placeholder={`${t.personaCreate.writePlaceholder(name || '그분')}\n\n${t.personaCreate.writeExample}`}
+                placeholder={isPet
+                  ? `${t.personaCreate.writePlaceholderPet(name || '그 아이')}\n\n${t.personaCreate.writeExamplePet}`
+                  : `${t.personaCreate.writePlaceholder(name || '그분')}\n\n${t.personaCreate.writeExample}`}
                 value={manualText} onChangeText={setManualText}
-                multiline numberOfLines={8} placeholderTextColor="#B0A89E" textAlignVertical="top"
+                multiline numberOfLines={12} placeholderTextColor="#B0A89E" textAlignVertical="top"
               />
               <Text style={styles.charCount}>{manualText.length}자 {manualText.length < 20 ? t.personaCreate.charCountHint : '✓'}</Text>
             </View>
@@ -841,7 +843,7 @@ const styles = StyleSheet.create({
   tabTextActive: { color: '#FFFFFF', fontWeight: '600' },
   manualInput: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)',
-    borderRadius: 14, padding: 14, fontSize: 14, color: '#FFFFFF', minHeight: 160,
+    borderRadius: 14, padding: 14, fontSize: 14, color: '#FFFFFF', minHeight: 220,
   },
   charCount: { fontSize: 12, color: 'rgba(167, 139, 250, 0.6)', textAlign: 'right', marginTop: 4 },
   kakaoGuide: { fontSize: 14, color: 'rgba(196, 181, 253, 0.8)', marginBottom: 8, lineHeight: 20 },
