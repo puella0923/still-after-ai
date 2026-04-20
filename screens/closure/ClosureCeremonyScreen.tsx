@@ -227,7 +227,7 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
       <ScrollView style={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backText}>← 뒤로</Text>
+            <Text style={styles.backText}>{t.common.back}</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t.closure.header}</Text>
           <LanguageToggle />

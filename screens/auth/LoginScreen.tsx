@@ -201,7 +201,7 @@ export default function LoginScreen({ navigation }: Props) {
                 }}
                 style={styles.backButton}
               >
-                <Text style={styles.backText}>{t.common.goBack}</Text>
+                <Text style={styles.backText}>{t.common.back}</Text>
               </TouchableOpacity>
             </LinearGradient>
           </Animated.View>

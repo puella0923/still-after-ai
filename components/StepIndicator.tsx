@@ -10,7 +10,7 @@ type Props = {
 
 export default function StepIndicator({ current, total, style }: Props) {
   return (
-    <View style={[styles.wrap, style]}>
+    <View style={[styles.wrap, style]} pointerEvents="none">
       {Array.from({ length: total }, (_, i) => {
         const stepNum = i + 1
         const isDone = stepNum < current

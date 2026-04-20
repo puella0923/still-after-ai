@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     ...(({ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }) as any),
   },
   backBtn: { width: 60 },
-  backText: { fontSize: 14, color: 'rgba(196, 181, 253, 0.8)' },
+  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
   headerTitle: { fontSize: 17, fontWeight: '700', color: '#F3E8FF' },
 
   // AI Banner

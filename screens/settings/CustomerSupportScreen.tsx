@@ -6,6 +6,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
+import { useLanguage } from '../../context/LanguageContext'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'CustomerSupport'>
@@ -32,6 +33,7 @@ const STAR_DOTS = Array.from({ length: 20 }, (_, i) => ({
 const glass = Platform.OS === 'web' ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } as any : {}
 
 export default function CustomerSupportScreen({ navigation }: Props) {
+  const { t } = useLanguage()
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
 
   const openEmail = () => {
@@ -58,7 +60,7 @@ export default function CustomerSupportScreen({ navigation }: Props) {
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>← 뒤로</Text>
+          <Text style={styles.backText}>{t.common.back}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>고객 지원</Text>
         <View style={{ width: 36 }} />

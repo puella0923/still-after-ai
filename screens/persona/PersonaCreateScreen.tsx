@@ -412,8 +412,8 @@ ${manualText.trim()}
       <ScrollView style={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {/* 헤더 */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backIcon}>←</Text>
+          <TouchableOpacity onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('TimingCheck' as any)} style={styles.backBtn}>
+            <Text style={styles.backText}>{t.common.back}</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t.personaCreate.headerTitle}</Text>
           <View style={{ width: 40 }} />
@@ -801,8 +801,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(167, 139, 250, 0.2)',
     ...(({ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }) as any),
   },
-  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  backIcon: { fontSize: 18, color: 'rgba(196, 181, 253, 0.8)' },
+  backBtn: { paddingVertical: 4, alignSelf: 'flex-start' },
+  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: '#F3E8FF' },
   headerRight: { width: 36 },
   banner: {

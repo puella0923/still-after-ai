@@ -566,7 +566,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backIcon}>←</Text>
+            <Text style={styles.backText}>{t.common.back}</Text>
           </TouchableOpacity>
           <View style={styles.headerInfo}>
             <View style={styles.headerAvatar}>
@@ -828,7 +828,7 @@ const styles = StyleSheet.create({
     ...(({ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }) as any),
   },
   backBtn: { padding: 8, marginRight: 4 },
-  backIcon: { fontSize: 18, color: 'rgba(196, 181, 253, 0.8)' },
+  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
   headerInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerAvatar: { width: 40, height: 40, borderRadius: 20, overflow: 'hidden' },
   headerAvatarImg: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)' },

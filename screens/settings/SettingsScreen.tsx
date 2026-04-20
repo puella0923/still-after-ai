@@ -208,7 +208,7 @@ export default function SettingsScreen({ navigation }: Props) {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} activeOpacity={0.7}>
-            <Text style={styles.backText}>← 뒤로</Text>
+            <Text style={styles.backText}>{t.common.back}</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t.settings.header}</Text>
           <LanguageToggle />

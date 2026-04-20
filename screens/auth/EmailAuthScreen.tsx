@@ -496,7 +496,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
 
                 {/* Back */}
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                  <Text style={styles.backBtnText}>{t.common.goBack}</Text>
+                  <Text style={styles.backBtnText}>{t.common.back}</Text>
                 </TouchableOpacity>
               </LinearGradient>
             </Animated.View>

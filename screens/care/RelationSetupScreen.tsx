@@ -59,11 +59,11 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
       ))}
 
       <LanguageToggle style={{ position: 'absolute', top: 56, right: 20, zIndex: 100 }} />
-      <StepIndicator current={2} total={4} style={{ position: 'absolute', top: 62, left: 0, right: 0, zIndex: 90 }} />
+      <StepIndicator current={2} total={4} style={{ position: 'absolute', top: 56, left: 0, right: 0, zIndex: 90 }} />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('CareSelect' as any)}>
             <Text style={styles.backText}>{t.common.back}</Text>
           </TouchableOpacity>
 
