@@ -16,7 +16,7 @@ type Props = {
 }
 
 const PERSON_RELATIONS = ['부모님', '배우자', '자녀', '친구', '연인', '기타']
-const PET_TYPES = ['강아지', '고양이', '기타']
+const PET_TYPES = ['강아지', '고양이', '앵무새', '햄스터', '토끼', '물고기', '기타']
 
 const STAR_DOTS = Array.from({ length: 25 }, (_, i) => ({
   top: `${(i * 37 + 13) % 100}%`,
@@ -30,14 +30,20 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
   const { careType } = route.params
   const isPerson = careType === 'human'
   const [selectedRelation, setSelectedRelation] = useState<string | null>(null)
+  const [customRelation, setCustomRelation] = useState('')
   const [name, setName] = useState('')
-  const canProceed = selectedRelation !== null && name.trim().length > 0
+
+  const showCustomInput = selectedRelation === '기타'
+  const resolvedRelation = showCustomInput ? customRelation.trim() : (selectedRelation ?? '')
+  const canProceed = resolvedRelation.length > 0 && name.trim().length > 0
 
   const handleNext = () => {
     if (!canProceed) return
-    const trimmedName = name.trim()
-    const relation = selectedRelation as string
-    navigation.navigate('PersonaCreate', { careType, relation, name: trimmedName })
+    navigation.navigate('PersonaCreate', {
+      careType,
+      relation: resolvedRelation,
+      name: name.trim(),
+    })
   }
 
   const chips = isPerson ? PERSON_RELATIONS : PET_TYPES
@@ -68,19 +74,47 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
 
           {/* Chips */}
           <View style={styles.chipGrid}>
-            {chips.map((item) => (
-              <TouchableOpacity key={item} onPress={() => setSelectedRelation(item)} activeOpacity={0.8}
-                style={[styles.chip, selectedRelation === item && styles.chipSelected]}>
-                {selectedRelation === item ? (
-                  <LinearGradient colors={['#a855f7', '#db2777']} style={styles.chipGrad}>
-                    <Text style={styles.chipTextSelected}>{item}</Text>
-                  </LinearGradient>
-                ) : (
-                  <Text style={styles.chipText}>{item}</Text>
-                )}
-              </TouchableOpacity>
-            ))}
+            {chips.map((item) => {
+              const isSelected = selectedRelation === item
+              return (
+                <TouchableOpacity
+                  key={item}
+                  onPress={() => setSelectedRelation(item)}
+                  activeOpacity={0.8}
+                  style={styles.chip}
+                >
+                  {isSelected ? (
+                    <LinearGradient colors={['#a855f7', '#db2777']} style={styles.chipInner}>
+                      <Text style={styles.chipTextSelected}>{item}</Text>
+                    </LinearGradient>
+                  ) : (
+                    <View style={styles.chipInner}>
+                      <Text style={styles.chipText}>{item}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              )
+            })}
           </View>
+
+          {/* 기타 선택 시 직접 입력 */}
+          {showCustomInput && (
+            <View style={styles.inputSection}>
+              <Text style={styles.inputLabel}>
+                {isPerson ? '관계를 직접 입력해주세요' : '반려동물 종류를 직접 입력해주세요'}
+              </Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder={isPerson ? '예) 스승님, 직장 동료' : '예) 거북이, 도마뱀'}
+                placeholderTextColor="rgba(255,255,255,0.3)"
+                value={customRelation}
+                onChangeText={setCustomRelation}
+                maxLength={20}
+                returnKeyType="done"
+                autoFocus
+              />
+            </View>
+          )}
 
           {/* Name input */}
           <View style={styles.inputSection}>
@@ -126,14 +160,22 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '300', color: '#fff', letterSpacing: 0.3 },
   subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 22 },
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  // 외부 컨테이너: 크기 고정 (패딩 없이 overflow hidden + border)
   chip: {
-    borderRadius: 50, overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-    paddingHorizontal: 20, paddingVertical: 12,
+    borderRadius: 50,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  chipSelected: { padding: 0, borderColor: 'transparent' },
-  chipGrad: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 50 },
+  // 내부 영역: 항상 같은 패딩 유지 → 선택해도 크기 불변
+  chipInner: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   chipText: { fontSize: 15, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
   chipTextSelected: { fontSize: 15, color: '#fff', fontWeight: '500' },
   inputSection: { gap: 10 },
