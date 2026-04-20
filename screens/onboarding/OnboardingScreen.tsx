@@ -104,7 +104,7 @@ export default function OnboardingScreen({ navigation }: Props) {
         {/* ════ ② 공감 ════ */}
         <View style={styles.section}>
           <Text style={styles.empathyQuote}>
-            <Text style={styles.empathyQuoteAccent}>"밥은 먹었어?"</Text>{'\n'}
+            <Text style={styles.empathyQuoteAccent}>{o.empathyQuoteAccent}</Text>{'\n'}
             {o.empathyTitle}
           </Text>
 
@@ -144,9 +144,9 @@ export default function OnboardingScreen({ navigation }: Props) {
               {/* 지원 앱 */}
               <View style={styles.supportedApps}>
                 {[
-                  { emoji: '💬', name: '카카오톡' },
-                  { emoji: '📱', name: 'WhatsApp' },
-                  { emoji: '🟢', name: 'LINE' },
+                  { emoji: '💬', name: o.supportedApps[0] },
+                  { emoji: '📱', name: o.supportedApps[1] },
+                  { emoji: '🟢', name: o.supportedApps[2] },
                 ].map((app, i) => (
                   <View key={i} style={styles.supportedAppTag}>
                     <Text style={styles.supportedAppEmoji}>{app.emoji}</Text>

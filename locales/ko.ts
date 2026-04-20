@@ -23,6 +23,8 @@ const ko = {
   onboarding: {
     heroTitle: '한 번만 더\n말할 수 있다면',
     heroSub: '아직 전하지 못한 말이 있나요?',
+    empathyQuoteAccent: '"밥은 먹었어?"',
+    supportedApps: ['카카오톡', 'WhatsApp', 'LINE'],
     heroDesc: '죄책감을 혼자 안고 있지 않아도 됩니다.\n하지 못한 말을 전하고, 천천히 놓을 수 있도록 돕습니다.',
     heroMission1: '전하지 못한 말을 꺼내고,',
     heroMission2: '천천히 마음을 정리할 수 있는 공간',

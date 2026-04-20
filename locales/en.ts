@@ -25,6 +25,8 @@ const en: Translations = {
   onboarding: {
     heroTitle: 'If only I could\nsay it one more time',
     heroSub: 'Do you have words you never got to say?',
+    empathyQuoteAccent: '"Did you eat?"',
+    supportedApps: ['KakaoTalk', 'WhatsApp', 'LINE'],
     heroDesc: "You don't have to carry the guilt alone.\nLet us help you say what was left unsaid, and gently let go.",
     heroMission1: 'Bring out the words left unsaid,',
     heroMission2: 'a space to gently find peace',
