@@ -16,9 +16,9 @@ export default function LanguageToggle({ style }: Props) {
       activeOpacity={0.7}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
-      <Text style={[styles.label, language === 'ko' && styles.active]}>KO</Text>
+      <Text style={[styles.label, language === 'ko' && styles.active]}>한국어</Text>
       <View style={styles.divider} />
-      <Text style={[styles.label, language === 'en' && styles.active]}>EN</Text>
+      <Text style={[styles.label, language === 'en' && styles.active]}>English</Text>
     </TouchableOpacity>
   )
 }
@@ -27,18 +27,17 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 5,
     borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.14)',
-    gap: 5,
+    gap: 6,
   },
   label: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontSize: 12,
+    fontWeight: '600',
     color: 'rgba(255,255,255,0.28)',
   },
   active: {

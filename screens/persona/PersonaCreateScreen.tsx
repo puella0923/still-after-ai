@@ -12,8 +12,6 @@ import { parseKakaoChat, generateSystemPrompt, generatePetSystemPrompt, ParsedKa
 import { createPersona, uploadPersonaPhoto } from '../../services/personaService'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
-import LanguageToggle from '../../components/LanguageToggle'
-import StepIndicator from '../../components/StepIndicator'
 import { C, RADIUS } from '../theme'
 
 type Props = {
@@ -418,9 +416,8 @@ ${manualText.trim()}
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t.personaCreate.headerTitle}</Text>
-          <LanguageToggle />
+          <View style={{ width: 40 }} />
         </View>
-        <StepIndicator current={4} total={4} style={{ alignSelf: "center", marginTop: 8, marginBottom: 4 }} />
 
         {/* 안내 */}
         <View style={styles.banner}>
