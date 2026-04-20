@@ -23,6 +23,7 @@ const en: Translations = {
 
   // ── Onboarding ──
   onboarding: {
+    heroTitle: 'If only I could\nsay it one more time',
     heroSub: 'Do you have words you never got to say?',
     heroDesc: "You don't have to carry the guilt alone.\nLet us help you say what was left unsaid, and gently let go.",
     heroMission1: 'Bring out the words left unsaid,',

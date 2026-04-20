@@ -23,7 +23,7 @@ type Props = {
 
 export default function OnboardingScreen({ navigation }: Props) {
   const { session } = useAuth()
-  const { t, language } = useLanguage()
+  const { t, language, toggleLanguage } = useLanguage()
   const o = t.onboarding
   const [demoTab, setDemoTab] = useState<'replay' | 'stable' | 'closure' | 'pet'>('replay')
   const fadeAnim = useRef(new Animated.Value(0)).current
@@ -60,6 +60,17 @@ export default function OnboardingScreen({ navigation }: Props) {
         )
       })}
 
+      {/* ── 언어 토글 (우측 상단 고정) ── */}
+      <TouchableOpacity
+        onPress={toggleLanguage}
+        activeOpacity={0.75}
+        style={styles.langToggle}
+      >
+        <Text style={[styles.langOption, language === 'ko' && styles.langOptionActive]}>한국어</Text>
+        <Text style={styles.langDivider}>/</Text>
+        <Text style={[styles.langOption, language === 'en' && styles.langOptionActive]}>English</Text>
+      </TouchableOpacity>
+
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.contentWrapper}>
 
@@ -73,7 +84,7 @@ export default function OnboardingScreen({ navigation }: Props) {
           </LinearGradient>
 
           <Text style={styles.heroEyebrow}>Grief Care · AI</Text>
-          <Text style={styles.heroTitle}>한 번만 더{'\n'}말할 수 있다면</Text>
+          <Text style={styles.heroTitle}>{o.heroTitle}</Text>
           <Text style={styles.heroSub}>{o.heroSub}</Text>
           <Text style={styles.heroDesc}>{o.heroDesc}</Text>
 
@@ -493,6 +504,18 @@ function DemoBubble({ from, name, text }: { from: 'user' | 'assistant'; name?: s
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.BG },
   scrollContent: { paddingBottom: 40, alignItems: 'center' },
+
+  // Language toggle
+  langToggle: {
+    position: 'absolute', top: 52, right: 16, zIndex: 100,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
+  },
+  langOption: { fontSize: 12, color: 'rgba(255,255,255,0.35)', fontWeight: '500' },
+  langOptionActive: { color: '#fff', fontWeight: '700' },
+  langDivider: { fontSize: 11, color: 'rgba(255,255,255,0.2)' },
   contentWrapper: { width: '100%', maxWidth: 680 },
 
   // 배경
