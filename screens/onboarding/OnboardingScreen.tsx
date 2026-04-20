@@ -60,7 +60,7 @@ export default function OnboardingScreen({ navigation }: Props) {
         )
       })}
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} style={{ marginBottom: 72 }}>
         <View style={styles.contentWrapper}>
 
         {/* ════ ① HERO ════ */}
@@ -461,6 +461,24 @@ export default function OnboardingScreen({ navigation }: Props) {
         </View>
       </ScrollView>
 
+      {/* ── Sticky CTA footer ── */}
+      <View style={styles.stickyFooter}>
+        <TouchableOpacity
+          onPress={() => navigation.replace('Login')}
+          activeOpacity={0.85}
+          style={styles.stickyBtn}
+        >
+          <LinearGradient
+            colors={['#7C3AED', '#3B82F6']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={styles.stickyBtnGradient}
+          >
+            <Text style={styles.stickyBtnText}>{o.startBtn}</Text>
+            <Text style={styles.stickyBtnArrow}>›</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+
       {/* ── 언어 토글 (우측 상단 고정 — ScrollView 위에 렌더링) ── */}
       <TouchableOpacity
         onPress={toggleLanguage}
@@ -496,6 +514,21 @@ function DemoBubble({ from, name, text }: { from: 'user' | 'assistant'; name?: s
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.BG },
   scrollContent: { paddingBottom: 40, alignItems: 'center' },
+
+  // Sticky CTA footer
+  stickyFooter: {
+    position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 200,
+    paddingHorizontal: 20, paddingVertical: 12, paddingBottom: 20,
+    backgroundColor: 'rgba(10, 1, 24, 0.88)',
+    borderTopWidth: 1, borderTopColor: 'rgba(167, 139, 250, 0.15)',
+  },
+  stickyBtn: { borderRadius: 12, overflow: 'hidden' },
+  stickyBtnGradient: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    paddingVertical: 14, borderRadius: 12,
+  },
+  stickyBtnText: { fontSize: 15, fontWeight: '500', color: '#fff' },
+  stickyBtnArrow: { fontSize: 20, color: '#fff' },
 
   // Language toggle
   langToggle: {
