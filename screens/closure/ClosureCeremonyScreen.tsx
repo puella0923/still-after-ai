@@ -11,7 +11,8 @@ import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { supabase } from '../../services/supabase'
 import { useLanguage } from '../../context/LanguageContext'
-import LanguageToggle from '../../components/LanguageToggle'
+import CosmicBackground from '../../components/CosmicBackground'
+import TopStickyControls from '../../components/TopStickyControls'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'ClosureCeremony'>
@@ -30,12 +31,11 @@ const PARTICLE_DATA = Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
   delay: i * 80,
 }))
 
-const STAR_DOTS = Array.from({ length: 30 }, (_, i) => ({
-  top: `${(i * 37 + 13) % 100}%`,
-  left: `${(i * 53 + 7) % 100}%`,
-  size: (i % 3) + 1,
-  opacity: 0.15 + (i % 5) * 0.08,
-}))
+const CLOSURE_BG_COLORS: [string, string, string] = ['#05010f', '#0f0a3e', '#080520']
+const CLOSURE_ORBS = [
+  { top: '5%', right: '-15%', color: 'rgba(99, 102, 241, 0.12)', size: 280 },
+  { bottom: '15%', left: '-10%', color: 'rgba(168, 85, 247, 0.08)', size: 220 },
+]
 
 const DRAFT_KEY_PREFIX = '@stillafter/closure_draft_'
 
@@ -101,7 +101,7 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
       }).eq('id', personaId)
       // 봉인 완료 후 임시 저장 삭제
       await AsyncStorage.removeItem(draftKey).catch(() => {})
-    } catch (err) { console.error('[ClosureCeremony] 저장 중 예외:', err) }
+    } catch (err) { if (__DEV__) console.error('[ClosureCeremony] 저장 중 예외:', err) }
   }, [personaId, letter, aiFarewell, draftKey])
 
   const runFarewellAnimation = useCallback(() => {
@@ -165,10 +165,7 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
 
     return (
       <View style={styles.fullScreen}>
-        <LinearGradient colors={['#05010f', '#0f0a3e', '#080520']} style={StyleSheet.absoluteFillObject} />
-        {STAR_DOTS.map((s, i) => (
-          <View key={i} style={{ position: 'absolute', top: s.top as any, left: s.left as any, width: s.size, height: s.size, borderRadius: s.size / 2, backgroundColor: '#fff', opacity: s.opacity }} />
-        ))}
+        <CosmicBackground colors={CLOSURE_BG_COLORS} orbs={[]} starCount={30} />
         <Animated.View style={[styles.overlayBg, { opacity: overlayOpacity }]}>
           {PARTICLE_DATA.map((data, i) => (
             <Animated.View key={data.id} style={[styles.particle, {
@@ -217,22 +214,14 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
   // ─── Letter writing screen ───
   return (
     <View style={styles.root}>
-      <LinearGradient colors={['#05010f', '#0f0a3e', '#080520']} style={StyleSheet.absoluteFillObject} />
-      <View style={[styles.orb, styles.orb1]} />
-      <View style={[styles.orb, styles.orb2]} />
-      {STAR_DOTS.map((s, i) => (
-        <View key={i} style={{ position: 'absolute', top: s.top as any, left: s.left as any, width: s.size, height: s.size, borderRadius: s.size / 2, backgroundColor: '#fff', opacity: s.opacity }} />
-      ))}
+      <CosmicBackground colors={CLOSURE_BG_COLORS} orbs={CLOSURE_ORBS} starCount={30} />
+      <TopStickyControls
+        backLabel={t.common.back}
+        onBackPress={() => navigation.goBack()}
+        title={t.closure.header}
+      />
 
       <ScrollView style={styles.scroll}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backText}>{t.common.back}</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t.closure.header}</Text>
-          <LanguageToggle />
-        </View>
-
         <View style={styles.content}>
           {!!aiFarewell && (
             <View style={styles.farewellCard}>
@@ -305,19 +294,8 @@ const glass = Platform.OS === 'web' ? { backdropFilter: 'blur(16px)', WebkitBack
 const styles = StyleSheet.create({
   root: { flex: 1, overflow: 'hidden' },
   scroll: { flex: 1 },
-  orb: { position: 'absolute', borderRadius: 999 },
-  orb1: { width: 280, height: 280, top: '5%', right: '-15%', backgroundColor: 'rgba(99, 102, 241, 0.12)' },
-  orb2: { width: 220, height: 220, bottom: '15%', left: '-10%', backgroundColor: 'rgba(168, 85, 247, 0.08)' },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)',
-  },
-  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '600', color: '#fff' },
-  content: { padding: 28, gap: 16 },
+  content: { padding: 28, paddingTop: 79, gap: 16 },
 
   farewellCard: {
     backgroundColor: 'rgba(99, 102, 241, 0.1)', borderRadius: 14, padding: 18,

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, Pressable, StyleSheet,
   ScrollView, Alert, ActivityIndicator, Platform, SafeAreaView, Image,
-  Dimensions,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -13,6 +12,8 @@ import { createPersona, uploadPersonaPhoto } from '../../services/personaService
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
 import { C, RADIUS } from '../theme'
+import CosmicBackground from '../../components/CosmicBackground'
+import TopStickyControls from '../../components/TopStickyControls'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'PersonaCreate'>
@@ -59,8 +60,8 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
   // 에러 스낵바 자동 3초 후 숨김
   React.useEffect(() => {
     if (!createErrorMsg) return
-    const t = setTimeout(() => setCreateErrorMsg(''), 3500)
-    return () => clearTimeout(t)
+    const timer = setTimeout(() => setCreateErrorMsg(''), 3500)
+    return () => clearTimeout(timer)
   }, [createErrorMsg])
 
   // 반려동물 종류 (RelationSetup에서 pre-filled)
@@ -107,7 +108,7 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
       setErrorMsg(message)
       setKakaoRawText('')
       setFileName('')
-      console.error('[PersonaCreate] 파싱 오류:', error)
+      if (__DEV__) console.error('[PersonaCreate] 파싱 오류:', error)
     } finally {
       setIsParsing(false)
     }
@@ -129,7 +130,7 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
         setParseResult({ parsed, rawText: kakaoRawText, fileName })
         setErrorMsg('')
       } catch (e) {
-        console.error('[PersonaCreate] 이름 변경 후 재파싱 오류:', e)
+        if (__DEV__) console.error('[PersonaCreate] 이름 변경 후 재파싱 오류:', e)
       }
     }, 400)
 
@@ -253,7 +254,7 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
           setPhotoBlob(blob)
         } catch {
           setPhotoBlob(null)
-          console.warn('[Photo] blob 변환 완전 실패 — 사진 없이 진행')
+          if (__DEV__) console.warn('[Photo] blob 변환 완전 실패 — 사진 없이 진행')
         }
       }
     } catch {
@@ -283,6 +284,25 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
     if (activeTab === 'manual') return manualText.trim().length >= 20
     if (activeTab === 'kakao') return parseResult !== null && kakaoRawText.trim().length > 0
     return false
+  }
+
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack()
+      return
+    }
+
+    // Direct entry or stack reset case: only navigate to TimingCheck when required params exist.
+    if (routeRelation && routeName) {
+      navigation.navigate('TimingCheck', {
+        careType,
+        relation: routeRelation,
+        name: routeName,
+      })
+      return
+    }
+
+    navigation.navigate('CareSelect')
   }
 
   const handleCreate = async () => {
@@ -384,7 +404,7 @@ ${manualText.trim()}
 
       navigation.replace('AIGenerating', { name: name.trim(), personaId })
     } catch (err: unknown) {
-      console.error('[PersonaCreate] 생성 오류:', err)
+      if (__DEV__) console.error('[PersonaCreate] 생성 오류:', err)
       const message = err instanceof Error ? err.message : t.personaCreate.errorCheckInput
       setCreateErrorMsg(message)
       Alert.alert(t.personaCreate.alertPausedTitle, message)
@@ -393,32 +413,23 @@ ${manualText.trim()}
     }
   }
 
-  const SCREEN_WIDTH = Dimensions.get('window').width
-  const STARS = Array.from({ length: 20 }, (_, i) => ({
-    left: ((i * 97 + 31) % 100), top: ((i * 53 + 17) % 100),
-    size: (i % 3) + 1.5, opacity: 0.12 + (i % 5) * 0.08,
-  }))
-
   return (
     <View style={styles.rootWrap}>
-      <LinearGradient colors={['#0a0118', '#1a0f3e', '#0f0520']} style={StyleSheet.absoluteFill} />
-      <View style={styles.orbContainer}>
-        <View style={[styles.orb, { top: -100, left: SCREEN_WIDTH * 0.25 - 192, backgroundColor: 'rgba(124, 58, 237, 0.2)' }]} />
-        <View style={[styles.orb, { bottom: -100, right: SCREEN_WIDTH * 0.25 - 192, backgroundColor: 'rgba(37, 99, 235, 0.2)' }]} />
-      </View>
-      {STARS.map((star, i) => (
-        <View key={i} style={[styles.star, { left: `${star.left}%` as any, top: `${star.top}%` as any, width: star.size, height: star.size, opacity: star.opacity, borderRadius: star.size }]} />
-      ))}
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        {/* 헤더 */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('TimingCheck' as any)} style={styles.backBtn}>
-            <Text style={styles.backText}>{t.common.back}</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t.personaCreate.headerTitle}</Text>
-          <View style={{ width: 40 }} />
-        </View>
+      <CosmicBackground starCount={20} />
+      <SafeAreaView style={styles.safeArea}>
+        <TopStickyControls
+          backLabel={t.common.back}
+          onBackPress={handleBack}
+          title={t.personaCreate.headerTitle}
+          showLanguageToggle={false}
+        />
+
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
 
         {/* 안내 */}
         <View style={styles.banner}>
@@ -756,8 +767,8 @@ ${manualText.trim()}
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
 
       {/* 에러 스낵바 — 화면 하단 고정 */}
       {!!createErrorMsg && (
@@ -770,7 +781,7 @@ ${manualText.trim()}
 }
 
 const styles = StyleSheet.create({
-  rootWrap: { flex: 1, backgroundColor: '#0a0118' },
+  rootWrap: { flex: 1 },
   snackbar: {
     position: 'absolute', bottom: 32, left: 24, right: 24,
     backgroundColor: 'rgba(239,68,68,0.92)', borderRadius: 12,
@@ -779,11 +790,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 10,
   },
   snackbarText: { color: '#fff', fontSize: 14, fontWeight: '500', textAlign: 'center' },
-  orbContainer: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
-  orb: { position: 'absolute', width: 384, height: 384, borderRadius: 192 },
-  star: { position: 'absolute', backgroundColor: '#E9D5FF' },
   safeArea: { flex: 1 },
   container: { flex: 1 },
+  scrollContent: { paddingTop: 51 },
   // ─── 사진 ───
   photoSection: { alignItems: 'center', paddingVertical: 20, gap: 8 },
   photoCircle: {
@@ -796,16 +805,6 @@ const styles = StyleSheet.create({
   photoHint: { fontSize: 12, fontWeight: '500', color: 'rgba(196, 181, 253, 0.8)' },
   photoHintSub: { fontSize: 10, color: 'rgba(167, 139, 250, 0.5)' },
   photoRemove: { fontSize: 12, color: '#FCA5A5' },
-  // ─── 헤더 ───
-  header: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(167, 139, 250, 0.2)',
-    ...(({ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }) as any),
-  },
-  backBtn: { paddingVertical: 4, alignSelf: 'flex-start' },
-  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: '#F3E8FF' },
-  headerRight: { width: 36 },
   banner: {
     backgroundColor: 'rgba(120, 53, 15, 0.3)', paddingHorizontal: 16, paddingVertical: 8, marginBottom: 8,
     borderBottomWidth: 1, borderBottomColor: 'rgba(251, 191, 36, 0.2)',
