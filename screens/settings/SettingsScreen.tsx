@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet,
   ScrollView, Switch, Modal,
-  ActivityIndicator, Linking, Platform, Dimensions,
+  ActivityIndicator, Linking, Platform,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -13,6 +13,7 @@ import { useAuth } from '../../context/AuthContext'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
+import CosmicBackground from '../../components/CosmicBackground'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Settings'>
@@ -20,14 +21,11 @@ type Props = {
 
 const NOTIF_KEY = '@stillafter/notifications_enabled'
 const APP_VERSION = '1.0.0 (MVP)'
-const { width: SW } = Dimensions.get('window')
 
-const STAR_DOTS = Array.from({ length: 25 }, (_, i) => ({
-  top: `${(i * 37 + 13) % 100}%`,
-  left: `${(i * 53 + 7) % 100}%`,
-  size: (i % 3) + 1,
-  opacity: 0.15 + (i % 5) * 0.08,
-}))
+const SETTINGS_ORBS = [
+  { top: '-5%', right: '-15%', color: 'rgba(168, 85, 247, 0.12)', size: 280 },
+  { bottom: '15%', left: '-10%', color: 'rgba(219, 39, 119, 0.08)', size: 220 },
+]
 
 // ─── Confirm Modal ──────────────────────────────────────────────────────────
 type ConfirmStep = {
@@ -196,13 +194,7 @@ export default function SettingsScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      {/* Cosmic background */}
-      <LinearGradient colors={['#1a0118', '#200a2e', '#0f0520']} style={StyleSheet.absoluteFillObject} />
-      <View style={[styles.orb, styles.orb1]} />
-      <View style={[styles.orb, styles.orb2]} />
-      {STAR_DOTS.map((s, i) => (
-        <View key={i} style={{ position: 'absolute', top: s.top as any, left: s.left as any, width: s.size, height: s.size, borderRadius: s.size / 2, backgroundColor: '#fff', opacity: s.opacity }} />
-      ))}
+      <CosmicBackground colors={['#1a0118', '#200a2e', '#0f0520']} orbs={SETTINGS_ORBS} starCount={25} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
@@ -309,10 +301,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, overflow: 'hidden' },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
-
-  orb: { position: 'absolute', borderRadius: 999 },
-  orb1: { width: 280, height: 280, top: '-5%', right: '-15%', backgroundColor: 'rgba(168, 85, 247, 0.12)' },
-  orb2: { width: 220, height: 220, bottom: '15%', left: '-10%', backgroundColor: 'rgba(219, 39, 119, 0.08)' },
 
   // Header
   header: {

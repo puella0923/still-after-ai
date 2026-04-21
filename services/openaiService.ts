@@ -192,11 +192,11 @@ export function detectDanger(text: string): boolean {
   return DANGER_KEYWORDS.some(keyword => text.includes(keyword))
 }
 
-type EmotionalStage = 'replay' | 'stable' | 'closure'
+export type EmotionalStage = 'replay' | 'stable' | 'closure'
 export type ClosurePhase = 1 | 2 | 3 | 4 | 5 // 5 = 마지막(20번째) 메시지
 
 // 재연·안정 단계도 페이즈별로 세분화
-type StagePhase = 1 | 2 | 3 | 4  // 각 단계 내 4개 구간 (5회씩)
+export type StagePhase = 1 | 2 | 3 | 4  // 각 단계 내 4개 구간 (5회씩)
 
 const REPLAY_PHASE_PROMPTS: Record<StagePhase, string> = {
   1: `[재연 1~5회: 첫 만남 — 어색함 없애기]
@@ -493,7 +493,7 @@ export async function getChatResponse(params: {
         const errorMsg = data?.error || '응답을 받지 못했어요.'
         // 429, 5xx는 재시도 가능
         if ((resp.status === 429 || resp.status >= 500) && attempt < MAX_RETRIES) {
-          console.warn(`[Chat] 요청 실패 (시도 ${attempt + 1}/${MAX_RETRIES + 1}): ${resp.status} ${errorMsg}`)
+          if (__DEV__) console.warn(`[Chat] 요청 실패 (시도 ${attempt + 1}/${MAX_RETRIES + 1}): ${resp.status} ${errorMsg}`)
           const delay = backoffDelay(attempt)
           await new Promise(resolve => setTimeout(resolve, delay))
           continue
@@ -506,7 +506,7 @@ export async function getChatResponse(params: {
       return content.trim()
     } catch (error) {
       lastError = error
-      console.warn(`[Chat] 요청 실패 (시도 ${attempt + 1}/${MAX_RETRIES + 1}):`, error)
+      if (__DEV__) console.warn(`[Chat] 요청 실패 (시도 ${attempt + 1}/${MAX_RETRIES + 1}):`, error)
 
       // 네트워크 에러도 재시도
       if (attempt < MAX_RETRIES && !(error instanceof Error && error.message.includes('로그인'))) {

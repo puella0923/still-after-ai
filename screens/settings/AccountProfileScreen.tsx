@@ -10,17 +10,16 @@ import { supabase } from '../../services/supabase'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
+import CosmicBackground from '../../components/CosmicBackground'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'AccountProfile'>
 }
 
-const STAR_DOTS = Array.from({ length: 20 }, (_, i) => ({
-  top: `${(i * 37 + 13) % 100}%`,
-  left: `${(i * 53 + 7) % 100}%`,
-  size: (i % 3) + 1,
-  opacity: 0.12 + (i % 5) * 0.06,
-}))
+const ACCOUNT_ORBS = [
+  { top: '-5%', right: '-15%', color: 'rgba(168, 85, 247, 0.1)', size: 280 },
+  { bottom: '15%', left: '-10%', color: 'rgba(219, 39, 119, 0.06)', size: 200 },
+]
 
 const glass = Platform.OS === 'web'
   ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } as any
@@ -142,12 +141,7 @@ export default function AccountProfileScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={['#1a0118', '#200a2e', '#0f0520']} style={StyleSheet.absoluteFillObject} />
-      <View style={[styles.orb, styles.orb1]} />
-      <View style={[styles.orb, styles.orb2]} />
-      {STAR_DOTS.map((s, i) => (
-        <View key={i} style={{ position: 'absolute', top: s.top as any, left: s.left as any, width: s.size, height: s.size, borderRadius: s.size / 2, backgroundColor: '#fff', opacity: s.opacity }} />
-      ))}
+      <CosmicBackground colors={['#1a0118', '#200a2e', '#0f0520']} orbs={ACCOUNT_ORBS} starCount={20} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -406,9 +400,6 @@ export default function AccountProfileScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, overflow: 'hidden' },
-  orb: { position: 'absolute', borderRadius: 999 },
-  orb1: { width: 280, height: 280, top: '-5%', right: '-15%', backgroundColor: 'rgba(168,85,247,0.1)' },
-  orb2: { width: 200, height: 200, bottom: '15%', left: '-10%', backgroundColor: 'rgba(219,39,119,0.06)' },
 
   header: {
     flexDirection: 'row', alignItems: 'center',

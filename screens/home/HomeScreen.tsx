@@ -21,25 +21,15 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../services/supabase'
-import { deletePersona } from '../../services/personaService'
+import { deletePersona, Persona } from '../../services/personaService'
 import { C, RADIUS } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
+import CosmicBackground from '../../components/CosmicBackground'
 
 const { width } = Dimensions.get('window')
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList>
 type StageFilter = 'all' | 'replay' | 'stable' | 'closure'
-
-interface Persona {
-  id: string
-  name: string
-  relationship: string
-  emotional_stage: 'replay' | 'stable' | 'closure'
-  photo_url?: string | null
-  created_at: string
-  is_archived?: boolean
-  archived_at?: string | null
-}
 
 const STAGE_INFO: Record<string, { label: string; colors: [string, string]; borderColor: string; textColor: string }> = {
   replay: { label: '재연', colors: ['rgba(236, 72, 153, 0.3)', 'rgba(168, 85, 247, 0.3)'], borderColor: 'rgba(236, 72, 153, 0.3)', textColor: '#F9A8D4' },
@@ -49,14 +39,6 @@ const STAGE_INFO: Record<string, { label: string; colors: [string, string]; bord
 
 // Filter labels will be set from translations in the component
 const FILTER_KEYS: StageFilter[] = ['all', 'replay', 'stable', 'closure']
-
-// Stars
-const STARS = Array.from({ length: 30 }, (_, i) => ({
-  left: ((i * 97 + 31) % 100),
-  top: ((i * 53 + 17) % 100),
-  size: (i % 3) + 1.5,
-  opacity: 0.15 + (i % 5) * 0.1,
-}))
 
 export default function HomeScreen() {
   const navigation = useNavigation<HomeNavProp>()
@@ -90,7 +72,7 @@ export default function HomeScreen() {
         .order('created_at', { ascending: false })
 
       if (fetchError) throw fetchError
-      const list: Persona[] = data ?? []
+      const list = (data ?? []) as Persona[]
       setPersonas(list)
 
       if (list.length > 0) {
@@ -114,9 +96,9 @@ export default function HomeScreen() {
         .eq('is_active', false)
         .eq('is_archived', true)
         .order('archived_at', { ascending: false })
-      setArchivedPersonas(archivedData ?? [])
+      setArchivedPersonas((archivedData ?? []) as Persona[])
     } catch (err) {
-      console.error('[Home] fetch error:', err)
+      if (__DEV__) console.error('[Home] fetch error:', err)
       setError(true)
     } finally {
       setLoading(false)
@@ -131,7 +113,7 @@ export default function HomeScreen() {
       personaId: persona.id,
       personaName: persona.name,
       currentPhotoUrl: persona.photo_url ?? null,
-      currentNickname: (persona as any).user_nickname ?? null,
+      currentNickname: persona.user_nickname ?? null,
       currentRelationship: persona.relationship ?? null,
     })
   }
@@ -162,14 +144,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={['#0a0118', '#1a0f3e', '#0f0520']} style={StyleSheet.absoluteFill} />
-      <View style={styles.orbContainer}>
-        <View style={[styles.orb, styles.orbPurple]} />
-        <View style={[styles.orb, styles.orbBlue]} />
-      </View>
-      {STARS.map((star, i) => (
-        <View key={i} style={[styles.star, { left: `${star.left}%` as any, top: `${star.top}%` as any, width: star.size, height: star.size, opacity: star.opacity, borderRadius: star.size }]} />
-      ))}
+      <CosmicBackground starCount={30} />
 
       {/* 메뉴 외부 탭 시 닫기 */}
       {openMenuId !== null && (
@@ -484,13 +459,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.BG },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
-
-  // Background
-  orbContainer: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
-  orb: { position: 'absolute', width: 384, height: 384, borderRadius: 192 },
-  orbPurple: { top: -100, left: width * 0.25 - 192, backgroundColor: 'rgba(124, 58, 237, 0.2)' },
-  orbBlue: { bottom: -100, right: width * 0.25 - 192, backgroundColor: 'rgba(37, 99, 235, 0.2)' },
-  star: { position: 'absolute', backgroundColor: '#E9D5FF' },
 
   // Header
   header: {

@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   Animated,
-  Dimensions,
   Platform,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -12,21 +11,17 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useLanguage } from '../../context/LanguageContext'
+import CosmicBackground from '../../components/CosmicBackground'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'AIGenerating'>
   route: RouteProp<RootStackParamList, 'AIGenerating'>
 }
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window')
-
-// Star dots for cosmic background
-const STAR_DOTS = Array.from({ length: 30 }, (_, i) => ({
-  top: `${(i * 37 + 13) % 100}%`,
-  left: `${(i * 53 + 7) % 100}%`,
-  size: (i % 3) + 1,
-  opacity: 0.2 + (i % 5) * 0.1,
-}))
+const AI_GENERATING_ORBS = [
+  { top: '10%', right: '-15%', color: 'rgba(168, 85, 247, 0.15)', size: 300 },
+  { bottom: '10%', left: '-10%', color: 'rgba(219, 39, 119, 0.12)', size: 250 },
+]
 
 export default function AIGeneratingScreen({ navigation, route }: Props) {
   const { name, personaId } = route.params
@@ -112,32 +107,11 @@ export default function AIGeneratingScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.container}>
-      {/* Cosmic gradient background */}
-      <LinearGradient
+      <CosmicBackground
         colors={['#1a0118', '#200a2e', '#0f0520']}
-        style={StyleSheet.absoluteFillObject}
+        orbs={AI_GENERATING_ORBS}
+        starCount={30}
       />
-
-      {/* Gradient orbs */}
-      <View style={[styles.orb, styles.orb1]} />
-      <View style={[styles.orb, styles.orb2]} />
-
-      {/* Star dots */}
-      {STAR_DOTS.map((star, i) => (
-        <View
-          key={i}
-          style={{
-            position: 'absolute',
-            top: star.top as any,
-            left: star.left as any,
-            width: star.size,
-            height: star.size,
-            borderRadius: star.size / 2,
-            backgroundColor: '#fff',
-            opacity: star.opacity,
-          }}
-        />
-      ))}
 
       <Animated.View
         style={[
@@ -205,24 +179,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     overflow: 'hidden',
-  },
-  orb: {
-    position: 'absolute',
-    borderRadius: 999,
-  },
-  orb1: {
-    width: 300,
-    height: 300,
-    top: '10%',
-    right: '-15%',
-    backgroundColor: 'rgba(168, 85, 247, 0.15)',
-  },
-  orb2: {
-    width: 250,
-    height: 250,
-    bottom: '10%',
-    left: '-10%',
-    backgroundColor: 'rgba(219, 39, 119, 0.12)',
   },
   content: {
     flex: 1,

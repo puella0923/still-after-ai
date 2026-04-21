@@ -5,20 +5,18 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useLanguage } from '../../context/LanguageContext'
-import LanguageToggle from '../../components/LanguageToggle'
-import StepIndicator from '../../components/StepIndicator'
+import CosmicBackground from '../../components/CosmicBackground'
+import TopStickyControls from '../../components/TopStickyControls'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'TimingCheck'>
   route: RouteProp<RootStackParamList, 'TimingCheck'>
 }
 
-const STAR_DOTS = Array.from({ length: 25 }, (_, i) => ({
-  top: `${(i * 37 + 13) % 100}%`,
-  left: `${(i * 53 + 7) % 100}%`,
-  size: (i % 3) + 1,
-  opacity: 0.15 + (i % 5) * 0.08,
-}))
+const TIMING_ORBS = [
+  { top: '5%', right: '-15%', color: 'rgba(168, 85, 247, 0.12)', size: 280 },
+  { bottom: '20%', left: '-10%', color: 'rgba(219, 39, 119, 0.08)', size: 220 },
+]
 
 // timing 값 → AI가 톤을 조절하는 데 사용
 const TIMING_OPTIONS = [
@@ -43,21 +41,16 @@ export default function TimingCheckScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={['#1a0118', '#200a2e', '#0f0520']} style={StyleSheet.absoluteFillObject} />
-      <View style={[styles.orb, styles.orb1]} />
-      <View style={[styles.orb, styles.orb2]} />
-      {STAR_DOTS.map((s, i) => (
-        <View key={i} style={{ position: 'absolute', top: s.top as any, left: s.left as any, width: s.size, height: s.size, borderRadius: s.size / 2, backgroundColor: '#fff', opacity: s.opacity }} />
-      ))}
+      <CosmicBackground colors={['#1a0118', '#200a2e', '#0f0520']} orbs={TIMING_ORBS} starCount={25} />
 
-      <LanguageToggle style={{ position: 'absolute', top: 56, right: 20, zIndex: 100 }} />
-      <StepIndicator current={3} total={4} style={{ position: 'absolute', top: 62, left: 0, right: 0, zIndex: 90 }} />
+      <TopStickyControls
+        backLabel={t.common.back}
+        onBackPress={() => navigation.goBack()}
+        stepCurrent={3}
+        stepTotal={4}
+      />
 
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>{t.common.back}</Text>
-        </TouchableOpacity>
-
         <View style={styles.header}>
           <Text style={styles.emoji}>
             {careType === 'pet' ? t.timingCheck.emojiPet : t.timingCheck.emojiHuman}
@@ -129,12 +122,7 @@ export default function TimingCheckScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, overflow: 'hidden' },
-  orb: { position: 'absolute', borderRadius: 999 },
-  orb1: { width: 280, height: 280, top: '5%', right: '-15%', backgroundColor: 'rgba(168,85,247,0.12)' },
-  orb2: { width: 220, height: 220, bottom: '20%', left: '-10%', backgroundColor: 'rgba(219,39,119,0.08)' },
-  scrollContent: { paddingHorizontal: 28, paddingTop: 60, paddingBottom: 120, gap: 32 },
-  backButton: { alignSelf: 'flex-start' },
-  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
+  scrollContent: { paddingHorizontal: 28, paddingTop: 110, paddingBottom: 120, gap: 32 },
   header: { alignItems: 'center', gap: 12 },
   emoji: { fontSize: 36 },
   title: { fontSize: 24, fontWeight: '300', color: '#fff', letterSpacing: 0.3, textAlign: 'center', lineHeight: 34 },

@@ -7,7 +7,6 @@ import {
   Pressable,
   SafeAreaView,
   Animated,
-  Dimensions,
   Alert,
   Linking,
   Platform,
@@ -20,20 +19,11 @@ import { C, RADIUS } from '../theme'
 import { signInWithGoogle } from '../../services/authService'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
-
-const { width, height } = Dimensions.get('window')
+import CosmicBackground from '../../components/CosmicBackground'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>
 }
-
-// Deterministic star positions
-const STARS = Array.from({ length: 40 }, (_, i) => ({
-  left: ((i * 97 + 31) % 100),
-  top: ((i * 53 + 17) % 100),
-  size: (i % 3) + 1.5,
-  opacity: 0.2 + (i % 5) * 0.12,
-}))
 
 export default function LoginScreen({ navigation }: Props) {
   const { session } = useAuth()
@@ -82,35 +72,7 @@ export default function LoginScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      {/* Gradient background */}
-      <LinearGradient
-        colors={['#0a0118', '#1a0f3e', '#0f0520']}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* Cosmic gradient orbs */}
-      <View style={styles.orbContainer}>
-        <View style={[styles.orb, styles.orbPurple]} />
-        <View style={[styles.orb, styles.orbBlue]} />
-      </View>
-
-      {/* Stars */}
-      {STARS.map((star, i) => (
-        <View
-          key={i}
-          style={[
-            styles.star,
-            {
-              left: `${star.left}%`,
-              top: `${star.top}%`,
-              width: star.size,
-              height: star.size,
-              opacity: star.opacity,
-              borderRadius: star.size,
-            },
-          ]}
-        />
-      ))}
+      <CosmicBackground starCount={40} />
 
       {/* Language toggle — absolute top-right */}
       <LanguageToggle style={{ position: 'absolute', top: 56, right: 20, zIndex: 100 }} />
@@ -213,38 +175,13 @@ export default function LoginScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.BG },
+  root: { flex: 1 },
   safeArea: { flex: 1 },
   centerWrap: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
-  },
-
-  // Orbs
-  orbContainer: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
-  orb: {
-    position: 'absolute',
-    width: 384,
-    height: 384,
-    borderRadius: 192,
-  },
-  orbPurple: {
-    top: -100,
-    left: width * 0.25 - 192,
-    backgroundColor: 'rgba(124, 58, 237, 0.2)',
-  },
-  orbBlue: {
-    bottom: -100,
-    right: width * 0.25 - 192,
-    backgroundColor: 'rgba(37, 99, 235, 0.2)',
-  },
-
-  // Stars
-  star: {
-    position: 'absolute',
-    backgroundColor: '#E9D5FF',
   },
 
   // Card

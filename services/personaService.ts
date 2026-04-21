@@ -4,19 +4,27 @@
  */
 
 import { supabase } from './supabase'
+import type { KakaoMessage } from './kakaoParser'
+
+/** 카카오톡 파싱 후 저장하는 메시지 스타일 데이터 */
+export type MessageStyleData = {
+  avgMessageLength?: number
+  commonPhrases?: string[]
+  [key: string]: unknown
+}
 
 export type Persona = {
   id: string
   user_id: string
   name: string
   relationship: string
-  care_type: string             // 'human' | 'pet'
+  care_type: 'human' | 'pet'
   timing: string | null         // 떠난 시점
   raw_chat_text: string | null
-  parsed_messages: any[]
+  parsed_messages: KakaoMessage[]
   system_prompt: string | null
-  message_style: any
-  emotional_stage: string
+  message_style: MessageStyleData
+  emotional_stage: 'replay' | 'stable' | 'closure'
   is_active: boolean
   photo_url: string | null
   user_nickname: string | null  // 페르소나가 사용자를 부르던 애칭
@@ -54,12 +62,12 @@ async function getCurrentUserId(): Promise<string> {
 export async function createPersona(data: {
   name: string
   relationship: string
-  careType?: string
+  careType?: 'human' | 'pet'
   timing?: string | null
   rawChatText: string
   systemPrompt: string
-  parsedMessages: any[]
-  messageStyle: any
+  parsedMessages: KakaoMessage[]
+  messageStyle: MessageStyleData
   photoUrl?: string | null
   userNickname?: string | null
   // 반려동물 전용
@@ -121,7 +129,7 @@ export async function uploadPersonaPhoto(
       .upload(path, fileBlob, { contentType: fileBlob.type || 'image/jpeg', upsert: true })
 
     if (error) {
-      console.error('[personaService] 사진 업로드 실패:', error.message, '| path:', path, '| size:', fileBlob.size)
+      if (__DEV__) console.error('[personaService] 사진 업로드 실패:', error.message, '| path:', path, '| size:', fileBlob.size)
       return null
     }
 
@@ -129,8 +137,9 @@ export async function uploadPersonaPhoto(
     const url = data?.publicUrl ?? null
     if (__DEV__) console.log('[personaService] 사진 업로드 성공:', url)
     return url
-  } catch (e: any) {
-    console.error('[personaService] 사진 업로드 예외:', e?.message)
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[personaService] 사진 업로드 예외:', msg)
     return null
   }
 }
@@ -241,12 +250,12 @@ export async function saveConversation(data: {
   const { error } = await supabase.from('conversations').insert(payload)
 
   if (error) {
-    console.warn('[saveConversation] 1차 저장 실패, 재시도:', error.message)
+    if (__DEV__) console.warn('[saveConversation] 1차 저장 실패, 재시도:', error.message)
     // 1회 재시도 (네트워크 일시 오류 대비)
     await new Promise(r => setTimeout(r, 800))
     const { error: retryError } = await supabase.from('conversations').insert(payload)
     if (retryError) {
-      console.error('[saveConversation] 재시도도 실패:', retryError.message)
+      if (__DEV__) console.error('[saveConversation] 재시도도 실패:', retryError.message)
       throw new Error(`대화 저장 실패: ${retryError.message}`)
     }
   }
@@ -264,7 +273,7 @@ export async function getConversations(personaId: string): Promise<Conversation[
     .order('created_at', { ascending: true })
 
   if (error) {
-    console.error('[getConversations] 조회 실패:', error.message, '| code:', error.code)
+    if (__DEV__) console.error('[getConversations] 조회 실패:', error.message, '| code:', error.code)
     // 테이블 미존재(42P01) 등 스키마 문제 → 진단 메시지 포함해서 throw
     if (error.code === '42P01') {
       throw new Error('conversations 테이블이 없어요. Supabase SQL Editor에서 001_create_tables.sql을 실행해주세요.')
@@ -294,7 +303,7 @@ export async function diagnoseDatabaseHealth(): Promise<{ ok: boolean; issues: s
     issues.push(`DB 연결 실패: ${err instanceof Error ? err.message : String(err)}`)
   }
   if (issues.length > 0) {
-    console.error('[DB 진단] 문제 발견:', issues)
+    if (__DEV__) console.error('[DB 진단] 문제 발견:', issues)
   } else {
     if (__DEV__) console.log('[DB 진단] 모든 테이블 정상')
   }
