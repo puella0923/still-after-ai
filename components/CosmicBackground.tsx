@@ -6,6 +6,7 @@
 import React from 'react'
 import { View, StyleSheet, Dimensions, Animated, Platform } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
+import ShootingMeteor from './ShootingMeteor'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -37,6 +38,8 @@ type Props = {
   orbs?: OrbConfig[]
   /** 별 개수 (기본 25) */
   starCount?: number
+  /** 값이 바뀔 때마다 별똥별 1회 강제 재생 (이스터에그 테스트용) */
+  meteorTriggerKey?: number
 }
 
 /** 기본 퍼플 테마 orb */
@@ -49,6 +52,7 @@ export default function CosmicBackground({
   colors = ['#0a0118', '#1a0f3e', '#0f0520'],
   orbs = DEFAULT_ORBS,
   starCount = 25,
+  meteorTriggerKey,
 }: Props) {
   const stars = starCount === 25 ? DEFAULT_STARS : generateStars(starCount)
   const starOpacitiesRef = React.useRef<Animated.Value[]>([])
@@ -101,9 +105,9 @@ export default function CosmicBackground({
   }, [stars])
 
   return (
-    <>
+    <View style={styles.backgroundRoot} pointerEvents="none">
       <LinearGradient colors={colors} style={StyleSheet.absoluteFill} />
-      <View style={styles.orbContainer} pointerEvents="none">
+      <View style={styles.orbContainer}>
         {orbs.map((orb, i) => {
           const size = orb.size ?? 384
           return (
@@ -126,7 +130,7 @@ export default function CosmicBackground({
           )
         })}
       </View>
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <View style={StyleSheet.absoluteFill}>
         {stars.map((star, i) => (
           <Animated.View
             key={i}
@@ -143,12 +147,17 @@ export default function CosmicBackground({
             ]}
           />
         ))}
+        <ShootingMeteor triggerKey={meteorTriggerKey} />
       </View>
-    </>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
+  backgroundRoot: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: -100,
+  },
   orbContainer: {
     ...StyleSheet.absoluteFillObject,
     overflow: 'hidden',

@@ -52,12 +52,39 @@ export default function HomeScreen() {
   const [error, setError] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Persona | null>(null)
+  const [logoTapCount, setLogoTapCount] = useState(0)
+  const [meteorTriggerKey, setMeteorTriggerKey] = useState(0)
+  const logoTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const fadeAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: Platform.OS !== 'web' }).start()
   }, [])
+
+  useEffect(() => {
+    return () => {
+      if (logoTapTimerRef.current) clearTimeout(logoTapTimerRef.current)
+    }
+  }, [])
+
+  const handleLogoTap = () => {
+    if (logoTapTimerRef.current) clearTimeout(logoTapTimerRef.current)
+    const next = logoTapCount + 1
+    setLogoTapCount(next)
+
+    if (next >= 5) {
+      setLogoTapCount(0)
+      setMeteorTriggerKey(prev => prev + 1)
+      if (Platform.OS === 'web') window.alert('Easter egg: shooting star test!')
+      else Alert.alert('Easter egg', 'Shooting star test triggered.')
+      return
+    }
+
+    logoTapTimerRef.current = setTimeout(() => {
+      setLogoTapCount(0)
+    }, 1500)
+  }
 
   const fetchData = useCallback(async () => {
     if (!user) return
@@ -144,7 +171,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.root}>
-      <CosmicBackground starCount={30} />
+      <CosmicBackground starCount={30} meteorTriggerKey={meteorTriggerKey} />
 
       {/* 메뉴 외부 탭 시 닫기 */}
       {openMenuId !== null && (
@@ -173,10 +200,10 @@ export default function HomeScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <View>
+          <TouchableOpacity activeOpacity={0.8} onPress={handleLogoTap}>
             <Text style={styles.headerTitle}>Still After</Text>
             <Text style={styles.headerEmail}>{user?.email}</Text>
-          </View>
+          </TouchableOpacity>
           <View style={styles.headerRight}>
             <LanguageToggle />
             <Pressable
