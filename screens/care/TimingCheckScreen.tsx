@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
@@ -49,6 +49,16 @@ export default function TimingCheckScreen({ navigation, route }: Props) {
         stepCurrent={3}
         stepTotal={4}
       />
+
+      {/* within_week 선택 시 따뜻한 안내 배너 */}
+      {selected === 'within_week' && (
+        <View style={styles.earlyGriefBanner}>
+          <Text style={styles.earlyGriefEmoji}>🕊️</Text>
+          <Text style={styles.earlyGriefText}>
+            아직 많이 힘드실 거예요.{'\n'}지금은 충분히 슬퍼도 괜찮습니다.{'\n'}준비가 될 때 언제든 시작하세요.
+          </Text>
+        </View>
+      )}
 
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
@@ -148,6 +158,15 @@ const styles = StyleSheet.create({
     width: 28, height: 28, borderRadius: 14, marginLeft: 12,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
   },
+  earlyGriefBanner: {
+    position: 'absolute', top: 90, left: 20, right: 20, zIndex: 10,
+    backgroundColor: 'rgba(168, 85, 247, 0.15)',
+    borderWidth: 1, borderColor: 'rgba(168, 85, 247, 0.3)',
+    borderRadius: 16, padding: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+  },
+  earlyGriefEmoji: { fontSize: 24 },
+  earlyGriefText: { flex: 1, fontSize: 13, color: 'rgba(243, 232, 255, 0.9)', lineHeight: 20 },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 28, paddingBottom: 32, paddingTop: 12 },
   nextButton: { borderRadius: 14, overflow: 'hidden', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', paddingVertical: 16 },
   nextGrad: { width: '100%', paddingVertical: 16, alignItems: 'center', borderRadius: 14 },

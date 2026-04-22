@@ -1153,6 +1153,7 @@ export function generatePetSystemPrompt(
     favorites?: string
     lastMemory?: string
     unsaid?: string
+    nickname?: string
   }
 ): string {
   const animalHint = getAnimalHint(animalType)
@@ -1165,6 +1166,7 @@ export function generatePetSystemPrompt(
   if (structured?.favorites) parts.push(`[제일 좋아하던 것] ${structured.favorites}`)
   if (structured?.lastMemory) parts.push(`[마지막 기억] ${structured.lastMemory}`)
   if (structured?.unsaid)    parts.push(`[주인이 하고 싶었던 말] ${structured.unsaid}`)
+  if (structured?.nickname)  parts.push(`[주인이 부르던 호칭] ${structured.nickname} — 이 이름으로 불렸을 때 특히 좋아했어요. 주인도 이 이름으로 불러주세요.`)
   if (memories)              parts.push(`[추가 기억] ${memories}`)
 
   const memorySection = parts.length > 0

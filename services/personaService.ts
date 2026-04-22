@@ -39,6 +39,7 @@ export type Persona = {
   pet_favorites: string | null
   pet_last_memory: string | null
   pet_unsaid: string | null
+  pet_nickname: string | null    // 평소 부르던 호칭
 }
 
 export type Conversation = {
@@ -77,6 +78,7 @@ export async function createPersona(data: {
   petFavorites?: string | null
   petLastMemory?: string | null
   petUnsaid?: string | null
+  petNickname?: string | null
 }): Promise<string> {
   const userId = await getCurrentUserId()
 
@@ -102,6 +104,7 @@ export async function createPersona(data: {
   if (data.petFavorites)     basePayload.pet_favorites    = data.petFavorites
   if (data.petLastMemory)    basePayload.pet_last_memory  = data.petLastMemory
   if (data.petUnsaid)        basePayload.pet_unsaid       = data.petUnsaid
+  if (data.petNickname)      basePayload.pet_nickname     = data.petNickname
 
   const { data: persona, error } = await supabase
     .from('personas')

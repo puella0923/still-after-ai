@@ -81,6 +81,7 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
   const [petFavorites, setPetFavorites] = useState('') // 제일 좋아하던 것
   const [petLastMemory, setPetLastMemory] = useState('') // 마지막 기억
   const [petUnsaid, setPetUnsaid] = useState('')       // 하고 싶었던 말 (선택)
+  const [petNickname, setPetNickname] = useState('')   // 평소 부르던 호칭 (선택)
 
   // 파일 파싱 처리 (공통)
   const processKakaoFile = (rawText: string, fName: string) => {
@@ -343,7 +344,8 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
         systemPrompt = generatePetSystemPrompt(
           name.trim(), resolvedAnimalType, manualText.trim(),
           { personality: petPersonality, habits: petHabits.trim(), bond: petBond.trim(),
-            favorites: petFavorites.trim(), lastMemory: petLastMemory.trim(), unsaid: petUnsaid.trim() }
+            favorites: petFavorites.trim(), lastMemory: petLastMemory.trim(),
+            unsaid: petUnsaid.trim(), nickname: petNickname.trim() }
         )
       } else if (activeTab === 'kakao' && parseResult) {
         systemPrompt = generateSystemPrompt(parseResult.parsed, resolvedRelationship)
@@ -400,6 +402,7 @@ ${manualText.trim()}
         petFavorites:  isPet && petFavorites.trim()   ? petFavorites.trim()   : null,
         petLastMemory: isPet && petLastMemory.trim()  ? petLastMemory.trim()  : null,
         petUnsaid:     isPet && petUnsaid.trim()      ? petUnsaid.trim()      : null,
+        petNickname:   isPet && petNickname.trim()    ? petNickname.trim()    : null,
       })
 
       navigation.replace('AIGenerating', { name: name.trim(), personaId })
@@ -615,6 +618,16 @@ ${manualText.trim()}
                 placeholder={`예) 많이 사랑해\n좋은 곳에서 행복하게 지내길 바라`}
                 value={petUnsaid} onChangeText={setPetUnsaid}
                 multiline numberOfLines={4} placeholderTextColor="#B0A89E" textAlignVertical="top" />
+            </View>
+
+            {/* Q7: 평소 부르던 호칭 */}
+            <View style={styles.section}>
+              <Text style={styles.label}>평소에 어떻게 불렀나요? <Text style={styles.labelOptional}>(선택)</Text></Text>
+              <TextInput style={styles.input}
+                placeholder={`예) 코코야, 강아지야, 우리 아기`}
+                value={petNickname} onChangeText={setPetNickname}
+                maxLength={30} placeholderTextColor="#B0A89E" />
+              <Text style={styles.inputHint}>AI가 대화할 때 이 호칭으로 불러드려요</Text>
             </View>
           </>
         )}
