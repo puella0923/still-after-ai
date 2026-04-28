@@ -114,8 +114,11 @@ export default function PrivacyPolicyScreen({ navigation }: Props) {
 
       <TopStickyControls
         backLabel={t.common.back}
-        onBackPress={() => navigation.goBack()}
-        title="개인정보 처리방침"
+        onBackPress={() => {
+          if (navigation.canGoBack()) navigation.goBack()
+          else navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] })
+        }}
+        title={t.settings.privacyPolicy}
         showLanguageToggle={false}
       />
 

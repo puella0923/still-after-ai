@@ -120,10 +120,10 @@ export default function CosmicBackground({
                   height: size,
                   borderRadius: size / 2,
                   backgroundColor: orb.color,
-                  ...(orb.top !== undefined ? { top: orb.top } : {}),
-                  ...(orb.bottom !== undefined ? { bottom: orb.bottom } : {}),
-                  ...(orb.left !== undefined ? { left: orb.left } : {}),
-                  ...(orb.right !== undefined ? { right: orb.right } : {}),
+                  ...(orb.top !== undefined ? { top: orb.top as any } : {}),
+                  ...(orb.bottom !== undefined ? { bottom: orb.bottom as any } : {}),
+                  ...(orb.left !== undefined ? { left: orb.left as any } : {}),
+                  ...(orb.right !== undefined ? { right: orb.right as any } : {}),
                 },
               ]}
             />

@@ -31,10 +31,11 @@ const { width } = Dimensions.get('window')
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList>
 type StageFilter = 'all' | 'replay' | 'stable' | 'closure'
 
-const STAGE_INFO: Record<string, { label: string; colors: [string, string]; borderColor: string; textColor: string }> = {
-  replay: { label: '재연', colors: ['rgba(236, 72, 153, 0.3)', 'rgba(168, 85, 247, 0.3)'], borderColor: 'rgba(236, 72, 153, 0.3)', textColor: '#F9A8D4' },
-  stable: { label: '안정', colors: ['rgba(59, 130, 246, 0.3)', 'rgba(99, 102, 241, 0.3)'], borderColor: 'rgba(96, 165, 250, 0.3)', textColor: '#93C5FD' },
-  closure: { label: '이별', colors: ['rgba(99, 102, 241, 0.3)', 'rgba(168, 85, 247, 0.3)'], borderColor: 'rgba(129, 140, 248, 0.3)', textColor: '#A5B4FC' },
+// label은 i18n에서 t.home.filter*로 가져옴
+const STAGE_INFO: Record<string, { colors: [string, string]; borderColor: string; textColor: string }> = {
+  replay: { colors: ['rgba(236, 72, 153, 0.3)', 'rgba(168, 85, 247, 0.3)'], borderColor: 'rgba(236, 72, 153, 0.3)', textColor: '#F9A8D4' },
+  stable: { colors: ['rgba(59, 130, 246, 0.3)', 'rgba(99, 102, 241, 0.3)'], borderColor: 'rgba(96, 165, 250, 0.3)', textColor: '#93C5FD' },
+  closure: { colors: ['rgba(99, 102, 241, 0.3)', 'rgba(168, 85, 247, 0.3)'], borderColor: 'rgba(129, 140, 248, 0.3)', textColor: '#A5B4FC' },
 }
 
 // Filter labels will be set from translations in the component
@@ -43,7 +44,7 @@ const FILTER_KEYS: StageFilter[] = ['all', 'replay', 'stable', 'closure']
 export default function HomeScreen() {
   const navigation = useNavigation<HomeNavProp>()
   const { user } = useAuth()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [personas, setPersonas] = useState<Persona[]>([])
   const [archivedPersonas, setArchivedPersonas] = useState<Persona[]>([])
   const [loading, setLoading] = useState(true)
@@ -365,7 +366,9 @@ export default function HomeScreen() {
                       {/* Stage badge */}
                       <View style={[styles.stageBadge, { borderColor: stage.borderColor }]}>
                         <Text style={[styles.stageBadgeText, { color: stage.textColor }]}>
-                          {stage.label}
+                          {persona.emotional_stage === 'stable' ? t.home.filterStable
+                            : persona.emotional_stage === 'closure' ? t.home.filterClosure
+                            : t.home.filterReplay}
                         </Text>
                       </View>
 
@@ -376,7 +379,7 @@ export default function HomeScreen() {
 
                       {/* Date */}
                       <Text style={styles.dateText}>
-                        {new Date(persona.created_at).toLocaleDateString('ko-KR')}
+                        {new Date(persona.created_at).toLocaleDateString(language === 'ko' ? 'ko-KR' : 'en-US')}
                       </Text>
 
                       {/* ⋯ 메뉴 버튼 */}
@@ -464,7 +467,7 @@ export default function HomeScreen() {
                   <Text style={styles.archivedRelation}>{persona.relationship}</Text>
                   {persona.archived_at && (
                     <Text style={styles.archivedDate}>
-                      {new Date(persona.archived_at).toLocaleDateString('ko-KR')}
+                      {new Date(persona.archived_at).toLocaleDateString(language === 'ko' ? 'ko-KR' : 'en-US')}
                     </Text>
                   )}
                 </View>

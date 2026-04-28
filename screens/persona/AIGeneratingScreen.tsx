@@ -90,10 +90,18 @@ export default function AIGeneratingScreen({ navigation, route }: Props) {
     const step2Timer = setTimeout(() => setCurrentStep(2), 2200)
 
     // Navigate to chat after 3.5s
+    // QA fix: reset stack to [Main, Chat] so back from Chat goes to Home
+    // (instead of leaking the persona create flow: CareSelect → RelationSetup → TimingCheck)
     const navTimer = setTimeout(() => {
       dotLoop.stop()
       pulseLoop.stop()
-      navigation.replace('Chat', { personaId })
+      navigation.reset({
+        index: 1,
+        routes: [
+          { name: 'Main' },
+          { name: 'Chat', params: { personaId } },
+        ],
+      })
     }, 3500)
 
     return () => {

@@ -217,7 +217,10 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
       <CosmicBackground colors={CLOSURE_BG_COLORS} orbs={CLOSURE_ORBS} starCount={30} />
       <TopStickyControls
         backLabel={t.common.back}
-        onBackPress={() => navigation.goBack()}
+        onBackPress={() => {
+          if (navigation.canGoBack()) navigation.goBack()
+          else navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
+        }}
         title={t.closure.header}
       />
 

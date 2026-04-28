@@ -258,6 +258,7 @@ const ko = {
     titlePet: (name: string) => `${name ? `${name}이(가)` : ''} 무지개다리를 건넌 지\n얼마나 됐나요?`,
     subtitleHuman: '지금 느끼는 감정에 맞게 함께할게요.',
     subtitlePet: '그 아이가 곁을 떠난 지 얼마나 됐는지 알려주세요.',
+    earlyGriefNote: '아직 많이 힘드실 거예요.\n지금은 충분히 슬퍼도 괜찮습니다.\n준비가 될 때 언제든 시작하세요.',
   },
 
   // ── Service Consent ──
@@ -446,6 +447,20 @@ const ko = {
     crisisOk: '괜찮아요, 계속할게요',
     saveError: '⚠️ 대화 저장 실패',
     loadPersonaError: '페르소나를 불러올 수 없어요',
+    retryLater: '잠시 후 다시 시도해주세요.',
+    sendError: '메시지 전송에 실패했습니다.',
+    dbHealthIssue: (issue: string) => `DB 문제: ${issue}`,
+    greetingFallback: (name: string) => `안녕, 나야 ${name}. 보고 싶었어.`,
+    stageReplayLabel: '재연',
+    stageStableLabel: '안정',
+    stageClosureLabel: '이별',
+    stageModalStableTitle: '안정 단계로 전환할까요?',
+    stageModalStableDesc: '안정 단계에서는 감정을 조금씩 정리하고\n표현하는 시간을 가져요.\n충분히 이야기 나눈 것 같다면\n다음 단계로 넘어가 볼게요.',
+    stageModalClosureTitle: '이별 단계로 전환할까요?',
+    stageModalClosureDesc: '이별 단계에서는 마지막 인사를 나누고\n조심스럽게 작별을 준비해요.\n대화가 마무리되면 편지를 남길 수 있어요.',
+    stageModalWarning: '⚠️ 이전 단계로 돌아올 수 없어요',
+    stageModalCancel: '아직은요',
+    stageModalConfirm: '네, 전환할게요',
     replayProgress: [
       '천천히, 하고 싶은 말을 건네보세요',
       '그때처럼, 이야기를 시작해보세요',

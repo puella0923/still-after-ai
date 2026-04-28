@@ -55,8 +55,11 @@ export default function CustomerSupportScreen({ navigation }: Props) {
 
       <TopStickyControls
         backLabel={t.common.back}
-        onBackPress={() => navigation.goBack()}
-        title="고객 지원"
+        onBackPress={() => {
+          if (navigation.canGoBack()) navigation.goBack()
+          else navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] })
+        }}
+        title={t.settings.support}
         showLanguageToggle={false}
       />
 

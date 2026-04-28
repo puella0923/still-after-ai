@@ -231,7 +231,13 @@ export default function PaywallScreen({ navigation, route }: Props) {
               ))}
             </View>
 
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => {
+                if (navigation.canGoBack()) navigation.goBack()
+                else navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
+              }}
+            >
               <Text style={styles.backText}>{t.paywall.backBtn}</Text>
             </TouchableOpacity>
           </>

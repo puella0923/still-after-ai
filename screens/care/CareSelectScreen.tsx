@@ -30,7 +30,10 @@ export default function CareSelectScreen({ navigation }: Props) {
 
       <TopStickyControls
         backLabel={t.common.back}
-        onBackPress={() => navigation.goBack()}
+        onBackPress={() => {
+          if (navigation.canGoBack()) navigation.goBack()
+          else navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
+        }}
         stepCurrent={1}
         stepTotal={4}
       />

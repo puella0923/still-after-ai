@@ -31,7 +31,7 @@ const en: Translations = {
     heroMission1: 'Bring out the words left unsaid,',
     heroMission2: 'a space to gently find peace',
     startBtn: 'Start for Free',
-    freeBadge: '10 free chats',
+    freeBadge: 'Free now',
     empathyTitle: 'Can you still hear their voice?',
     empathySubtitle: 'The words you never said — are they still here with you?',
     empathyItems: [
@@ -147,7 +147,7 @@ const en: Translations = {
     promiseQuote: '"We don\'t restore people.\nWe help those left behind forgive themselves,\nand find the strength to keep living."',
     promiseHealingNote: 'Goodbye is not the end.\nThey live on in every day you keep going.',
     ctaTitle: "It's okay to take the first step, right now.",
-    ctaNote: '10 free conversations — start slowly, with what was left unsaid.',
+    ctaNote: 'Free during the beta — start slowly, with what was left unsaid.',
     ctaBtn: 'Start for Free →',
     footerPrivacy: 'Privacy Policy',
     footerTerms: 'Terms of Service',
@@ -158,7 +158,7 @@ const en: Translations = {
   login: {
     brand: 'Still by your side',
     noCreditCard: '💳 No credit card required to start',
-    freeTrial: 'First 10 conversations are free',
+    freeTrial: 'Free conversations during the beta',
     disclaimer: "Still After doesn't restore real people. It's a careful space for your emotions to naturally find their place.",
     googleBtn: 'Continue with Google',
     emailBtn: 'Continue with Email',
@@ -184,7 +184,7 @@ const en: Translations = {
     agreePrivacy: '[Required] Agree to Privacy Policy',
     agreeAge: '[Required] I am 14 years of age or older',
     viewFull: 'View Full',
-    noCreditCard: '💳 No credit card required. Payment screen appears after 10 conversations.',
+    noCreditCard: '💳 No credit card required — start chatting for free.',
     checkInbox: 'Check your inbox',
     spamNote: "Didn't receive the email? Check your spam folder.",
     resendEmail: 'Resend verification email',
@@ -219,12 +219,12 @@ const en: Translations = {
   // ── Care Select ──
   careSelect: {
     title: 'Who do you miss?',
-    subtitle: "We'll help you hold their memory and gently find your way to peace.",
+    subtitle: "Hold the memory of someone gone forever,\nand let out the words you never said — at your own pace.",
     humanLabel: 'Person',
     humanSub: 'Family, friend, partner',
     petLabel: 'Pet',
     petSub: 'A beloved companion',
-    notice: "This service doesn't replace real people or animals. It's a space for emotional healing.",
+    notice: "This service is designed for those who have experienced final goodbyes — bereavement, pet loss, and similar losses.\nIt doesn't replace real people or animals; it's a space for emotional healing.",
   },
 
   // ── Relation Setup ──
@@ -261,6 +261,7 @@ const en: Translations = {
     titlePet: (name: string) => `How long has it been\nsince ${name ? `${name} ` : ''}crossed the rainbow bridge?`,
     subtitleHuman: "We'll be with you wherever you are in your grief.",
     subtitlePet: "Let us know how long ago your little one left your side.",
+    earlyGriefNote: "You're going through so much right now.\nIt's okay to grieve as long as you need.\nBegin whenever you feel ready.",
   },
 
   // ── Service Consent ──
@@ -449,6 +450,20 @@ const en: Translations = {
     crisisOk: "I'm okay, I'll continue",
     saveError: '⚠️ Failed to save conversation',
     loadPersonaError: 'Unable to load persona',
+    retryLater: 'Please try again in a moment.',
+    sendError: 'Failed to send message.',
+    dbHealthIssue: (issue: string) => `Database issue: ${issue}`,
+    greetingFallback: (name: string) => `Hi, it's me, ${name}. I've missed you.`,
+    stageReplayLabel: 'Replay',
+    stageStableLabel: 'Healing',
+    stageClosureLabel: 'Closure',
+    stageModalStableTitle: 'Move to Stable Stage?',
+    stageModalStableDesc: "In the stable stage, you'll slowly process and express your emotions.\nWhen you feel ready, move forward.",
+    stageModalClosureTitle: 'Move to Closure Stage?',
+    stageModalClosureDesc: "In the closure stage, you'll exchange final words and\ngently prepare to say goodbye.\nYou can write a letter when it's time.",
+    stageModalWarning: '⚠️ This cannot be undone',
+    stageModalCancel: 'Not yet',
+    stageModalConfirm: "Yes, let's continue",
     replayProgress: [
       'Slowly, try to say what you want',
       'Try starting a conversation, just like before',

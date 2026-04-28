@@ -145,7 +145,13 @@ export default function AccountProfileScreen({ navigation }: Props) {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => {
+            if (navigation.canGoBack()) navigation.goBack()
+            else navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
+          }}
+          style={styles.backBtn}
+        >
           <Text style={[styles.backText, Platform.OS === 'web' ? { whiteSpace: 'nowrap' } as any : {}]}>{t.common.back}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t.account.header}</Text>

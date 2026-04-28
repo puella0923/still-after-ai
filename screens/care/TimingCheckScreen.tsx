@@ -45,7 +45,10 @@ export default function TimingCheckScreen({ navigation, route }: Props) {
 
       <TopStickyControls
         backLabel={t.common.back}
-        onBackPress={() => navigation.goBack()}
+        onBackPress={() => {
+          if (navigation.canGoBack()) navigation.goBack()
+          else navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
+        }}
         stepCurrent={3}
         stepTotal={4}
       />
@@ -55,7 +58,7 @@ export default function TimingCheckScreen({ navigation, route }: Props) {
         <View style={styles.earlyGriefBanner}>
           <Text style={styles.earlyGriefEmoji}>🕊️</Text>
           <Text style={styles.earlyGriefText}>
-            아직 많이 힘드실 거예요.{'\n'}지금은 충분히 슬퍼도 괜찮습니다.{'\n'}준비가 될 때 언제든 시작하세요.
+            {t.timingCheck.earlyGriefNote}
           </Text>
         </View>
       )}

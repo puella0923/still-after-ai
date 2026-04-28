@@ -1,9 +1,9 @@
 import React from 'react'
-import { TouchableOpacity, Text, StyleSheet, View } from 'react-native'
+import { TouchableOpacity, Text, StyleSheet, View, ViewStyle, StyleProp } from 'react-native'
 import { useLanguage } from '../context/LanguageContext'
 
 type Props = {
-  style?: object
+  style?: StyleProp<ViewStyle>
 }
 
 export default function LanguageToggle({ style }: Props) {

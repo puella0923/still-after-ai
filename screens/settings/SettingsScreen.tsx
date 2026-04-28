@@ -199,7 +199,14 @@ export default function SettingsScreen({ navigation }: Props) {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={() => {
+              if (navigation.canGoBack()) navigation.goBack()
+              else navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
+            }}
+            style={styles.backBtn}
+            activeOpacity={0.7}
+          >
             <Text style={styles.backText}>{t.common.back}</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t.settings.header}</Text>

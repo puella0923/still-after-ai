@@ -27,10 +27,11 @@ import { FREE_MESSAGE_LIMIT } from '../../constants/chat'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
-const STAGE_INFO: Record<string, { label: string; colors: [string, string]; borderColor: string; textColor: string }> = {
-  replay: { label: '재연', colors: ['rgba(236, 72, 153, 0.3)', 'rgba(168, 85, 247, 0.3)'], borderColor: 'rgba(236, 72, 153, 0.3)', textColor: '#F9A8D4' },
-  stable: { label: '안정', colors: ['rgba(59, 130, 246, 0.3)', 'rgba(99, 102, 241, 0.3)'], borderColor: 'rgba(96, 165, 250, 0.3)', textColor: '#93C5FD' },
-  closure: { label: '이별', colors: ['rgba(99, 102, 241, 0.3)', 'rgba(168, 85, 247, 0.3)'], borderColor: 'rgba(129, 140, 248, 0.3)', textColor: '#A5B4FC' },
+// label은 i18n에서 t.home.filter*로 가져옴
+const STAGE_INFO: Record<string, { colors: [string, string]; borderColor: string; textColor: string }> = {
+  replay: { colors: ['rgba(236, 72, 153, 0.3)', 'rgba(168, 85, 247, 0.3)'], borderColor: 'rgba(236, 72, 153, 0.3)', textColor: '#F9A8D4' },
+  stable: { colors: ['rgba(59, 130, 246, 0.3)', 'rgba(99, 102, 241, 0.3)'], borderColor: 'rgba(96, 165, 250, 0.3)', textColor: '#93C5FD' },
+  closure: { colors: ['rgba(99, 102, 241, 0.3)', 'rgba(168, 85, 247, 0.3)'], borderColor: 'rgba(129, 140, 248, 0.3)', textColor: '#A5B4FC' },
 }
 
 // 테스트/개발 계정은 Paywall 우회 (무제한 대화)
@@ -193,7 +194,11 @@ export default function PersonaListScreen({ navigation }: Props) {
 
           {/* Stage badge */}
           <View style={[styles.stageBadge, { borderColor: stage.borderColor }]}>
-            <Text style={[styles.stageBadgeText, { color: stage.textColor }]}>{stage.label}</Text>
+            <Text style={[styles.stageBadgeText, { color: stage.textColor }]}>
+              {item.emotional_stage === 'stable' ? t.home.filterStable
+                : item.emotional_stage === 'closure' ? t.home.filterClosure
+                : t.home.filterReplay}
+            </Text>
           </View>
 
           {/* Status */}

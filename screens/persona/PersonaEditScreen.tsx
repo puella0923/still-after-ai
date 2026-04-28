@@ -116,7 +116,10 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
       <CosmicBackground colors={['#1a0118', '#200a2e', '#0f0520']} orbs={EDIT_ORBS} starCount={20} />
       <TopStickyControls
         backLabel={t.common.back}
-        onBackPress={() => navigation.goBack()}
+        onBackPress={() => {
+          if (navigation.canGoBack()) navigation.goBack()
+          else navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
+        }}
         title={`${name || personaName} ${t.personaEdit.headerSuffix}`}
         showLanguageToggle={false}
         rightSlot={(

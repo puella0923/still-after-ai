@@ -62,7 +62,7 @@ function getClosurePhase(count: number): ClosurePhase {
 // ─── 스타 배경 상수 ───
 // (CosmicBackground 컴포넌트로 이전됨 — 아래 STARS 배열은 제거)
 
-// Stage-specific themes
+// Stage-specific themes (label은 i18n에서 별도로 가져옴)
 const STAGE_THEMES = {
   replay: {
     bg: ['#1a0118', '#200a2e', '#0f0520'] as [string, string, string],
@@ -72,7 +72,6 @@ const STAGE_THEMES = {
     badgeBorder: 'rgba(236, 72, 153, 0.5)',
     badgeText: '#F9A8D4',
     badgeBg: 'rgba(236, 72, 153, 0.1)',
-    label: '재연',
   },
   stable: {
     bg: ['#010d1a', '#0a1a3e', '#050f20'] as [string, string, string],
@@ -82,7 +81,6 @@ const STAGE_THEMES = {
     badgeBorder: 'rgba(96, 165, 250, 0.5)',
     badgeText: '#93C5FD',
     badgeBg: 'rgba(59, 130, 246, 0.1)',
-    label: '안정',
   },
   closure: {
     bg: ['#05010f', '#0f0a3e', '#080520'] as [string, string, string],
@@ -92,7 +90,6 @@ const STAGE_THEMES = {
     badgeBorder: 'rgba(129, 140, 248, 0.5)',
     badgeText: '#A5B4FC',
     badgeBg: 'rgba(99, 102, 241, 0.1)',
-    label: '이별',
   },
 }
 
@@ -109,7 +106,7 @@ type Message = {
 
 export default function ChatScreen({ navigation, route }: Props) {
   const personaId = route.params?.personaId
-  const { t, language } = useLanguage()
+  const { t } = useLanguage()
 
   // 모듈 레벨 뮤터블 대신 컴포넌트 인스턴스 범위의 ref 사용
   const msgCounterRef = useRef(0)
@@ -153,7 +150,7 @@ export default function ChatScreen({ navigation, route }: Props) {
     if (!personaId) { navigation.replace('PersonaList'); return }
     const load = async () => {
       diagnoseDatabaseHealth().then(({ ok, issues }) => {
-        if (!ok) showToast(`DB 문제: ${issues[0]}`)
+        if (!ok) showToast(t.chat.dbHealthIssue(issues[0]))
       }).catch(() => {})
 
       try {
@@ -236,7 +233,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
             setMessages([{ id: makeId(), role: 'assistant', content: greeting }])
             saveConversation({ personaId: p.id, role: 'assistant', content: greeting }).catch(() => {})
           } catch {
-            setMessages([{ id: makeId(), role: 'assistant', content: `안녕, 나야 ${p.name}. 보고 싶었어.` }])
+            setMessages([{ id: makeId(), role: 'assistant', content: t.chat.greetingFallback(p.name) }])
           }
         }
       } catch {
@@ -345,7 +342,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       setPersona(prev => prev ? { ...prev, emotional_stage: 'stable' } : prev)
       setStageMessageCount(0)
       setMessages(prev => [...prev, { id: makeId(), role: 'system', content: t.chat.systemStableEntered }])
-    } catch { showToast('잠시 후 다시 시도해주세요.') }
+    } catch { showToast(t.chat.retryLater) }
   }, [persona, showToast])
 
   const handleClosureTransition = useCallback(async () => {
@@ -357,7 +354,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       setPersona(prev => prev ? { ...prev, emotional_stage: 'closure' } : prev)
       setStageMessageCount(0)
       setMessages(prev => [...prev, { id: makeId(), role: 'system', content: t.chat.systemClosureEntered }])
-    } catch { showToast('잠시 후 다시 시도해주세요.') }
+    } catch { showToast(t.chat.retryLater) }
   }, [persona, showToast])
 
   // 무료 베타 기간: Paywall 비활성화
@@ -474,7 +471,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       } catch { /* ignore */ }
     } catch (err) {
       if (__DEV__) console.error('[Chat] sendMessage error:', err)
-      setErrorMsg(err instanceof Error ? err.message : '메시지 전송에 실패했습니다.')
+      setErrorMsg(err instanceof Error ? err.message : t.chat.sendError)
     } finally { setIsTyping(false) }
   }, [inputText, isTyping, persona, messages, userMessageCount, stageMessageCount, showDangerAlert, showToast])
 
@@ -538,27 +535,17 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
           <View style={styles.modalBox}>
             <Text style={styles.modalEmoji}>{stageConfirmTarget === 'stable' ? '🌿' : '🌸'}</Text>
             <Text style={styles.modalTitle}>
-              {stageConfirmTarget === 'stable'
-                ? (language === 'ko' ? '안정 단계로 전환할까요?' : 'Move to Stable Stage?')
-                : (language === 'ko' ? '이별 단계로 전환할까요?' : 'Move to Closure Stage?')}
+              {stageConfirmTarget === 'stable' ? t.chat.stageModalStableTitle : t.chat.stageModalClosureTitle}
             </Text>
             <Text style={styles.modalDesc}>
-              {stageConfirmTarget === 'stable'
-                ? (language === 'ko'
-                    ? '안정 단계에서는 감정을 조금씩 정리하고\n표현하는 시간을 가져요.\n충분히 이야기 나눈 것 같다면\n다음 단계로 넘어가 볼게요.'
-                    : 'In the stable stage, you\'ll slowly process and express your emotions.\nWhen you feel ready, move forward.')
-                : (language === 'ko'
-                    ? '이별 단계에서는 마지막 인사를 나누고\n조심스럽게 작별을 준비해요.\n대화가 마무리되면 편지를 남길 수 있어요.'
-                    : 'In the closure stage, you\'ll exchange final words and\ngently prepare to say goodbye.\nYou can write a letter when it\'s time.')}
+              {stageConfirmTarget === 'stable' ? t.chat.stageModalStableDesc : t.chat.stageModalClosureDesc}
             </Text>
             <View style={styles.warningRow}>
-              <Text style={styles.warningText}>
-                {language === 'ko' ? '⚠️ 이전 단계로 돌아올 수 없어요' : '⚠️ This cannot be undone'}
-              </Text>
+              <Text style={styles.warningText}>{t.chat.stageModalWarning}</Text>
             </View>
             <View style={styles.modalBtnRow}>
               <TouchableOpacity style={styles.modalBtnCancel} onPress={() => setStageConfirmTarget(null)} activeOpacity={0.7}>
-                <Text style={styles.modalBtnCancelText}>{language === 'ko' ? '아직은요' : 'Not yet'}</Text>
+                <Text style={styles.modalBtnCancelText}>{t.chat.stageModalCancel}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
@@ -571,7 +558,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
                 style={styles.modalBtnPrimary}
               >
                 <LinearGradient colors={['#7C3AED', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalBtnPrimaryGrad}>
-                  <Text style={styles.modalBtnPrimaryText}>{language === 'ko' ? '네, 전환할게요' : 'Yes, let\'s continue'}</Text>
+                  <Text style={styles.modalBtnPrimaryText}>{t.chat.stageModalConfirm}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -603,7 +590,14 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => {
+              // QA fix: 딥링크 진입 시 canGoBack=false → Main으로 안전 이동
+              if (navigation.canGoBack()) navigation.goBack()
+              else navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
+            }}
+          >
             <Text style={styles.backText}>{t.common.back}</Text>
           </TouchableOpacity>
           <View style={styles.headerInfo}>
@@ -618,7 +612,9 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
               <View style={styles.headerNameRow}>
                 <Text style={styles.headerName}>{personaName}</Text>
                 <View style={[styles.stageBadge, { borderColor: theme.badgeBorder, backgroundColor: theme.badgeBg }]}>
-                  <Text style={[styles.stageBadgeText, { color: theme.badgeText }]}>{theme.label}</Text>
+                  <Text style={[styles.stageBadgeText, { color: theme.badgeText }]}>
+                    {currentStage === 'replay' ? t.chat.stageReplayLabel : currentStage === 'stable' ? t.chat.stageStableLabel : t.chat.stageClosureLabel}
+                  </Text>
                 </View>
               </View>
               <Text style={styles.headerSub}>{headerSubtitleText}</Text>

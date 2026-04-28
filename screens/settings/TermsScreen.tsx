@@ -40,8 +40,11 @@ export default function TermsScreen({ navigation }: Props) {
 
       <TopStickyControls
         backLabel={t.common.back}
-        onBackPress={() => navigation.goBack()}
-        title="이용약관"
+        onBackPress={() => {
+          if (navigation.canGoBack()) navigation.goBack()
+          else navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] })
+        }}
+        title={t.settings.terms}
         showLanguageToggle={false}
       />
 
