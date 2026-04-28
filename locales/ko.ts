@@ -29,7 +29,7 @@ const ko = {
     heroMission1: '전하지 못한 말을 꺼내고,',
     heroMission2: '천천히 마음을 정리할 수 있는 공간',
     startBtn: '무료로 시작하기',
-    freeBadge: '10회 무료',
+    freeBadge: '지금 무료',
     empathyTitle: '목소리가 아직도 들리나요.',
     empathySubtitle: '전하지 못한 말이, 아직 여기 남아 있지 않나요.',
     empathyItems: [
@@ -145,7 +145,7 @@ const ko = {
     promiseQuote: '"우리는 사람을 복원하지 않습니다.\n남겨진 사람이 스스로를 용서하고,\n다시 살아갈 수 있도록 돕습니다."',
     promiseHealingNote: '이별은 끝이 아니에요.\n그 분은 당신이 살아가는 날들 안에서 함께 있어요.',
     ctaTitle: '지금, 첫 걸음을 내딛어도 괜찮아요',
-    ctaNote: '10번의 무료 대화로 — 하지 못한 말부터, 천천히 시작해요',
+    ctaNote: '지금 무료로 — 하지 못한 말부터, 천천히 시작해요',
     ctaBtn: '무료로 시작하기 →',
     footerPrivacy: '개인정보처리방침',
     footerTerms: '이용약관',
@@ -156,7 +156,7 @@ const ko = {
   login: {
     brand: '당신 곁을 여전히',
     noCreditCard: '💳 카드 등록 없이 바로 시작할 수 있어요',
-    freeTrial: '첫 10번의 대화는 무료예요',
+    freeTrial: '지금은 무료로 대화할 수 있어요',
     disclaimer: 'Still After는 실제 인물을 복원하지 않아요. 감정이 자연스럽게 자리 잡을 수 있도록 조심스럽게 함께하는 공간이에요.',
     googleBtn: '구글로 시작하기',
     emailBtn: '이메일로 시작하기',
@@ -182,7 +182,7 @@ const ko = {
     agreePrivacy: '[필수] 개인정보 처리방침 동의',
     agreeAge: '[필수] 만 14세 이상입니다',
     viewFull: '전문보기',
-    noCreditCard: '💳 카드 등록 없이 바로 시작할 수 있습니다. 10회 이후 결제 화면으로 이동합니다.',
+    noCreditCard: '💳 카드 등록 없이 무료로 시작할 수 있어요.',
     checkInbox: '메일함을 확인해주세요',
     spamNote: '메일이 오지 않았나요? 스팸함도 확인해주세요.',
     resendEmail: '인증 메일 재발송',
@@ -216,12 +216,12 @@ const ko = {
   // ── Care Select ──
   careSelect: {
     title: '누구를 그리워하시나요?',
-    subtitle: '소중한 분의 기억을 담고, 천천히 마음을 정리할 수 있도록 함께할게요.',
+    subtitle: '영원히 떠나보낸 분과의 기억을 담고,\n전하지 못한 말을 천천히 꺼낼 수 있도록 함께할게요.',
     humanLabel: '사람',
     humanSub: '가족, 친구, 연인',
     petLabel: '반려동물',
     petSub: '함께한 가족',
-    notice: '이 서비스는 실제 인물·동물을 대체하지 않아요. 감정 회복을 위한 공간이에요.',
+    notice: '이 서비스는 사별·펫로스 등 영원한 이별을 경험한 분들을 위해 설계되었어요.\n실제 인물·동물을 대체하지 않으며, 감정 회복을 위한 공간이에요.',
   },
 
   // ── Relation Setup ──

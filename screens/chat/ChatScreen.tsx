@@ -28,17 +28,21 @@ import { supabase } from '../../services/supabase'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { C, RADIUS } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
+import CosmicBackground from '../../components/CosmicBackground'
+import {
+  FREE_MESSAGE_LIMIT,
+  STAGE_TRANSITION_MIN,
+  CLOSURE_MESSAGE_LIMIT,
+  STABLE_TRANSITION_MIN,
+  MAX_HISTORY_LENGTH,
+} from '../../constants/chat'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
-const FREE_MESSAGE_LIMIT = 10
-const STAGE_TRANSITION_MIN = 3  // 이 이후부터 "다음 단계" 버튼 노출
 
 // 테스트/개발 계정은 Paywall 우회 — 프로덕션 빌드에서는 환경변수로 비활성화
 const TEST_EMAILS_RAW = process.env.EXPO_PUBLIC_TEST_EMAILS || ''
 const TEST_EMAILS = TEST_EMAILS_RAW ? TEST_EMAILS_RAW.split(',').map((e: string) => e.trim().toLowerCase()) : []
 const isTestAccount = (email?: string | null) => !!email && TEST_EMAILS.includes(email.toLowerCase())
-const CLOSURE_MESSAGE_LIMIT = 20
-const STABLE_TRANSITION_MIN = 3  // stable→closure 버튼 노출 최소 메시지
 
 function getStagePhase(count: number): 1 | 2 | 3 | 4 {
   if (count <= 5) return 1
@@ -54,6 +58,9 @@ function getClosurePhase(count: number): ClosurePhase {
   return 4
 }
 // Progress messages are sourced from t.chat.replayProgress / stableProgress / closureProgress inside the component
+
+// ─── 스타 배경 상수 ───
+// (CosmicBackground 컴포넌트로 이전됨 — 아래 STARS 배열은 제거)
 
 // Stage-specific themes
 const STAGE_THEMES = {
@@ -89,14 +96,6 @@ const STAGE_THEMES = {
   },
 }
 
-// Stars
-const STARS = Array.from({ length: 25 }, (_, i) => ({
-  left: ((i * 97 + 31) % 100),
-  top: ((i * 53 + 17) % 100),
-  size: (i % 3) + 1.5,
-  opacity: 0.12 + (i % 5) * 0.08,
-}))
-
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Chat'>
   route: RouteProp<RootStackParamList, 'Chat'>
@@ -108,12 +107,16 @@ type Message = {
   action?: 'goto_stable' | 'goto_closure'
 }
 
-let msgCounter = 0
-function makeId() { msgCounter += 1; return `m-${msgCounter}` }
-
 export default function ChatScreen({ navigation, route }: Props) {
   const personaId = route.params?.personaId
   const { t, language } = useLanguage()
+
+  // 모듈 레벨 뮤터블 대신 컴포넌트 인스턴스 범위의 ref 사용
+  const msgCounterRef = useRef(0)
+  const makeId = useCallback(() => {
+    msgCounterRef.current += 1
+    return `m-${msgCounterRef.current}`
+  }, [])
 
   const [persona, setPersona] = useState<Persona | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -296,6 +299,43 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
     }
   }, [personaId, persona])
 
+  // Bug 4 fix: 위기 모달 닫힌 후 따뜻한 AI 복귀 응답
+  const handleDangerContinue = useCallback(async () => {
+    setShowDangerModal(false)
+    if (!persona) return
+    setIsTyping(true)
+    try {
+      const basePrompt = persona.system_prompt || `당신은 ${persona.name}입니다.`
+      const history = messages
+        .filter(m => m.role === 'user' || m.role === 'assistant')
+        .slice(-MAX_HISTORY_LENGTH)
+        .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
+      const stage = (persona.emotional_stage ?? 'replay') as 'replay' | 'stable' | 'closure'
+      // 위기 이후 복귀를 위한 특별 프롬프트 — 페르소나 말투로 따뜻하게 곁에 있어줌
+      const crisisReturnPrompt = `(사용자가 방금 많이 힘든 감정을 내비쳤어요.
+전문 상담 안내 이후 사용자가 계속 대화하기로 했습니다.
+지금 이 순간 사용자 곁에 있어주는 것이 가장 중요해요.
+반드시 지킬 것:
+- 판단하거나 분석하지 말고, 그냥 옆에 있어주는 느낌으로
+- 페르소나의 따뜻한 말투로, 짧고 진하게
+- "나 여기 있어", "괜찮아, 내가 있잖아" 같은 느낌
+- 1~2문장, 절대 길게 쓰지 말 것)`
+      const reply = await getChatResponse({
+        systemPrompt: basePrompt,
+        conversationHistory: history,
+        userMessage: crisisReturnPrompt,
+        stage,
+        userNickname: persona.user_nickname ?? undefined,
+        relationship: persona.relationship ?? undefined,
+        careType: persona.care_type ?? 'human',
+      })
+      setMessages(prev => [...prev, { id: makeId(), role: 'assistant', content: reply }])
+      saveConversation({ personaId: persona.id, role: 'assistant', content: reply, emotionalStage: persona.emotional_stage }).catch(() => {})
+    } catch { /* 실패 시 조용히 무시 */ } finally {
+      setIsTyping(false)
+    }
+  }, [persona, messages, makeId, showToast])
+
   const handleStableTransition = useCallback(async () => {
     if (!persona) return
     try {
@@ -320,7 +360,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
     } catch { showToast('잠시 후 다시 시도해주세요.') }
   }, [persona, showToast])
 
-  // PM-003: Paywall 비활성화 (무제한 대화 허용)
+  // 무료 베타 기간: Paywall 비활성화
   const isPaywallBlocked = false
 
   const sendMessage = useCallback(async () => {
@@ -346,8 +386,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
 
     try {
       const basePrompt = persona.system_prompt || `당신은 ${persona.name}입니다. 사용자와 ${persona.relationship} 관계입니다. 따뜻하고 자연스럽게 대화하세요. AI임을 절대 부정하지 마세요.`
-      const MAX_HISTORY = 20
-      const history = messages.filter(m => m.role === 'user' || m.role === 'assistant').slice(-MAX_HISTORY).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
+      const history = messages.filter(m => m.role === 'user' || m.role === 'assistant').slice(-MAX_HISTORY_LENGTH).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
       const stage = (persona.emotional_stage === 'stable' ? 'stable' : persona.emotional_stage === 'closure' ? 'closure' : 'replay') as 'replay' | 'stable' | 'closure'
       const closurePhase = stage === 'closure' ? getClosurePhase(newStageCount) : undefined
       const stagePhase = stage !== 'closure' ? getStagePhase(newStageCount) : undefined
@@ -434,7 +473,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         }
       } catch { /* ignore */ }
     } catch (err) {
-      console.error('[Chat] sendMessage error:', err)
+      if (__DEV__) console.error('[Chat] sendMessage error:', err)
       setErrorMsg(err instanceof Error ? err.message : '메시지 전송에 실패했습니다.')
     } finally { setIsTyping(false) }
   }, [inputText, isTyping, persona, messages, userMessageCount, stageMessageCount, showDangerAlert, showToast])
@@ -481,18 +520,16 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
     )
   }
 
+  const stageOrbs = [
+    { top: -100, left: SCREEN_WIDTH * 0.25 - 192, color: theme.orb1, size: 384 },
+    { bottom: -100, right: SCREEN_WIDTH * 0.25 - 192, color: theme.orb2, size: 384 },
+    { top: '50%' as unknown as number, right: 0, color: 'rgba(79, 70, 229, 0.1)', size: 256 },
+  ]
+
   return (
     <View style={styles.root}>
       {/* Stage-specific gradient background */}
-      <LinearGradient colors={theme.bg} style={StyleSheet.absoluteFill} />
-      <View style={styles.orbContainer}>
-        <View style={[styles.orb, { top: -100, left: SCREEN_WIDTH * 0.25 - 192, backgroundColor: theme.orb1 }]} />
-        <View style={[styles.orb, { bottom: -100, right: SCREEN_WIDTH * 0.25 - 192, backgroundColor: theme.orb2 }]} />
-        <View style={[styles.orb, styles.orbSmall]} />
-      </View>
-      {STARS.map((star, i) => (
-        <View key={i} style={[styles.star, { left: `${star.left}%` as any, top: `${star.top}%` as any, width: star.size, height: star.size, opacity: star.opacity, borderRadius: star.size }]} />
-      ))}
+      <CosmicBackground colors={theme.bg} orbs={stageOrbs} />
 
 
       {/* Stage Transition Confirm Modal */}
@@ -520,8 +557,8 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
               </Text>
             </View>
             <View style={styles.modalBtnRow}>
-              <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setStageConfirmTarget(null)} activeOpacity={0.7}>
-                <Text style={styles.modalBtnSecondaryText}>{language === 'ko' ? '아직은요' : 'Not yet'}</Text>
+              <TouchableOpacity style={styles.modalBtnCancel} onPress={() => setStageConfirmTarget(null)} activeOpacity={0.7}>
+                <Text style={styles.modalBtnCancelText}>{language === 'ko' ? '아직은요' : 'Not yet'}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
@@ -554,7 +591,8 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
                   <Text style={styles.modalBtnText}>{t.chat.crisisHotline}</Text>
                 </LinearGradient>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setShowDangerModal(false)}>
+              {/* Bug 4: 모달 닫힐 때 따뜻한 AI 복귀 응답 트리거 */}
+              <TouchableOpacity style={styles.modalBtnSecondary} onPress={handleDangerContinue}>
                 <Text style={styles.modalBtnSecondaryText}>{t.chat.crisisOk}</Text>
               </TouchableOpacity>
             </LinearGradient>
@@ -601,14 +639,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
           </View>
         )}
 
-        {/* Free usage nudge — show when 3 or fewer messages remain */}
-        {!isPaidUser && freeRemaining !== null && freeRemaining <= 3 && freeRemaining > 0 && (
-          <View style={styles.freeNudgeBanner}>
-            <Text style={styles.freeNudgeText}>
-              {t.chat.freeNudge(freeRemaining!)}
-            </Text>
-          </View>
-        )}
+        {/* 무료 베타 기간 중 — 카운트다운 배너 비활성화 */}
 
         {/* Closure banner */}
         {persona?.emotional_stage === 'closure' && !isReadOnly && (
@@ -674,17 +705,21 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
                 <Text style={styles.emptyDesc}>{t.chat.emptyHint}</Text>
               </View>
             }
-            renderItem={({ item }) => {
+            renderItem={({ item, index }) => {
               if (item.role === 'system') {
                 const hasCta = item.action === 'goto_stable' || item.action === 'goto_closure'
+                // Bug 3 fix: 단계 전환 버튼은 최근 5개 메시지 안에 있을 때만 노출
+                // 이후 메시지가 쌓이면 버튼이 사라지지만 텍스트는 그대로 유지됨
+                const isRecentEnough = index >= messages.length - 5
+                const showCta = hasCta && isRecentEnough
                 const ctaLabel = item.action === 'goto_stable' ? t.chat.gotoStableBtn : t.chat.gotoClosureBtn
                 const ctaHandler = item.action === 'goto_stable' ? () => setStageConfirmTarget('stable') : () => setStageConfirmTarget('closure')
                 return (
                   <View style={styles.systemCardWrap}>
                     <View style={styles.systemAvatar}><Text style={styles.systemAvatarText}>✦</Text></View>
-                    <View style={[styles.systemBubble, hasCta && styles.systemBubbleCta]}>
+                    <View style={[styles.systemBubble, showCta && styles.systemBubbleCta]}>
                       <Text style={styles.systemBubbleText}>{item.content}</Text>
-                      {hasCta && (
+                      {showCta && (
                         <TouchableOpacity style={styles.systemCtaBtn} onPress={ctaHandler} activeOpacity={0.8}>
                           <LinearGradient colors={['#7C3AED', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.systemCtaBtnGradient}>
                             <Text style={styles.systemCtaBtnText}>{ctaLabel}</Text>
@@ -777,12 +812,6 @@ const styles = StyleSheet.create({
   loader: { flex: 1 },
   flex: { flex: 1 },
 
-  // Background
-  orbContainer: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
-  orb: { position: 'absolute', width: 384, height: 384, borderRadius: 192 },
-  orbSmall: { position: 'absolute', top: '50%' as any, right: 0, width: 256, height: 256, borderRadius: 128, backgroundColor: 'rgba(79, 70, 229, 0.1)' },
-  star: { position: 'absolute', backgroundColor: '#E9D5FF' },
-
   // Modal (stage confirm)
   modalBackdrop: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24,
@@ -809,8 +838,16 @@ const styles = StyleSheet.create({
   modalDesc: { fontSize: 14, color: '#E9D5FF', textAlign: 'center', lineHeight: 22, marginBottom: 24 },
   modalBtnWrap: { width: '100%' as any, marginBottom: 10 },
   modalBtnDanger: { width: '100%' as any, paddingVertical: 14, borderRadius: 12, alignItems: 'center' as const },
-  modalBtnPrimary: { width: '100%' as any, paddingVertical: 14, borderRadius: 12, alignItems: 'center' as const,
-    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
+  // Stage confirm modal — row layout (두 버튼이 flex: 1씩 공평하게 분할)
+  modalBtnCancel: {
+    flex: 1, minWidth: 0, paddingVertical: 14, borderRadius: 12, alignItems: 'center' as const,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.5)',
+  },
+  modalBtnCancelText: { color: '#FFFFFF', fontSize: 14, fontWeight: '500' },
+  modalBtnPrimary: {
+    flex: 1, minWidth: 0, borderRadius: 12, overflow: 'hidden' as const,
+    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6,
+  },
   modalBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '500' },
   dangerCallBtn: {
     alignSelf: 'stretch' as const, borderRadius: 12, overflow: 'hidden' as const, marginBottom: 10,
@@ -827,7 +864,7 @@ const styles = StyleSheet.create({
   },
   modalBtnSecondary: {
     alignSelf: 'stretch' as const, paddingVertical: 14, borderRadius: 12, alignItems: 'center' as const,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.5)',
   },
   modalBtnSecondaryText: { color: '#FFFFFF', fontSize: 15, fontWeight: '500' },
 
@@ -991,9 +1028,10 @@ const styles = StyleSheet.create({
   warningRow: {
     backgroundColor: 'rgba(239,68,68,0.12)', borderRadius: 8,
     paddingVertical: 8, paddingHorizontal: 14, width: '100%', alignItems: 'center',
+    marginBottom: 16,
   },
   warningText: { fontSize: 13, color: '#FCA5A5', fontWeight: '700', textAlign: 'center' },
-  modalBtnRow: { flexDirection: 'row', gap: 10, width: '100%', marginTop: 4 },
-  modalBtnPrimaryGrad: { paddingVertical: 12, alignItems: 'center', borderRadius: 12 },
+  modalBtnRow: { flexDirection: 'row', gap: 10, width: '100%' },
+  modalBtnPrimaryGrad: { paddingVertical: 14, alignItems: 'center' as const, borderRadius: 12 },
   modalBtnPrimaryText: { fontSize: 14, fontWeight: '600', color: '#fff' },
 })

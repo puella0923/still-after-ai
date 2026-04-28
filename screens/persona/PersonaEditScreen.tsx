@@ -11,6 +11,8 @@ import { RootStackParamList } from '../../navigation/RootNavigator'
 import { updatePersona, uploadPersonaPhoto } from '../../services/personaService'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
+import CosmicBackground from '../../components/CosmicBackground'
+import TopStickyControls from '../../components/TopStickyControls'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'PersonaEdit'>
@@ -19,12 +21,10 @@ type Props = {
 
 const RELATIONS = ['부모님', '배우자', '연인', '친구', '형제/자매', '자녀', '반려동물', '기타']
 
-const STAR_DOTS = Array.from({ length: 20 }, (_, i) => ({
-  top: `${(i * 37 + 13) % 100}%`,
-  left: `${(i * 53 + 7) % 100}%`,
-  size: (i % 3) + 1,
-  opacity: 0.12 + (i % 5) * 0.06,
-}))
+const EDIT_ORBS = [
+  { top: '-5%', right: '-15%', color: 'rgba(168, 85, 247, 0.1)', size: 280 },
+  { bottom: '15%', left: '-10%', color: 'rgba(219, 39, 119, 0.06)', size: 200 },
+]
 
 const glass = Platform.OS === 'web' ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } as any : {}
 
@@ -113,20 +113,13 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={['#1a0118', '#200a2e', '#0f0520']} style={StyleSheet.absoluteFillObject} />
-      <View style={[styles.orb, styles.orb1]} />
-      <View style={[styles.orb, styles.orb2]} />
-      {STAR_DOTS.map((s, i) => (
-        <View key={i} style={{ position: 'absolute', top: s.top as any, left: s.left as any, width: s.size, height: s.size, borderRadius: s.size / 2, backgroundColor: '#fff', opacity: s.opacity }} />
-      ))}
-
-      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backText}>{t.common.back}</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{(name || personaName)} {t.personaEdit.headerSuffix}</Text>
+      <CosmicBackground colors={['#1a0118', '#200a2e', '#0f0520']} orbs={EDIT_ORBS} starCount={20} />
+      <TopStickyControls
+        backLabel={t.common.back}
+        onBackPress={() => navigation.goBack()}
+        title={`${name || personaName} ${t.personaEdit.headerSuffix}`}
+        showLanguageToggle={false}
+        rightSlot={(
           <TouchableOpacity style={[styles.saveBtn, loading && { opacity: 0.6 }]} onPress={handleSave} disabled={loading}>
             {loading
               ? <ActivityIndicator size="small" color="#FFFFFF" />
@@ -135,8 +128,10 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
                 </LinearGradient>
             }
           </TouchableOpacity>
-        </View>
+        )}
+      />
 
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
         {/* Photo */}
         <View style={styles.photoSection}>
           <TouchableOpacity style={styles.photoCircle} onPress={handlePickPhoto} activeOpacity={0.8}>
@@ -232,23 +227,12 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, overflow: 'hidden' },
-  orb: { position: 'absolute', borderRadius: 999 },
-  orb1: { width: 280, height: 280, top: '-5%', right: '-15%', backgroundColor: 'rgba(168, 85, 247, 0.1)' },
-  orb2: { width: 200, height: 200, bottom: '15%', left: '-10%', backgroundColor: 'rgba(219, 39, 119, 0.06)' },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)',
-  },
-  backBtn: { width: 44, height: 36, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '600', color: '#fff' },
   saveBtn: { borderRadius: 10, overflow: 'hidden', minWidth: 52 },
   saveBtnGrad: { paddingHorizontal: 16, paddingVertical: 8, alignItems: 'center', borderRadius: 10 },
   saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
 
-  photoSection: { alignItems: 'center', paddingVertical: 28, gap: 8 },
+  photoSection: { alignItems: 'center', paddingVertical: 28, paddingTop: 79, gap: 8 },
   photoCircle: { width: 100, height: 100, borderRadius: 50, overflow: 'hidden', position: 'relative' },
   photoImage: { width: 100, height: 100, borderRadius: 50 },
   photoPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 50 },

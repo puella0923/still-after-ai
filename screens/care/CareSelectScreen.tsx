@@ -1,26 +1,22 @@
 import React from 'react'
 import {
-  View, Text, StyleSheet, TouchableOpacity, Platform, Dimensions,
+  View, Text, StyleSheet, TouchableOpacity, Platform,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useLanguage } from '../../context/LanguageContext'
-import LanguageToggle from '../../components/LanguageToggle'
-import StepIndicator from '../../components/StepIndicator'
+import CosmicBackground from '../../components/CosmicBackground'
+import TopStickyControls from '../../components/TopStickyControls'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'CareSelect'>
 }
 
-const { width: SW } = Dimensions.get('window')
-
-const STAR_DOTS = Array.from({ length: 25 }, (_, i) => ({
-  top: `${(i * 37 + 13) % 100}%`,
-  left: `${(i * 53 + 7) % 100}%`,
-  size: (i % 3) + 1,
-  opacity: 0.15 + (i % 5) * 0.08,
-}))
+const CARE_SCREEN_ORBS = [
+  { top: '5%', right: '-15%', color: 'rgba(168, 85, 247, 0.12)', size: 280 },
+  { bottom: '15%', left: '-10%', color: 'rgba(219, 39, 119, 0.08)', size: 220 },
+]
 
 export default function CareSelectScreen({ navigation }: Props) {
   const { t } = useLanguage()
@@ -30,22 +26,14 @@ export default function CareSelectScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={['#1a0118', '#200a2e', '#0f0520']} style={StyleSheet.absoluteFillObject} />
-      <View style={[styles.orb, styles.orb1]} />
-      <View style={[styles.orb, styles.orb2]} />
-      {STAR_DOTS.map((s, i) => (
-        <View key={i} style={{ position: 'absolute', top: s.top as any, left: s.left as any, width: s.size, height: s.size, borderRadius: s.size / 2, backgroundColor: '#fff', opacity: s.opacity }} />
-      ))}
+      <CosmicBackground colors={['#1a0118', '#200a2e', '#0f0520']} orbs={CARE_SCREEN_ORBS} starCount={25} />
 
-      <LanguageToggle style={{ position: 'absolute', top: 56, right: 20, zIndex: 100 }} />
-
-      {/* 뒤로가기 */}
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Text style={styles.backText}>{t.common.back}</Text>
-      </TouchableOpacity>
-
-      {/* 스텝 인디케이터 */}
-      <StepIndicator current={1} total={4} style={styles.stepIndicator} />
+      <TopStickyControls
+        backLabel={t.common.back}
+        onBackPress={() => navigation.goBack()}
+        stepCurrent={1}
+        stepTotal={4}
+      />
 
       <View style={styles.container}>
         <View style={styles.header}>
@@ -83,12 +71,6 @@ export default function CareSelectScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, overflow: 'hidden' },
-  orb: { position: 'absolute', borderRadius: 999 },
-  orb1: { width: 280, height: 280, top: '5%', right: '-15%', backgroundColor: 'rgba(168, 85, 247, 0.12)' },
-  orb2: { width: 220, height: 220, bottom: '15%', left: '-10%', backgroundColor: 'rgba(219, 39, 119, 0.08)' },
-  backButton: { position: 'absolute', top: 58, left: 20, zIndex: 100 },
-  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
-  stepIndicator: { position: 'absolute', top: 62, left: 0, right: 0, zIndex: 90 },
   container: { flex: 1, paddingHorizontal: 28, paddingTop: 110, paddingBottom: 40, justifyContent: 'space-between' },
   header: { alignItems: 'center', gap: 14 },
   title: { fontSize: 26, fontWeight: '300', color: '#fff', letterSpacing: 0.5, textAlign: 'center' },

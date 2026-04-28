@@ -22,6 +22,8 @@ import { supabase } from '../../services/supabase'
 import { C, RADIUS } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
+import CosmicBackground from '../../components/CosmicBackground'
+import { FREE_MESSAGE_LIMIT } from '../../constants/chat'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -31,16 +33,9 @@ const STAGE_INFO: Record<string, { label: string; colors: [string, string]; bord
   closure: { label: '이별', colors: ['rgba(99, 102, 241, 0.3)', 'rgba(168, 85, 247, 0.3)'], borderColor: 'rgba(129, 140, 248, 0.3)', textColor: '#A5B4FC' },
 }
 
-const FREE_MESSAGE_LIMIT = 10
-
 // 테스트/개발 계정은 Paywall 우회 (무제한 대화)
 const TEST_EMAILS = ['dev@stillafter.com', 'test@stillafter.com', 'stillafter.test@gmail.com']
 const isTestAccount = (email?: string | null) => !!email && TEST_EMAILS.includes(email.toLowerCase())
-
-const STARS = Array.from({ length: 25 }, (_, i) => ({
-  left: ((i * 97 + 31) % 100), top: ((i * 53 + 17) % 100),
-  size: (i % 3) + 1.5, opacity: 0.12 + (i % 5) * 0.08,
-}))
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'PersonaList'> }
 type ModalState =
@@ -110,15 +105,15 @@ export default function PersonaListScreen({ navigation }: Props) {
   const handleEdit = (persona: Persona) => navigation.navigate('PersonaEdit', {
     personaId: persona.id,
     personaName: persona.name,
-    currentPhotoUrl: (persona as any).photo_url ?? null,
-    currentNickname: (persona as any).user_nickname ?? null,
+    currentPhotoUrl: persona.photo_url ?? null,
+    currentNickname: persona.user_nickname ?? null,
     currentRelationship: persona.relationship ?? null,
   })
 
   if (loading) {
     return (
       <View style={styles.root}>
-        <LinearGradient colors={['#0a0118', '#1a0f3e', '#0f0520']} style={StyleSheet.absoluteFill} />
+        <CosmicBackground />
         <ActivityIndicator style={styles.loader} color="#A78BFA" size="large" />
       </View>
     )
@@ -127,7 +122,7 @@ export default function PersonaListScreen({ navigation }: Props) {
   const renderPersonaCard = ({ item }: { item: Persona }) => {
     const stage = STAGE_INFO[item.emotional_stage] || STAGE_INFO.replay
     const usage = usageCounts[item.id]
-    const isArchived = (item as any).is_archived
+    const isArchived = item.is_archived
     const isPaid = usage?.isPaid ?? false
     const usedCount = usage?.count ?? 0
     const isStable = item.emotional_stage === 'stable'
@@ -183,8 +178,8 @@ export default function PersonaListScreen({ navigation }: Props) {
 
           {/* Avatar */}
           <View style={styles.avatarWrap}>
-            {(item as any).photo_url ? (
-              <Image source={{ uri: (item as any).photo_url }} style={styles.avatarImg} />
+            {item.photo_url ? (
+              <Image source={{ uri: item.photo_url }} style={styles.avatarImg} />
             ) : (
               <LinearGradient colors={['rgba(168, 85, 247, 0.3)', 'rgba(59, 130, 246, 0.3)']} style={styles.avatarDefault}>
                 <Text style={styles.avatarEmoji}>💜</Text>
@@ -216,14 +211,7 @@ export default function PersonaListScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={['#0a0118', '#1a0f3e', '#0f0520']} style={StyleSheet.absoluteFill} />
-      <View style={styles.orbContainer}>
-        <View style={[styles.orb, styles.orbPurple]} />
-        <View style={[styles.orb, styles.orbBlue]} />
-      </View>
-      {STARS.map((star, i) => (
-        <View key={i} style={[styles.star, { left: `${star.left}%` as any, top: `${star.top}%` as any, width: star.size, height: star.size, opacity: star.opacity, borderRadius: star.size }]} />
-      ))}
+      <CosmicBackground starCount={25} />
 
       {/* 메뉴 열려있을 때 외부 탭 → 닫기 */}
       {openMenuId !== null && (
@@ -233,9 +221,6 @@ export default function PersonaListScreen({ navigation }: Props) {
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backText}>{t.common.back}</Text>
-          </TouchableOpacity>
           <Text style={styles.headerTitle}>{t.personaList.header}</Text>
           <LanguageToggle />
         </View>
@@ -276,8 +261,8 @@ export default function PersonaListScreen({ navigation }: Props) {
                       <TouchableOpacity key={item.id} onPress={() => navigation.navigate('Chat', { personaId: item.id })} activeOpacity={0.85}>
                         <LinearGradient colors={stageInfo.colors as [string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.archivedCard}>
                           <View style={styles.archivedAvatar}>
-                            {(item as any).photo_url ? (
-                              <Image source={{ uri: (item as any).photo_url }} style={styles.archivedAvatarPhoto} />
+                            {item.photo_url ? (
+                              <Image source={{ uri: item.photo_url }} style={styles.archivedAvatarPhoto} />
                             ) : (
                               <Text style={styles.archivedAvatarText}>{item.name.charAt(0)}</Text>
                             )}
@@ -318,7 +303,7 @@ export default function PersonaListScreen({ navigation }: Props) {
                   <Text style={styles.modalDesc}>{t.personaList.deleteStep1Msg(modal.persona.name)}</Text>
                   <View style={styles.modalBtns}>
                     <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal({ type: 'none' })}><Text style={styles.modalBtnSecondaryText}>{t.common.cancel}</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={handleDeleteStep2}>
+                    <TouchableOpacity style={styles.modalBtnConfirmWrap} onPress={handleDeleteStep2}>
                       <LinearGradient colors={['#DC2626', '#DB2777']} style={styles.modalBtnDanger}><Text style={styles.modalBtnPrimaryText}>{t.common.next}</Text></LinearGradient>
                     </TouchableOpacity>
                   </View>
@@ -330,7 +315,7 @@ export default function PersonaListScreen({ navigation }: Props) {
                   <Text style={styles.modalDesc}>{t.personaList.deleteStep2Msg(modal.persona.name)}</Text>
                   <View style={styles.modalBtns}>
                     <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal({ type: 'none' })} disabled={modalLoading}><Text style={styles.modalBtnSecondaryText}>{t.common.cancel}</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={handleDeleteConfirm} disabled={modalLoading}>
+                    <TouchableOpacity style={styles.modalBtnConfirmWrap} onPress={handleDeleteConfirm} disabled={modalLoading}>
                       <LinearGradient colors={['#DC2626', '#DB2777']} style={styles.modalBtnDanger}>
                         {modalLoading ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Text style={styles.modalBtnPrimaryText}>{t.personaList.deleteBtnFinal}</Text>}
                       </LinearGradient>
@@ -344,7 +329,7 @@ export default function PersonaListScreen({ navigation }: Props) {
                   <Text style={styles.modalDesc}>{t.personaList.closureConfirmMsg(modal.persona.name)}</Text>
                   <View style={styles.modalBtns}>
                     <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal({ type: 'none' })} disabled={modalLoading}><Text style={styles.modalBtnSecondaryText}>{t.personaList.closureConfirmCancel}</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={handleClosureConfirm} disabled={modalLoading}>
+                    <TouchableOpacity style={styles.modalBtnConfirmWrap} onPress={handleClosureConfirm} disabled={modalLoading}>
                       <LinearGradient colors={['#7C3AED', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalBtnPrimary}>
                         {modalLoading ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Text style={styles.modalBtnPrimaryText}>{t.personaList.closureConfirmOk}</Text>}
                       </LinearGradient>
@@ -361,16 +346,9 @@ export default function PersonaListScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0a0118' },
+  root: { flex: 1 },
   safeArea: { flex: 1 },
   loader: { flex: 1 },
-
-  // Background
-  orbContainer: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
-  orb: { position: 'absolute', width: 384, height: 384, borderRadius: 192 },
-  orbPurple: { top: -100, left: SCREEN_WIDTH * 0.25 - 192, backgroundColor: 'rgba(124, 58, 237, 0.2)' },
-  orbBlue: { bottom: -100, right: SCREEN_WIDTH * 0.25 - 192, backgroundColor: 'rgba(37, 99, 235, 0.2)' },
-  star: { position: 'absolute', backgroundColor: '#E9D5FF' },
 
   // Header
   header: {
@@ -497,9 +475,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)',
   },
   modalBtnSecondaryText: { fontSize: 15, color: 'rgba(196, 181, 253, 0.8)', fontWeight: '500' },
-  modalBtnDanger: { flex: 1, paddingVertical: 13, borderRadius: 12, alignItems: 'center' },
+  // Wrapper gives the confirm button equal flex share in the row; gradient fills it
+  modalBtnConfirmWrap: { flex: 1, borderRadius: 12, overflow: 'hidden' },
+  modalBtnDanger: { paddingVertical: 13, borderRadius: 12, alignItems: 'center' },
   modalBtnPrimary: {
-    flex: 1, paddingVertical: 13, borderRadius: 12, alignItems: 'center',
+    paddingVertical: 13, borderRadius: 12, alignItems: 'center',
     shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6,
   },
   modalBtnPrimaryText: { fontSize: 15, color: '#FFFFFF', fontWeight: '600' },

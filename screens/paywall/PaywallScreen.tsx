@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ActivityIndicator, Alert, Platform, Dimensions, Linking,
+  ActivityIndicator, Alert, Platform, Linking,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -9,6 +9,7 @@ import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { supabase } from '../../services/supabase'
 import { useLanguage } from '../../context/LanguageContext'
+import CosmicBackground from '../../components/CosmicBackground'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Paywall'>
@@ -22,12 +23,10 @@ const PRODUCT_PRICE = 19900
 const TEST_EMAILS = ['dev@stillafter.com', 'test@stillafter.com', 'stillafter.test@gmail.com']
 const isTestAccount = (email?: string | null) => !!email && TEST_EMAILS.includes(email.toLowerCase())
 
-const STAR_DOTS = Array.from({ length: 30 }, (_, i) => ({
-  top: `${(i * 37 + 13) % 100}%`,
-  left: `${(i * 53 + 7) % 100}%`,
-  size: (i % 3) + 1,
-  opacity: 0.15 + (i % 5) * 0.08,
-}))
+const PAYWALL_ORBS = [
+  { top: '5%', right: '-15%', color: 'rgba(168, 85, 247, 0.12)', size: 280 },
+  { bottom: '15%', left: '-10%', color: 'rgba(219, 39, 119, 0.08)', size: 220 },
+]
 
 export default function PaywallScreen({ navigation, route }: Props) {
   const { personaId, stage } = route.params
@@ -116,8 +115,8 @@ export default function PaywallScreen({ navigation, route }: Props) {
       } else {
         await Linking.openURL(payurl)
       }
-    } catch (err: any) {
-      Alert.alert(t.paywall.paymentErrorTitle, err.message || t.home.retryMsg)
+    } catch (err: unknown) {
+      Alert.alert(t.paywall.paymentErrorTitle, err instanceof Error ? err.message : t.home.retryMsg)
     } finally {
       setLoading(false)
     }
@@ -151,7 +150,7 @@ export default function PaywallScreen({ navigation, route }: Props) {
   if (checking) {
     return (
       <View style={styles.root}>
-        <LinearGradient colors={['#1a0118', '#200a2e', '#0f0520']} style={StyleSheet.absoluteFillObject} />
+        <CosmicBackground colors={['#1a0118', '#200a2e', '#0f0520']} orbs={PAYWALL_ORBS} starCount={30} />
         <ActivityIndicator style={{ flex: 1 }} color="#a855f7" />
       </View>
     )
@@ -161,12 +160,7 @@ export default function PaywallScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={['#1a0118', '#200a2e', '#0f0520']} style={StyleSheet.absoluteFillObject} />
-      <View style={[styles.orb, styles.orb1]} />
-      <View style={[styles.orb, styles.orb2]} />
-      {STAR_DOTS.map((s, i) => (
-        <View key={i} style={{ position: 'absolute', top: s.top as any, left: s.left as any, width: s.size, height: s.size, borderRadius: s.size / 2, backgroundColor: '#fff', opacity: s.opacity }} />
-      ))}
+      <CosmicBackground colors={['#1a0118', '#200a2e', '#0f0520']} orbs={PAYWALL_ORBS} starCount={30} />
 
       <View style={styles.container}>
         <Text style={styles.title}>Still After</Text>
@@ -252,13 +246,9 @@ export default function PaywallScreen({ navigation, route }: Props) {
 }
 
 const glass = Platform.OS === 'web' ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } as any : {}
-const { width } = Dimensions.get('window')
 
 const styles = StyleSheet.create({
   root: { flex: 1, overflow: 'hidden' },
-  orb: { position: 'absolute', borderRadius: 999 },
-  orb1: { width: 280, height: 280, top: '5%', right: '-15%', backgroundColor: 'rgba(168, 85, 247, 0.12)' },
-  orb2: { width: 220, height: 220, bottom: '15%', left: '-10%', backgroundColor: 'rgba(219, 39, 119, 0.08)' },
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   title: { fontSize: 28, fontWeight: '300', color: '#fff', letterSpacing: 2, marginBottom: 8 },
   subtitle: { fontSize: 16, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 24, marginBottom: 32 },

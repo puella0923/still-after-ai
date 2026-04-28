@@ -2,10 +2,11 @@ import React from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform,
 } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useLanguage } from '../../context/LanguageContext'
+import CosmicBackground from '../../components/CosmicBackground'
+import TopStickyControls from '../../components/TopStickyControls'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'PrivacyPolicy'>
@@ -98,12 +99,10 @@ AI 서비스 제공을 위해 OpenAI API를 활용하며, OpenAI의 개인정보
   },
 ]
 
-const STAR_DOTS = Array.from({ length: 20 }, (_, i) => ({
-  top: `${(i * 37 + 13) % 100}%`,
-  left: `${(i * 53 + 7) % 100}%`,
-  size: (i % 3) + 1,
-  opacity: 0.12 + (i % 5) * 0.06,
-}))
+const STATIC_ORBS = [
+  { top: '-5%', right: '-15%', color: 'rgba(168, 85, 247, 0.1)', size: 280 },
+  { bottom: '10%', left: '-10%', color: 'rgba(219, 39, 119, 0.06)', size: 200 },
+]
 
 const glass = Platform.OS === 'web' ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } as any : {}
 
@@ -111,20 +110,14 @@ export default function PrivacyPolicyScreen({ navigation }: Props) {
   const { t } = useLanguage()
   return (
     <View style={styles.root}>
-      <LinearGradient colors={['#1a0118', '#200a2e', '#0f0520']} style={StyleSheet.absoluteFillObject} />
-      <View style={[styles.orb, styles.orb1]} />
-      <View style={[styles.orb, styles.orb2]} />
-      {STAR_DOTS.map((s, i) => (
-        <View key={i} style={{ position: 'absolute', top: s.top as any, left: s.left as any, width: s.size, height: s.size, borderRadius: s.size / 2, backgroundColor: '#fff', opacity: s.opacity }} />
-      ))}
+      <CosmicBackground colors={['#1a0118', '#200a2e', '#0f0520']} orbs={STATIC_ORBS} starCount={20} />
 
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>{t.common.back}</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>개인정보 처리방침</Text>
-        <View style={{ width: 36 }} />
-      </View>
+      <TopStickyControls
+        backLabel={t.common.back}
+        onBackPress={() => navigation.goBack()}
+        title="개인정보 처리방침"
+        showLanguageToggle={false}
+      />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.intro}>
@@ -154,20 +147,8 @@ export default function PrivacyPolicyScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, overflow: 'hidden' },
-  orb: { position: 'absolute', borderRadius: 999 },
-  orb1: { width: 280, height: 280, top: '-5%', right: '-15%', backgroundColor: 'rgba(168, 85, 247, 0.1)' },
-  orb2: { width: 200, height: 200, bottom: '10%', left: '-10%', backgroundColor: 'rgba(219, 39, 119, 0.06)' },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)',
-  },
-  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '600', color: '#fff' },
-
-  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 71, paddingBottom: 40 },
 
   intro: {
     marginBottom: 24, padding: 16, borderRadius: 12,

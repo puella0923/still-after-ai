@@ -12,7 +12,6 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  Dimensions,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -27,8 +26,7 @@ import { useAuth } from '../../context/AuthContext'
 import { C, RADIUS } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
-
-const { width } = Dimensions.get('window')
+import CosmicBackground from '../../components/CosmicBackground'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'EmailAuth'>
@@ -39,14 +37,6 @@ type Tab = 'login' | 'signup'
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 const isValidNickname = (v: string) => /^[가-힣a-zA-Z0-9]{2,10}$/.test(v)
 const isValidPassword = (v: string) => /^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(v)
-
-// Deterministic star positions
-const STARS = Array.from({ length: 35 }, (_, i) => ({
-  left: ((i * 97 + 31) % 100),
-  top: ((i * 53 + 17) % 100),
-  size: (i % 3) + 1.5,
-  opacity: 0.15 + (i % 5) * 0.1,
-}))
 
 export default function EmailAuthScreen({ navigation }: Props) {
   const { session } = useAuth()
@@ -203,14 +193,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
   if (needsConfirmation) {
     return (
       <View style={styles.root}>
-        <LinearGradient colors={['#0a0118', '#1a0f3e', '#0f0520']} style={StyleSheet.absoluteFill} />
-        <View style={styles.orbContainer}>
-          <View style={[styles.orb, styles.orbPurple]} />
-          <View style={[styles.orb, styles.orbBlue]} />
-        </View>
-        {STARS.map((star, i) => (
-          <View key={i} style={[styles.star, { left: `${star.left}%`, top: `${star.top}%`, width: star.size, height: star.size, opacity: star.opacity, borderRadius: star.size }]} />
-        ))}
+        <CosmicBackground starCount={35} />
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.centerWrap}>
             <View style={styles.confirmCard}>
@@ -253,15 +236,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      {/* Background */}
-      <LinearGradient colors={['#0a0118', '#1a0f3e', '#0f0520']} style={StyleSheet.absoluteFill} />
-      <View style={styles.orbContainer}>
-        <View style={[styles.orb, styles.orbPurple]} />
-        <View style={[styles.orb, styles.orbBlue]} />
-      </View>
-      {STARS.map((star, i) => (
-        <View key={i} style={[styles.star, { left: `${star.left}%`, top: `${star.top}%`, width: star.size, height: star.size, opacity: star.opacity, borderRadius: star.size }]} />
-      ))}
+      <CosmicBackground starCount={35} />
 
       <LanguageToggle style={{ position: 'absolute', top: 56, right: 20, zIndex: 100 }} />
       <SafeAreaView style={styles.safeArea}>
@@ -508,7 +483,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.BG },
+  root: { flex: 1 },
   safeArea: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
@@ -520,13 +495,6 @@ const styles = StyleSheet.create({
   centerWrap: {
     flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16,
   },
-
-  // Background
-  orbContainer: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
-  orb: { position: 'absolute', width: 384, height: 384, borderRadius: 192 },
-  orbPurple: { top: -100, left: width * 0.25 - 192, backgroundColor: 'rgba(124, 58, 237, 0.2)' },
-  orbBlue: { bottom: -100, right: width * 0.25 - 192, backgroundColor: 'rgba(37, 99, 235, 0.2)' },
-  star: { position: 'absolute', backgroundColor: '#E9D5FF' },
 
   // Card
   card: {
