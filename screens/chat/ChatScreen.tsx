@@ -299,6 +299,43 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
     }
   }, [personaId, persona])
 
+  // Bug 4 fix: 위기 모달 닫힌 후 따뜻한 AI 복귀 응답
+  const handleDangerContinue = useCallback(async () => {
+    setShowDangerModal(false)
+    if (!persona) return
+    setIsTyping(true)
+    try {
+      const basePrompt = persona.system_prompt || `당신은 ${persona.name}입니다.`
+      const history = messages
+        .filter(m => m.role === 'user' || m.role === 'assistant')
+        .slice(-MAX_HISTORY_LENGTH)
+        .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
+      const stage = (persona.emotional_stage ?? 'replay') as 'replay' | 'stable' | 'closure'
+      // 위기 이후 복귀를 위한 특별 프롬프트 — 페르소나 말투로 따뜻하게 곁에 있어줌
+      const crisisReturnPrompt = `(사용자가 방금 많이 힘든 감정을 내비쳤어요.
+전문 상담 안내 이후 사용자가 계속 대화하기로 했습니다.
+지금 이 순간 사용자 곁에 있어주는 것이 가장 중요해요.
+반드시 지킬 것:
+- 판단하거나 분석하지 말고, 그냥 옆에 있어주는 느낌으로
+- 페르소나의 따뜻한 말투로, 짧고 진하게
+- "나 여기 있어", "괜찮아, 내가 있잖아" 같은 느낌
+- 1~2문장, 절대 길게 쓰지 말 것)`
+      const reply = await getChatResponse({
+        systemPrompt: basePrompt,
+        conversationHistory: history,
+        userMessage: crisisReturnPrompt,
+        stage,
+        userNickname: persona.user_nickname ?? undefined,
+        relationship: persona.relationship ?? undefined,
+        careType: persona.care_type ?? 'human',
+      })
+      setMessages(prev => [...prev, { id: makeId(), role: 'assistant', content: reply }])
+      saveConversation({ personaId: persona.id, role: 'assistant', content: reply, emotionalStage: persona.emotional_stage }).catch(() => {})
+    } catch { /* 실패 시 조용히 무시 */ } finally {
+      setIsTyping(false)
+    }
+  }, [persona, messages, makeId, showToast])
+
   const handleStableTransition = useCallback(async () => {
     if (!persona) return
     try {
@@ -323,7 +360,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
     } catch { showToast('잠시 후 다시 시도해주세요.') }
   }, [persona, showToast])
 
-  // PM-003: Paywall 비활성화 (무제한 대화 허용)
+  // 무료 베타 기간: Paywall 비활성화
   const isPaywallBlocked = false
 
   const sendMessage = useCallback(async () => {
@@ -554,7 +591,8 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
                   <Text style={styles.modalBtnText}>{t.chat.crisisHotline}</Text>
                 </LinearGradient>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setShowDangerModal(false)}>
+              {/* Bug 4: 모달 닫힐 때 따뜻한 AI 복귀 응답 트리거 */}
+              <TouchableOpacity style={styles.modalBtnSecondary} onPress={handleDangerContinue}>
                 <Text style={styles.modalBtnSecondaryText}>{t.chat.crisisOk}</Text>
               </TouchableOpacity>
             </LinearGradient>
@@ -601,14 +639,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
           </View>
         )}
 
-        {/* Free usage nudge — show when 3 or fewer messages remain */}
-        {!isPaidUser && freeRemaining !== null && freeRemaining <= 3 && freeRemaining > 0 && (
-          <View style={styles.freeNudgeBanner}>
-            <Text style={styles.freeNudgeText}>
-              {t.chat.freeNudge(freeRemaining!)}
-            </Text>
-          </View>
-        )}
+        {/* 무료 베타 기간 중 — 카운트다운 배너 비활성화 */}
 
         {/* Closure banner */}
         {persona?.emotional_stage === 'closure' && !isReadOnly && (
@@ -674,17 +705,21 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
                 <Text style={styles.emptyDesc}>{t.chat.emptyHint}</Text>
               </View>
             }
-            renderItem={({ item }) => {
+            renderItem={({ item, index }) => {
               if (item.role === 'system') {
                 const hasCta = item.action === 'goto_stable' || item.action === 'goto_closure'
+                // Bug 3 fix: 단계 전환 버튼은 최근 5개 메시지 안에 있을 때만 노출
+                // 이후 메시지가 쌓이면 버튼이 사라지지만 텍스트는 그대로 유지됨
+                const isRecentEnough = index >= messages.length - 5
+                const showCta = hasCta && isRecentEnough
                 const ctaLabel = item.action === 'goto_stable' ? t.chat.gotoStableBtn : t.chat.gotoClosureBtn
                 const ctaHandler = item.action === 'goto_stable' ? () => setStageConfirmTarget('stable') : () => setStageConfirmTarget('closure')
                 return (
                   <View style={styles.systemCardWrap}>
                     <View style={styles.systemAvatar}><Text style={styles.systemAvatarText}>✦</Text></View>
-                    <View style={[styles.systemBubble, hasCta && styles.systemBubbleCta]}>
+                    <View style={[styles.systemBubble, showCta && styles.systemBubbleCta]}>
                       <Text style={styles.systemBubbleText}>{item.content}</Text>
-                      {hasCta && (
+                      {showCta && (
                         <TouchableOpacity style={styles.systemCtaBtn} onPress={ctaHandler} activeOpacity={0.8}>
                           <LinearGradient colors={['#7C3AED', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.systemCtaBtnGradient}>
                             <Text style={styles.systemCtaBtnText}>{ctaLabel}</Text>
