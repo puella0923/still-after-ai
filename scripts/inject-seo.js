@@ -24,8 +24,8 @@ const seoTags = `
     <meta property="og:site_name" content="Still After" />
     <meta property="og:title" content="Still After — 아직 전하지 못한 말이 있다면" />
     <meta property="og:description" content="사랑하는 사람을 떠나보낸 후, 못 다한 말을 전하는 공간." />
-    <meta property="og:image" content="https://stillafter.com/og-image.jpg?v=2" />
-    <meta property="og:image:secure_url" content="https://stillafter.com/og-image.jpg?v=2" />
+    <meta property="og:image" content="https://stillafter.com/og-image-v2.jpg" />
+    <meta property="og:image:secure_url" content="https://stillafter.com/og-image-v2.jpg" />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -38,7 +38,7 @@ const seoTags = `
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Still After — 아직 전하지 못한 말이 있다면" />
     <meta name="twitter:description" content="사랑하는 사람을 떠나보낸 후, 못 다한 말을 전하는 공간." />
-    <meta name="twitter:image" content="https://stillafter.com/og-image.jpg?v=2" />
+    <meta name="twitter:image" content="https://stillafter.com/og-image-v2.jpg" />
 
     <!-- ⑤ 파비콘 -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
