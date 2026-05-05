@@ -127,6 +127,12 @@ function AppContent() {
     <NavigationContainer
       key={isAuthed ? 'authed' : 'guest'}
       linking={activeLinking}
+      documentTitle={{
+        // 모든 화면에서 일관된 브랜드 title을 노출.
+        // 기본 동작은 화면 이름(예: "Onboarding", "Login")으로 document.title을 덮어쓰는데,
+        // 이 결과를 구글이 색인해서 검색결과 제목이 "Onboarding"으로 표시되는 문제가 발생.
+        formatter: () => 'Still After — 아직 전하지 못한 말이 있다면',
+      }}
     >
       <StatusBar style="dark" backgroundColor="#FAF8F5" />
       <RootNavigator initialRouteName={initialRoute} />

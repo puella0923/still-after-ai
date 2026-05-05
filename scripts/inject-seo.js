@@ -20,9 +20,16 @@ const seoTags = `
     <meta name="description" content="사랑하는 사람을 떠나보낸 후, 못 다한 말을 전하는 공간. 천천히, 당신의 속도로." />
 
     <!-- ③ OG 태그 (카카오톡 / SNS 공유 미리보기) -->
+    <!-- og:image 뒤의 ?v=2 는 카카오톡 등 공유 캐시를 강제 갱신하기 위한 버전 쿼리 -->
+    <meta property="og:site_name" content="Still After" />
     <meta property="og:title" content="Still After — 아직 전하지 못한 말이 있다면" />
     <meta property="og:description" content="사랑하는 사람을 떠나보낸 후, 못 다한 말을 전하는 공간." />
-    <meta property="og:image" content="https://stillafter.com/og-image.jpg" />
+    <meta property="og:image" content="https://stillafter.com/og-image.jpg?v=2" />
+    <meta property="og:image:secure_url" content="https://stillafter.com/og-image.jpg?v=2" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Still After — 아직 전하지 못한 말이 있다면" />
     <meta property="og:url" content="https://stillafter.com" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="ko_KR" />
@@ -31,7 +38,7 @@ const seoTags = `
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Still After — 아직 전하지 못한 말이 있다면" />
     <meta name="twitter:description" content="사랑하는 사람을 떠나보낸 후, 못 다한 말을 전하는 공간." />
-    <meta name="twitter:image" content="https://stillafter.com/og-image.jpg" />
+    <meta name="twitter:image" content="https://stillafter.com/og-image.jpg?v=2" />
 
     <!-- ⑤ 파비콘 -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
