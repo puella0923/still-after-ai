@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { LanguageProvider } from './context/LanguageContext'
 import RootNavigator, { RootStackParamList } from './navigation/RootNavigator'
+import VercelAnalytics from './components/VercelAnalytics'
 
 // URL 딥링크 설정 — 웹에서 /Login, /PersonaCreate 등 URL이 직접 작동하도록
 const linking: LinkingOptions<RootStackParamList> = {
@@ -139,6 +140,7 @@ export default function App() {
       <LanguageProvider>
         <AuthProvider>
           <AppContent />
+          <VercelAnalytics />
         </AuthProvider>
       </LanguageProvider>
     </GestureHandlerRootView>
