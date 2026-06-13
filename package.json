@@ -6,7 +6,10 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "supabase:apply-auth": "node scripts/apply-supabase-auth-config.mjs",
+    "supabase:apply-email": "node scripts/apply-supabase-auth-config.mjs",
+    "supabase:apply-migration": "node scripts/apply-supabase-migration.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~55.0.6",

@@ -41,3 +41,9 @@ yarn-error.*
 /ios
 /android
 public/*.js
+.vercel
+
+# QA artifacts
+.qa-tmp/
+qa-screenshot-*.png
+qa-remaining-report.json

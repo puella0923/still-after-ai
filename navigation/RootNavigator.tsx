@@ -9,7 +9,6 @@ import CareSelectScreen from '../screens/care/CareSelectScreen'
 import RelationSetupScreen from '../screens/care/RelationSetupScreen'
 import TimingCheckScreen from '../screens/care/TimingCheckScreen'
 import AIGeneratingScreen from '../screens/persona/AIGeneratingScreen'
-import PaywallScreen from '../screens/paywall/PaywallScreen'
 import SettingsScreen from '../screens/settings/SettingsScreen'
 import PrivacyPolicyScreen from '../screens/settings/PrivacyPolicyScreen'
 import TermsScreen from '../screens/settings/TermsScreen'
@@ -37,7 +36,6 @@ export type RootStackParamList = {
     currentRelationship?: string | null
   }
   AIGenerating: { name: string; personaId: string }
-  Paywall: { personaId: string; stage: string }
   Settings: undefined
   AccountProfile: undefined
   PrivacyPolicy: undefined
@@ -70,7 +68,6 @@ export default function RootNavigator({ initialRouteName }: Props) {
       <Stack.Screen name="PersonaCreate"   component={PersonaCreateScreen} />
       <Stack.Screen name="PersonaEdit"     component={PersonaEditScreen} />
       <Stack.Screen name="AIGenerating"    component={AIGeneratingScreen} />
-      <Stack.Screen name="Paywall"          component={PaywallScreen} />
       <Stack.Screen name="Settings"         component={SettingsScreen} />
       <Stack.Screen name="AccountProfile"   component={AccountProfileScreen} />
       <Stack.Screen name="PrivacyPolicy"    component={PrivacyPolicyScreen} />

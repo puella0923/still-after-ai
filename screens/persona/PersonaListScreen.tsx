@@ -23,8 +23,6 @@ import { C, RADIUS } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
 import CosmicBackground from '../../components/CosmicBackground'
-import { FREE_MESSAGE_LIMIT } from '../../constants/chat'
-
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 // label은 i18n에서 t.home.filter*로 가져옴
@@ -33,10 +31,6 @@ const STAGE_INFO: Record<string, { colors: [string, string]; borderColor: string
   stable: { colors: ['rgba(59, 130, 246, 0.3)', 'rgba(99, 102, 241, 0.3)'], borderColor: 'rgba(96, 165, 250, 0.3)', textColor: '#93C5FD' },
   closure: { colors: ['rgba(99, 102, 241, 0.3)', 'rgba(168, 85, 247, 0.3)'], borderColor: 'rgba(129, 140, 248, 0.3)', textColor: '#A5B4FC' },
 }
-
-// 테스트/개발 계정은 Paywall 우회 (무제한 대화)
-const TEST_EMAILS = ['dev@stillafter.com', 'test@stillafter.com', 'stillafter.test@gmail.com']
-const isTestAccount = (email?: string | null) => !!email && TEST_EMAILS.includes(email.toLowerCase())
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'PersonaList'> }
 type ModalState =
@@ -50,7 +44,6 @@ export default function PersonaListScreen({ navigation }: Props) {
   const [personas, setPersonas] = useState<Persona[]>([])
   const [archivedPersonas, setArchivedPersonas] = useState<Persona[]>([])
   const [loading, setLoading] = useState(true)
-  const [usageCounts, setUsageCounts] = useState<Record<string, { count: number; isPaid: boolean }>>({})
   const [modal, setModal] = useState<ModalState>({ type: 'none' })
   const [modalLoading, setModalLoading] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
@@ -61,18 +54,6 @@ export default function PersonaListScreen({ navigation }: Props) {
       const [list, archived] = await Promise.all([getPersonas(), getArchivedPersonas()])
       setPersonas(list)
       setArchivedPersonas(archived)
-      if (list.length > 0) {
-        try {
-          const { data: { user } } = await supabase.auth.getUser()
-          if (user) {
-            const { data: usages } = await supabase.from('user_usage').select('persona_id, message_count, is_paid').eq('user_id', user.id).in('persona_id', list.map(p => p.id))
-            const map: Record<string, { count: number; isPaid: boolean }> = {}
-            const testBypass = isTestAccount(user.email)
-            for (const u of (usages ?? [])) { map[u.persona_id] = { count: u.message_count ?? 0, isPaid: (u.is_paid ?? false) || testBypass } }
-            setUsageCounts(map)
-          }
-        } catch { /* ignore */ }
-      }
     } catch { setPersonas([]); setArchivedPersonas([]) }
     finally { setLoading(false) }
   }, [])
@@ -122,10 +103,7 @@ export default function PersonaListScreen({ navigation }: Props) {
 
   const renderPersonaCard = ({ item }: { item: Persona }) => {
     const stage = STAGE_INFO[item.emotional_stage] || STAGE_INFO.replay
-    const usage = usageCounts[item.id]
     const isArchived = item.is_archived
-    const isPaid = usage?.isPaid ?? false
-    const usedCount = usage?.count ?? 0
     const isStable = item.emotional_stage === 'stable'
 
     const isMenuOpen = openMenuId === item.id
@@ -201,13 +179,8 @@ export default function PersonaListScreen({ navigation }: Props) {
             </Text>
           </View>
 
-          {/* Status */}
           {isArchived ? (
             <Text style={styles.statusText}>{t.personaList.closureComplete}</Text>
-          ) : isPaid ? (
-            <Text style={[styles.statusText, { color: '#86EFAC' }]}>{t.personaList.unlimited}</Text>
-          ) : usedCount > 0 ? (
-            <Text style={styles.statusText}>{t.personaList.usageCount(usedCount, FREE_MESSAGE_LIMIT)}</Text>
           ) : null}
         </LinearGradient>
       </TouchableOpacity>

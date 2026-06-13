@@ -10,7 +10,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
+  Modal,
   Animated,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -19,9 +19,10 @@ import { RootStackParamList } from '../../navigation/RootNavigator'
 import {
   signInWithEmail,
   signUpWithEmail,
-  resendConfirmationEmail,
   sendPasswordReset,
+  updatePassword,
 } from '../../services/authService'
+import { supabase } from '../../services/supabase'
 import { useAuth } from '../../context/AuthContext'
 import { C, RADIUS } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
@@ -34,20 +35,89 @@ type Props = {
 
 type Tab = 'login' | 'signup'
 
+type NoticeModalState = {
+  visible: boolean
+  title: string
+  message: string
+  primaryLabel: string
+  onPrimary: () => void
+}
+
+const NOTICE_HIDDEN: NoticeModalState = {
+  visible: false,
+  title: '',
+  message: '',
+  primaryLabel: '',
+  onPrimary: () => {},
+}
+
+function AuthNoticeModal({ modal, onClose }: {
+  modal: NoticeModalState
+  onClose: () => void
+}) {
+  if (!modal.visible) return null
+  return (
+    <Modal visible={modal.visible} transparent animationType="fade" onRequestClose={onClose}>
+      <TouchableOpacity style={styles.noticeBackdrop} activeOpacity={1} onPress={onClose}>
+        <TouchableOpacity style={styles.noticeBox} activeOpacity={1} onPress={() => {}}>
+          <Text style={styles.noticeTitle}>{modal.title}</Text>
+          <Text style={styles.noticeMessage}>{modal.message}</Text>
+          <TouchableOpacity onPress={modal.onPrimary} activeOpacity={0.85}>
+            <LinearGradient
+              colors={['#7C3AED', '#3B82F6']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={styles.noticePrimaryBtn}
+            >
+              <Text style={styles.noticePrimaryText}>{modal.primaryLabel}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  )
+}
+
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 const isValidNickname = (v: string) => /^[가-힣a-zA-Z0-9]{2,10}$/.test(v)
 const isValidPassword = (v: string) => /^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(v)
 
 export default function EmailAuthScreen({ navigation }: Props) {
-  const { session } = useAuth()
+  const { session, pendingPasswordRecovery, clearPendingPasswordRecovery } = useAuth()
   const { t } = useLanguage()
 
-  // OAuth 콜백으로 돌아왔을 때 세션이 있으면 바로 Main으로 이동
+  const [recoveryMode, setRecoveryMode] = useState(() => {
+    if (pendingPasswordRecovery) return true
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      return window.location.hash.includes('type=recovery')
+    }
+    return false
+  })
+  const [newPassword, setNewPassword] = useState('')
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('')
+  const [showNewPassword, setShowNewPassword] = useState(false)
+
+  // 비밀번호 재설정 링크 → PASSWORD_RECOVERY 세션
   useEffect(() => {
-    if (session) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setRecoveryMode(true)
+    })
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const hash = window.location.hash
+      if (hash.includes('type=recovery')) setRecoveryMode(true)
+    }
+    return () => subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    if (pendingPasswordRecovery) setRecoveryMode(true)
+  }, [pendingPasswordRecovery])
+
+  // OAuth 콜백 등 — 재설정 중이 아닐 때만 Main으로 이동
+  useEffect(() => {
+    if (session && !recoveryMode && !pendingPasswordRecovery) {
       navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
     }
-  }, [session, navigation])
+  }, [session, recoveryMode, pendingPasswordRecovery, navigation])
 
   const [tab, setTab] = useState<Tab>('login')
   const [email, setEmail] = useState('')
@@ -61,10 +131,8 @@ export default function EmailAuthScreen({ navigation }: Props) {
   const [agreePrivacy, setAgreePrivacy] = useState(false)
   const [agreeAge, setAgreeAge] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [needsConfirmation, setNeedsConfirmation] = useState(false)
-  const [pendingEmail, setPendingEmail] = useState('')
-  const [confirmMessage, setConfirmMessage] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+  const [noticeModal, setNoticeModal] = useState<NoticeModalState>(NOTICE_HIDDEN)
 
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(30)).current
@@ -77,7 +145,10 @@ export default function EmailAuthScreen({ navigation }: Props) {
   }, [])
 
   const clearMessages = () => { setErrors({}); setSuccessMsg('') }
-  const switchTab = (t: Tab) => { setTab(t); clearMessages(); setNeedsConfirmation(false) }
+  const switchTab = (t: Tab) => {
+    setTab(t)
+    clearMessages()
+  }
 
   const validateLogin = (): boolean => {
     const errs: Record<string, string> = {}
@@ -113,13 +184,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
       const result = await signInWithEmail(email.trim(), password)
       if (result.success) {
         setSuccessMsg(t.auth.successLogin)
-        setTimeout(() => {
-          navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
-        }, 800)
-      } else if (result.needsConfirmation) {
-        setNeedsConfirmation(true)
-        setPendingEmail(email.trim())
-        setConfirmMessage(result.error ?? t.auth.errorEmailVerificationRequired)
+        navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
       } else {
         setErrors({ general: result.error ?? t.auth.errorLoginFailed })
       }
@@ -134,15 +199,14 @@ export default function EmailAuthScreen({ navigation }: Props) {
     setLoading(true)
     try {
       const result = await signUpWithEmail(email.trim(), password, nickname.trim())
-      if (result.success && result.needsConfirmation) {
-        setPendingEmail(email.trim())
-        setNeedsConfirmation(true)
-        setConfirmMessage(t.auth.successVerificationSent(email.trim()))
-      } else if (result.success) {
-        setSuccessMsg(t.auth.successSignup)
-        setTimeout(() => {
+      if (result.success) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          setSuccessMsg(t.auth.successSignup)
           navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
-        }, 800)
+        } else {
+          setSuccessMsg(t.auth.successSignup)
+        }
       } else {
         setErrors({ general: result.error ?? t.auth.errorSignupFailed })
       }
@@ -151,19 +215,43 @@ export default function EmailAuthScreen({ navigation }: Props) {
     }
   }, [email, password, nickname, passwordConfirm, agreeTerms, agreePrivacy, agreeAge, navigation])
 
-  const handleResendEmail = async () => {
+  const handleResetPassword = useCallback(async () => {
+    clearMessages()
+    const errs: Record<string, string> = {}
+    if (!isValidPassword(newPassword)) errs.newPassword = t.auth.errorPasswordInvalid
+    if (newPassword !== newPasswordConfirm) errs.newPasswordConfirm = t.auth.errorPasswordMismatch
+    if (Object.keys(errs).length) {
+      setErrors(errs)
+      return
+    }
     setLoading(true)
     try {
-      const result = await resendConfirmationEmail(pendingEmail)
+      const result = await updatePassword(newPassword)
       if (result.success) {
-        Alert.alert(t.auth.alertResendTitle, t.auth.alertResendMsg)
+        setRecoveryMode(false)
+        clearPendingPasswordRecovery()
+        setNewPassword('')
+        setNewPasswordConfirm('')
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.history.replaceState(null, '', '/Main')
+        }
+        setNoticeModal({
+          visible: true,
+          title: t.common.confirm,
+          message: t.auth.resetPasswordSuccess,
+          primaryLabel: t.common.confirm,
+          onPrimary: () => {
+            setNoticeModal(NOTICE_HIDDEN)
+            navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
+          },
+        })
       } else {
-        Alert.alert(t.auth.alertResendFailTitle, result.error ?? t.auth.alertResendFailMsg)
+        setErrors({ general: result.error ?? t.auth.resetPasswordInvalidLink })
       }
     } finally {
       setLoading(false)
     }
-  }
+  }, [newPassword, newPasswordConfirm, navigation, t, clearPendingPasswordRecovery])
 
   const handleForgotPassword = async () => {
     if (!email.trim() || !isValidEmail(email)) {
@@ -174,9 +262,21 @@ export default function EmailAuthScreen({ navigation }: Props) {
     try {
       const result = await sendPasswordReset(email.trim())
       if (result.success) {
-        Alert.alert(t.auth.alertResetTitle, t.auth.alertResetMsg(email.trim()))
+        setNoticeModal({
+          visible: true,
+          title: t.auth.alertResetTitle,
+          message: t.auth.alertResetMsg(email.trim()),
+          primaryLabel: t.common.confirm,
+          onPrimary: () => setNoticeModal(NOTICE_HIDDEN),
+        })
       } else {
-        Alert.alert(t.auth.alertResendFailTitle, result.error ?? t.auth.alertResendFailMsg)
+        setNoticeModal({
+          visible: true,
+          title: t.auth.alertResendFailTitle,
+          message: result.error ?? t.auth.alertResendFailMsg,
+          primaryLabel: t.common.confirm,
+          onPrimary: () => setNoticeModal(NOTICE_HIDDEN),
+        })
       }
     } finally {
       setLoading(false)
@@ -187,51 +287,6 @@ export default function EmailAuthScreen({ navigation }: Props) {
   const toggleAllAgree = () => {
     const next = !allAgreed
     setAgreeTerms(next); setAgreePrivacy(next); setAgreeAge(next)
-  }
-
-  // 이메일 인증 대기 화면
-  if (needsConfirmation) {
-    return (
-      <View style={styles.root}>
-        <CosmicBackground starCount={35} />
-        <SafeAreaView style={styles.safeArea}>
-          <View style={styles.centerWrap}>
-            <View style={styles.confirmCard}>
-              <LinearGradient
-                colors={['rgba(88, 28, 135, 0.4)', 'rgba(30, 58, 138, 0.4)']}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={styles.confirmCardGradient}
-              >
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                  <Text style={styles.backBtnText}>{t.common.back}</Text>
-                </TouchableOpacity>
-                <View style={styles.confirmIconWrap}>
-                  <Text style={styles.confirmIcon}>✉️</Text>
-                </View>
-                <Text style={styles.confirmTitle}>{t.auth.checkInbox}</Text>
-                <Text style={styles.confirmDesc}>{confirmMessage}</Text>
-                <View style={styles.confirmEmailBox}>
-                  <Text style={styles.confirmEmail}>{pendingEmail}</Text>
-                </View>
-                <Text style={styles.confirmSub}>{t.auth.spamNote}</Text>
-                <TouchableOpacity style={styles.resendButton} onPress={handleResendEmail} disabled={loading}>
-                  {loading
-                    ? <ActivityIndicator color={C.TEXT} />
-                    : <Text style={styles.resendButtonText}>{t.auth.resendEmail}</Text>
-                  }
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.confirmLoginBtn}
-                  onPress={() => { setNeedsConfirmation(false); setTab('login'); setPassword('') }}
-                >
-                  <Text style={styles.confirmLoginText}>{t.auth.loginAfterVerify}</Text>
-                </TouchableOpacity>
-              </LinearGradient>
-            </View>
-          </View>
-        </SafeAreaView>
-      </View>
-    )
   }
 
   return (
@@ -272,6 +327,77 @@ export default function EmailAuthScreen({ navigation }: Props) {
                   <Text style={styles.tagline}>{t.login.brand}</Text>
                 </View>
 
+                {recoveryMode ? (
+                  <>
+                    <Text style={styles.resetTitle}>{t.auth.resetPasswordTitle}</Text>
+                    <Text style={styles.resetDesc}>{t.auth.resetPasswordDesc}</Text>
+
+                    {errors.general ? (
+                      <View style={styles.errorBox}>
+                        <Text style={styles.errorBoxText}>⚠️ {errors.general}</Text>
+                      </View>
+                    ) : null}
+
+                    <Text style={styles.label}>{t.auth.labelPassword}</Text>
+                    <View style={[styles.inputWrap, errors.newPassword ? styles.inputError : null]}>
+                      <Text style={styles.inputIcon}>🔒</Text>
+                      <TextInput
+                        style={styles.inputField}
+                        value={newPassword}
+                        onChangeText={setNewPassword}
+                        placeholder={t.auth.placeholderPassword}
+                        placeholderTextColor="rgba(167, 139, 250, 0.5)"
+                        secureTextEntry={!showNewPassword}
+                        autoCapitalize="none"
+                      />
+                      <TouchableOpacity onPress={() => setShowNewPassword((v) => !v)}>
+                        <Text style={styles.eyeIcon}>{showNewPassword ? '🙈' : '👁'}</Text>
+                      </TouchableOpacity>
+                    </View>
+                    {errors.newPassword ? <Text style={styles.fieldError}>{errors.newPassword}</Text> : null}
+
+                    <Text style={styles.label}>{t.auth.labelPasswordConfirm}</Text>
+                    <View style={[styles.inputWrap, errors.newPasswordConfirm ? styles.inputError : null]}>
+                      <Text style={styles.inputIcon}>🔒</Text>
+                      <TextInput
+                        style={styles.inputField}
+                        value={newPasswordConfirm}
+                        onChangeText={setNewPasswordConfirm}
+                        placeholder={t.auth.placeholderPasswordConfirm}
+                        placeholderTextColor="rgba(167, 139, 250, 0.5)"
+                        secureTextEntry={!showNewPassword}
+                        autoCapitalize="none"
+                      />
+                    </View>
+                    {errors.newPasswordConfirm ? <Text style={styles.fieldError}>{errors.newPasswordConfirm}</Text> : null}
+
+                    <TouchableOpacity
+                      style={styles.submitBtn}
+                      onPress={handleResetPassword}
+                      disabled={loading}
+                      activeOpacity={0.85}
+                    >
+                      <LinearGradient
+                        colors={loading ? ['rgba(124, 58, 237, 0.5)', 'rgba(59, 130, 246, 0.5)'] : ['#7C3AED', '#3B82F6']}
+                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                        style={styles.submitBtnGradient}
+                      >
+                        {loading
+                          ? <ActivityIndicator color="#FFFFFF" />
+                          : <Text style={styles.submitBtnText}>{t.auth.resetPasswordBtn}</Text>
+                        }
+                      </LinearGradient>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => { setRecoveryMode(false); navigation.goBack() }}
+                      style={styles.backBtn}
+                    >
+                      <Text style={styles.backBtnText}>{t.common.back}</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                <>
                 {/* Mode Toggle - Pill style */}
                 <View style={styles.toggleWrap}>
                   <TouchableOpacity
@@ -473,11 +599,14 @@ export default function EmailAuthScreen({ navigation }: Props) {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                   <Text style={styles.backBtnText}>{t.common.back}</Text>
                 </TouchableOpacity>
+                </>
+                )}
               </LinearGradient>
             </Animated.View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
+      <AuthNoticeModal modal={noticeModal} onClose={() => setNoticeModal(NOTICE_HIDDEN)} />
     </View>
   )
 }
@@ -491,9 +620,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 40,
-  },
-  centerWrap: {
-    flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16,
   },
 
   // Card
@@ -509,6 +635,8 @@ const styles = StyleSheet.create({
   },
 
   // Header
+  resetTitle: { fontSize: 20, fontWeight: '700', color: '#F3E8FF', textAlign: 'center', marginBottom: 8 },
+  resetDesc: { fontSize: 14, color: 'rgba(196, 181, 253, 0.8)', textAlign: 'center', marginBottom: 20 },
   header: { alignItems: 'center', marginBottom: 28 },
   iconWrap: { marginBottom: 20 },
   iconGradient: {
@@ -628,38 +756,25 @@ const styles = StyleSheet.create({
   backBtn: { alignItems: 'center', marginTop: 16, paddingVertical: 4 },
   backBtnText: { fontSize: 14, fontWeight: '500', color: 'rgba(196, 181, 253, 0.8)' },
 
-  // Confirmation screen
-  confirmCard: {
-    width: '100%', maxWidth: 420, borderRadius: 24, overflow: 'hidden',
-    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3, shadowRadius: 24, elevation: 10,
+  noticeBackdrop: {
+    flex: 1, backgroundColor: 'rgba(10, 1, 24, 0.75)',
+    alignItems: 'center', justifyContent: 'center', padding: 24,
   },
-  confirmCardGradient: {
-    padding: 32, borderRadius: 24, alignItems: 'center',
+  noticeBox: {
+    width: '100%', maxWidth: 360, backgroundColor: '#1a0f3e',
+    borderRadius: 20, padding: 28,
     borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)',
-    ...(({ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }) as any),
   },
-  confirmIconWrap: {
-    width: 80, height: 80, borderRadius: 40,
-    backgroundColor: 'rgba(124, 58, 237, 0.2)',
-    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)',
-    alignItems: 'center', justifyContent: 'center', marginBottom: 16, marginTop: 20,
+  noticeTitle: {
+    fontSize: 18, fontWeight: '700', color: C.TEXT,
+    textAlign: 'center', marginBottom: 12,
   },
-  confirmIcon: { fontSize: 36 },
-  confirmTitle: { fontSize: 22, fontWeight: '600', color: C.TEXT, marginBottom: 12 },
-  confirmDesc: { fontSize: 15, color: 'rgba(167, 139, 250, 0.8)', textAlign: 'center', lineHeight: 24, marginBottom: 20 },
-  confirmEmailBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: RADIUS.SM,
-    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)',
-    paddingHorizontal: 20, paddingVertical: 12, marginBottom: 20,
+  noticeMessage: {
+    fontSize: 15, color: C.TEXT_SECONDARY, textAlign: 'center',
+    lineHeight: 24, marginBottom: 24,
   },
-  confirmEmail: { fontSize: 15, fontWeight: '600', color: C.TEXT },
-  confirmSub: { fontSize: 13, color: 'rgba(167, 139, 250, 0.7)', textAlign: 'center', marginBottom: 24 },
-  resendButton: {
-    borderWidth: 2, borderColor: 'rgba(167, 139, 250, 0.4)', borderRadius: RADIUS.LG,
-    paddingVertical: 14, paddingHorizontal: 32, marginBottom: 12,
+  noticePrimaryBtn: {
+    borderRadius: RADIUS.LG, paddingVertical: 14, alignItems: 'center',
   },
-  resendButtonText: { fontSize: 15, fontWeight: '600', color: C.TEXT },
-  confirmLoginBtn: { padding: 12 },
-  confirmLoginText: { fontSize: 14, color: 'rgba(167, 139, 250, 0.7)' },
+  noticePrimaryText: { fontSize: 16, fontWeight: '600', color: '#fff' },
 })

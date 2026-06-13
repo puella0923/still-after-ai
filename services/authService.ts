@@ -6,7 +6,28 @@
 import * as Linking from 'expo-linking'
 import * as WebBrowser from 'expo-web-browser'
 import { Platform } from 'react-native'
-import { supabase } from './supabase'
+import type { Session } from '@supabase/supabase-js'
+import { supabase, isSupabaseConfigured } from './supabase'
+
+function connectionErrorMessage(): string {
+  return '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.'
+}
+
+function isNetworkError(message: string): boolean {
+  return /failed to fetch|network|fetch/i.test(message)
+}
+
+function isAlreadyRegistered(error: { message?: string; code?: string }): boolean {
+  return (
+    error.code === 'user_already_exists' ||
+    /already registered|user already registered/i.test(error.message ?? '')
+  )
+}
+
+function mapAuthErrorMessage(error: { message?: string; code?: string }, fallback: string): string {
+  if (isNetworkError(error.message ?? '')) return connectionErrorMessage()
+  return error.message || fallback
+}
 
 function getOAuthRedirectUrl(): string {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -17,11 +38,46 @@ function getOAuthRedirectUrl(): string {
 
 // ─── 이메일 회원가입 ───────────────────────────
 
+async function saveProfile(userId: string, nickname: string): Promise<void> {
+  try {
+    await supabase.from('profiles').upsert(
+      { id: userId, nickname },
+      { onConflict: 'id' }
+    )
+  } catch {
+    console.warn('[Auth] profiles 닉네임 저장 실패 (무시)')
+  }
+}
+
+async function ensureActiveSession(
+  email: string,
+  password: string,
+  existingSession: Session | null
+): Promise<{ ok: boolean; error?: string }> {
+  if (existingSession) return { ok: true }
+
+  const { data: { session } } = await supabase.auth.getSession()
+  if (session) return { ok: true }
+
+  const login = await signInWithEmail(email, password)
+  if (login.success) return { ok: true }
+
+  // signUp 직후 전파 지연 대비 1회 재시도
+  await new Promise((r) => setTimeout(r, 600))
+  const retry = await signInWithEmail(email, password)
+  if (retry.success) return { ok: true }
+
+  return { ok: false, error: retry.error ?? login.error ?? '로그인에 실패했습니다.' }
+}
+
 export async function signUpWithEmail(
   email: string,
   password: string,
   nickname: string
 ): Promise<{ success: boolean; needsConfirmation: boolean; error?: string }> {
+  if (!isSupabaseConfigured) {
+    return { success: false, needsConfirmation: false, error: connectionErrorMessage() }
+  }
   try {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -33,36 +89,49 @@ export async function signUpWithEmail(
     })
 
     if (error) {
-      if (error.message.includes('already registered') || error.message.includes('User already registered')) {
-        return { success: false, needsConfirmation: false, error: '이미 가입된 이메일입니다. 로그인해주세요.' }
+      if (isAlreadyRegistered(error)) {
+        const login = await signInWithEmail(email, password)
+        if (login.success) {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session?.user?.id) await saveProfile(session.user.id, nickname)
+          return { success: true, needsConfirmation: false }
+        }
+        return { success: false, needsConfirmation: false, error: '이미 가입된 이메일입니다. 로그인 탭에서 로그인해주세요.' }
       }
-      return { success: false, needsConfirmation: false, error: error.message }
+      return { success: false, needsConfirmation: false, error: mapAuthErrorMessage(error, '회원가입에 실패했습니다.') }
     }
 
-    // identities가 비어있으면 이미 가입된 이메일
+    // identities가 비어있으면 기존 계정 — 로그인 시도
     if (data.user?.identities && data.user.identities.length === 0) {
-      return { success: false, needsConfirmation: false, error: '이미 가입된 이메일입니다.' }
+      const login = await signInWithEmail(email, password)
+      if (login.success) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user?.id) await saveProfile(session.user.id, nickname)
+        return { success: true, needsConfirmation: false }
+      }
+      return { success: false, needsConfirmation: false, error: '이미 가입된 이메일입니다. 로그인 탭에서 로그인해주세요.' }
     }
 
-    // profiles 테이블에 닉네임 저장 (upsert — 실패해도 회원가입은 진행)
-    if (data.user?.id) {
-      try {
-        await supabase.from('profiles').upsert(
-          { id: data.user.id, nickname },
-          { onConflict: 'id' }
-        )
-      } catch {
-        console.warn('[Auth] profiles 닉네임 저장 실패 (무시)')
+    const sessionResult = await ensureActiveSession(email, password, data.session)
+    if (!sessionResult.ok) {
+      return {
+        success: false,
+        needsConfirmation: false,
+        error: sessionResult.error ?? '회원가입은 완료됐지만 로그인에 실패했습니다. 로그인 탭에서 다시 시도해주세요.',
       }
     }
 
-    // session이 null이면 이메일 인증이 필요한 상태
-    if (data.session === null) {
-      return { success: true, needsConfirmation: true }
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.user?.id) {
+      await saveProfile(session.user.id, nickname)
     }
 
     return { success: true, needsConfirmation: false }
-  } catch {
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : ''
+    if (isNetworkError(msg)) {
+      return { success: false, needsConfirmation: false, error: connectionErrorMessage() }
+    }
     return { success: false, needsConfirmation: false, error: '회원가입 중 오류가 발생했습니다.' }
   }
 }
@@ -73,6 +142,9 @@ export async function signInWithEmail(
   email: string,
   password: string
 ): Promise<{ success: boolean; error?: string; needsConfirmation?: boolean }> {
+  if (!isSupabaseConfigured) {
+    return { success: false, error: connectionErrorMessage() }
+  }
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -86,8 +158,8 @@ export async function signInWithEmail(
       if (error.message.includes('Invalid login credentials')) {
         return { success: false, error: '이메일 또는 비밀번호가 올바르지 않습니다.' }
       }
-      if (error.message.includes('network') || error.message.includes('fetch') || error.message.includes('Failed to fetch')) {
-        return { success: false, error: '서버에 연결할 수 없습니다. 인터넷 연결을 확인해주세요.' }
+      if (isNetworkError(error.message)) {
+        return { success: false, error: connectionErrorMessage() }
       }
       return { success: false, error: error.message }
     }
@@ -97,8 +169,45 @@ export async function signInWithEmail(
     }
 
     return { success: true }
-  } catch {
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : ''
+    if (isNetworkError(msg)) {
+      return { success: false, error: connectionErrorMessage() }
+    }
     return { success: false, error: '로그인 중 오류가 발생했습니다.' }
+  }
+}
+
+// ─── 이메일 OTP 인증 ───────────────────────────
+
+export async function verifyEmailOtp(
+  email: string,
+  token: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token: token.trim(),
+      type: 'signup',
+    })
+
+    if (error) {
+      if (error.message.includes('expired') || error.message.includes('Token has expired')) {
+        return { success: false, error: '인증 코드가 만료되었습니다. 메일을 재발송해주세요.' }
+      }
+      if (error.message.includes('invalid') || error.message.includes('Invalid')) {
+        return { success: false, error: '인증 코드가 올바르지 않습니다. 다시 확인해주세요.' }
+      }
+      return { success: false, error: error.message }
+    }
+
+    if (!data.session) {
+      return { success: false, error: '인증에 실패했습니다. 다시 시도해주세요.' }
+    }
+
+    return { success: true }
+  } catch {
+    return { success: false, error: '인증 중 오류가 발생했습니다.' }
   }
 }
 
@@ -106,7 +215,7 @@ export async function signInWithEmail(
 
 export async function resendConfirmationEmail(
   email: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; alreadyVerified?: boolean }> {
   try {
     const { error } = await supabase.auth.resend({
       type: 'signup',
@@ -116,11 +225,33 @@ export async function resendConfirmationEmail(
       },
     })
 
-    if (error) return { success: false, error: error.message }
+    if (error) {
+      const msg = error.message.toLowerCase()
+      if (
+        msg.includes('already confirmed') ||
+        msg.includes('already verified') ||
+        msg.includes('email already')
+      ) {
+        return { success: false, alreadyVerified: true, error: error.message }
+      }
+      return { success: false, error: error.message }
+    }
     return { success: true }
   } catch {
     return { success: false, error: '메일 재발송에 실패했습니다.' }
   }
+}
+
+/** 이메일 인증이 이미 완료됐는지 로그인 시도로 확인 */
+export async function checkEmailVerificationStatus(
+  email: string,
+  password: string
+): Promise<'verified' | 'needs_confirmation' | 'invalid_credentials' | 'error'> {
+  const result = await signInWithEmail(email, password)
+  if (result.success) return 'verified'
+  if (result.needsConfirmation) return 'needs_confirmation'
+  if (result.error?.includes('Invalid login credentials')) return 'invalid_credentials'
+  return 'error'
 }
 
 // ─── 비밀번호 재설정 ───────────────────────────
@@ -139,6 +270,18 @@ export async function sendPasswordReset(
     return { success: true }
   } catch {
     return { success: false, error: '비밀번호 재설정 메일 발송에 실패했습니다.' }
+  }
+}
+
+export async function updatePassword(
+  newPassword: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) return { success: false, error: mapAuthErrorMessage(error, '비밀번호 변경에 실패했습니다.') }
+    return { success: true }
+  } catch {
+    return { success: false, error: connectionErrorMessage() }
   }
 }
 
@@ -187,6 +330,9 @@ export async function signInWithKakao(): Promise<{ success: boolean; error?: str
 // ─── 구글 OAuth ───────────────────────────
 
 export async function signInWithGoogle(): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured) {
+    return { success: false, error: connectionErrorMessage() }
+  }
   try {
     const redirectUrl = getOAuthRedirectUrl()
     const isWeb = Platform.OS === 'web'
@@ -221,7 +367,11 @@ export async function signInWithGoogle(): Promise<{ success: boolean; error?: st
     }
 
     return { success: false, error: '구글 로그인에 실패했습니다.' }
-  } catch {
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : ''
+    if (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed to fetch')) {
+      return { success: false, error: connectionErrorMessage() }
+    }
     return { success: false, error: '구글 로그인 중 오류가 발생했습니다.' }
   }
 }

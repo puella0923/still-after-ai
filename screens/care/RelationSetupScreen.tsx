@@ -10,14 +10,12 @@ import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useLanguage } from '../../context/LanguageContext'
 import CosmicBackground from '../../components/CosmicBackground'
 import TopStickyControls from '../../components/TopStickyControls'
+import { PERSON_RELATION_KEYS, PET_TYPE_KEYS, type PersonRelationKey, type PetTypeKey } from '../../constants/relations'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'RelationSetup'>
   route: RouteProp<RootStackParamList, 'RelationSetup'>
 }
-
-const PERSON_RELATIONS = ['부모님', '배우자', '자녀', '친구', '연인', '기타']
-const PET_TYPES = ['강아지', '고양이', '앵무새', '햄스터', '토끼', '물고기', '기타']
 
 const RELATION_ORBS = [
   { top: '5%', right: '-15%', color: 'rgba(168, 85, 247, 0.12)', size: 280 },
@@ -28,12 +26,17 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
   const { t } = useLanguage()
   const { careType } = route.params
   const isPerson = careType === 'human'
-  const [selectedRelation, setSelectedRelation] = useState<string | null>(null)
+  const [selectedRelation, setSelectedRelation] = useState<PersonRelationKey | PetTypeKey | null>(null)
   const [customRelation, setCustomRelation] = useState('')
   const [name, setName] = useState('')
 
-  const showCustomInput = selectedRelation === '기타'
-  const resolvedRelation = showCustomInput ? customRelation.trim() : (selectedRelation ?? '')
+  const relationLabels = isPerson ? t.relation.relations : t.relation.petTypes
+  const showCustomInput = selectedRelation === 'other'
+  const resolvedRelation = showCustomInput
+    ? customRelation.trim()
+    : selectedRelation
+      ? relationLabels[selectedRelation as keyof typeof relationLabels]
+      : ''
   const canProceed = resolvedRelation.length > 0 && name.trim().length > 0
 
   const handleNext = () => {
@@ -45,7 +48,7 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
     })
   }
 
-  const chips = isPerson ? PERSON_RELATIONS : PET_TYPES
+  const chips = isPerson ? PERSON_RELATION_KEYS : PET_TYPE_KEYS
 
   return (
     <View style={styles.root}>
@@ -69,22 +72,23 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
 
           {/* Chips */}
           <View style={styles.chipGrid}>
-            {chips.map((item) => {
-              const isSelected = selectedRelation === item
+            {chips.map((key) => {
+              const label = relationLabels[key as keyof typeof relationLabels]
+              const isSelected = selectedRelation === key
               return (
                 <TouchableOpacity
-                  key={item}
-                  onPress={() => setSelectedRelation(item)}
+                  key={key}
+                  onPress={() => setSelectedRelation(key)}
                   activeOpacity={0.8}
                   style={styles.chip}
                 >
                   {isSelected ? (
                     <LinearGradient colors={['#a855f7', '#db2777']} style={styles.chipInner}>
-                      <Text style={styles.chipTextSelected}>{item}</Text>
+                      <Text style={styles.chipTextSelected}>{label}</Text>
                     </LinearGradient>
                   ) : (
                     <View style={styles.chipInner}>
-                      <Text style={styles.chipText}>{item}</Text>
+                      <Text style={styles.chipText}>{label}</Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -96,11 +100,11 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
           {showCustomInput && (
             <View style={styles.inputSection}>
               <Text style={styles.inputLabel}>
-                {isPerson ? '관계를 직접 입력해주세요' : '반려동물 종류를 직접 입력해주세요'}
+                {isPerson ? t.relation.customLabelHuman : t.relation.customLabelPet}
               </Text>
               <TextInput
                 style={styles.textInput}
-                placeholder={isPerson ? '예) 스승님, 직장 동료' : '예) 거북이, 도마뱀'}
+                placeholder={isPerson ? t.relation.customPlaceholderHuman : t.relation.customPlaceholderPet}
                 placeholderTextColor="rgba(255,255,255,0.3)"
                 value={customRelation}
                 onChangeText={setCustomRelation}

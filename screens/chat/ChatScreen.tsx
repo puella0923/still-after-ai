@@ -30,7 +30,6 @@ import { C, RADIUS } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
 import CosmicBackground from '../../components/CosmicBackground'
 import {
-  FREE_MESSAGE_LIMIT,
   STAGE_TRANSITION_MIN,
   CLOSURE_MESSAGE_LIMIT,
   STABLE_TRANSITION_MIN,
@@ -38,11 +37,6 @@ import {
 } from '../../constants/chat'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
-
-// 테스트/개발 계정은 Paywall 우회 — 프로덕션 빌드에서는 환경변수로 비활성화
-const TEST_EMAILS_RAW = process.env.EXPO_PUBLIC_TEST_EMAILS || ''
-const TEST_EMAILS = TEST_EMAILS_RAW ? TEST_EMAILS_RAW.split(',').map((e: string) => e.trim().toLowerCase()) : []
-const isTestAccount = (email?: string | null) => !!email && TEST_EMAILS.includes(email.toLowerCase())
 
 function getStagePhase(count: number): 1 | 2 | 3 | 4 {
   if (count <= 5) return 1
@@ -101,7 +95,7 @@ type Message = {
   id: string
   role: 'user' | 'assistant' | 'system'
   content: string
-  action?: 'goto_stable' | 'goto_closure'
+  action?: 'goto_stable' | 'goto_closure' | 'goto_letter'
 }
 
 export default function ChatScreen({ navigation, route }: Props) {
@@ -123,13 +117,10 @@ export default function ChatScreen({ navigation, route }: Props) {
   const [toastText, setToastText] = useState('')
   const [userMessageCount, setUserMessageCount] = useState(0)
   const [stageMessageCount, setStageMessageCount] = useState(0)
-  const [freeUsageCount, setFreeUsageCount] = useState<number | null>(null)
-  const [isPaidUser, setIsPaidUser] = useState(false)
   const [closureLetter, setClosureLetter] = useState<{ content: string; ai_farewell: string } | null>(null)
   const [showDangerModal, setShowDangerModal] = useState(false)
   const [stageConfirmTarget, setStageConfirmTarget] = useState<'stable' | 'closure' | null>(null)
   const [aiBannerDismissed, setAiBannerDismissed] = useState(false)
-  const [showPaywall, setShowPaywall] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const isReadOnly = !!(persona?.is_archived)
 
@@ -159,26 +150,6 @@ export default function ChatScreen({ navigation, route }: Props) {
         setPersona(p)
 
         const history = await getConversations(personaId)
-
-        try {
-          const { data: { user: authUser } } = await supabase.auth.getUser()
-          if (authUser) {
-            const { data: usage } = await supabase
-              .from('user_usage')
-              .select('message_count, is_paid')
-              .eq('user_id', authUser.id)
-              .eq('persona_id', personaId)
-              .single()
-            if (usage) {
-              const paid = usage.is_paid ?? false
-              setFreeUsageCount(usage.message_count ?? 0)
-              setIsPaidUser(paid || isTestAccount(authUser.email))
-            } else {
-              setFreeUsageCount(0)
-              setIsPaidUser(isTestAccount(authUser.email))
-            }
-          }
-        } catch { /* ignore */ }
 
         if (p.is_archived) {
           try {
@@ -284,6 +255,17 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         }]
       })
     }
+
+    if (stage === 'closure' && stageMessageCount >= CLOSURE_MESSAGE_LIMIT) {
+      setMessages(prev => {
+        if (prev.some(m => m.action === 'goto_letter')) return prev
+        return [...prev, {
+          id: makeId(), role: 'system',
+          content: t.chat.stageTransitionToLetter,
+          action: 'goto_letter' as const,
+        }]
+      })
+    }
   }, [loading, persona?.emotional_stage, stageMessageCount])
 
   const showDangerAlert = useCallback((userMessage: string) => {
@@ -345,6 +327,17 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
     } catch { showToast(t.chat.retryLater) }
   }, [persona, showToast])
 
+  const navigateToClosureLetter = useCallback((aiFarewell?: string) => {
+    if (!persona) return
+    const lastAiMsg = [...messages].reverse().find(m => m.role === 'assistant')
+    navigation.navigate('ClosureCeremony', {
+      personaId: persona.id,
+      personaName: persona.name,
+      aiFarewell: aiFarewell ?? lastAiMsg?.content ?? '',
+      careType: persona.care_type ?? 'human',
+    })
+  }, [persona, messages, navigation])
+
   const handleClosureTransition = useCallback(async () => {
     if (!persona) return
     try {
@@ -356,9 +349,6 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       setMessages(prev => [...prev, { id: makeId(), role: 'system', content: t.chat.systemClosureEntered }])
     } catch { showToast(t.chat.retryLater) }
   }, [persona, showToast])
-
-  // 무료 베타 기간: Paywall 비활성화
-  const isPaywallBlocked = false
 
   const sendMessage = useCallback(async () => {
     const trimmed = inputText.trim()
@@ -450,25 +440,17 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         else if (newStageCount === 18) closureGuide = t.chat.closureProgress[4]
         if (closureGuide) setMessages(prev => [...prev, { id: makeId(), role: 'system', content: closureGuide! }])
         if (newStageCount >= CLOSURE_MESSAGE_LIMIT) {
-          setTimeout(() => { navigation.navigate('ClosureCeremony', { personaId: persona.id, personaName: persona.name, aiFarewell: reply, careType: persona.care_type ?? 'human' }) }, 3000)
+          setMessages(prev => {
+            if (prev.some(m => m.action === 'goto_letter')) return prev
+            return [...prev, {
+              id: makeId(), role: 'system',
+              content: t.chat.stageTransitionToLetter,
+              action: 'goto_letter' as const,
+            }]
+          })
         }
       }
 
-      // Free usage tracking
-      try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          const { data: usage } = await supabase.from('user_usage').select('message_count, is_paid').eq('user_id', user.id).eq('persona_id', persona.id).single()
-          if (usage) {
-            const newCount = (usage.message_count ?? 0) + 1
-            await supabase.from('user_usage').update({ message_count: newCount, updated_at: new Date().toISOString() }).eq('user_id', user.id).eq('persona_id', persona.id)
-            setFreeUsageCount(newCount)
-          } else {
-            await supabase.from('user_usage').insert({ user_id: user.id, persona_id: persona.id, message_count: 1, is_paid: false })
-            setFreeUsageCount(1)
-          }
-        }
-      } catch { /* ignore */ }
     } catch (err) {
       if (__DEV__) console.error('[Chat] sendMessage error:', err)
       setErrorMsg(err instanceof Error ? err.message : t.chat.sendError)
@@ -481,7 +463,6 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
   const personaName = persona?.name ?? '...'
   const avatarChar = personaName.charAt(0)
   const photoUrl = persona?.photo_url ?? null
-  const freeRemaining = (!isPaidUser && freeUsageCount !== null) ? Math.max(0, FREE_MESSAGE_LIMIT - freeUsageCount) : null
 
   const headerSubtitleText = (() => {
     if (persona?.emotional_stage === 'closure') {
@@ -639,10 +620,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
 
         {/* Closure banner */}
         {persona?.emotional_stage === 'closure' && !isReadOnly && (
-          <TouchableOpacity style={styles.closureBanner} onPress={() => {
-            const lastAiMsg = [...messages].reverse().find(m => m.role === 'assistant')
-            navigation.navigate('ClosureCeremony', { personaId: persona.id, personaName: persona.name, aiFarewell: lastAiMsg?.content ?? '', careType: persona.care_type ?? 'human' })
-          }}>
+          <TouchableOpacity style={styles.closureBanner} onPress={() => navigateToClosureLetter()}>
             <Text style={styles.closureBannerText}>{t.chat.closureLetterBtn}</Text>
           </TouchableOpacity>
         )}
@@ -703,13 +681,18 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
             }
             renderItem={({ item, index }) => {
               if (item.role === 'system') {
-                const hasCta = item.action === 'goto_stable' || item.action === 'goto_closure'
-                // Bug 3 fix: 단계 전환 버튼은 최근 5개 메시지 안에 있을 때만 노출
-                // 이후 메시지가 쌓이면 버튼이 사라지지만 텍스트는 그대로 유지됨
+                const hasCta = item.action === 'goto_stable' || item.action === 'goto_closure' || item.action === 'goto_letter'
+                // 단계 전환 버튼은 최근 5개 메시지 안에 있을 때만 노출 (편지 제안은 항상 표시)
                 const isRecentEnough = index >= messages.length - 5
-                const showCta = hasCta && isRecentEnough
-                const ctaLabel = item.action === 'goto_stable' ? t.chat.gotoStableBtn : t.chat.gotoClosureBtn
-                const ctaHandler = item.action === 'goto_stable' ? () => setStageConfirmTarget('stable') : () => setStageConfirmTarget('closure')
+                const showCta = hasCta && (item.action === 'goto_letter' || isRecentEnough)
+                const ctaLabel =
+                  item.action === 'goto_stable' ? t.chat.gotoStableBtn
+                  : item.action === 'goto_closure' ? t.chat.gotoClosureBtn
+                  : t.chat.gotoLetterBtn
+                const ctaHandler =
+                  item.action === 'goto_stable' ? () => setStageConfirmTarget('stable')
+                  : item.action === 'goto_closure' ? () => setStageConfirmTarget('closure')
+                  : () => navigateToClosureLetter()
                 return (
                   <View style={styles.systemCardWrap}>
                     <View style={styles.systemAvatar}><Text style={styles.systemAvatarText}>✦</Text></View>
@@ -851,13 +834,6 @@ const styles = StyleSheet.create({
   dangerCallBtnGrad: {
     paddingVertical: 14, borderRadius: 12, alignItems: 'center' as const,
   },
-  paywallPayBtn: {
-    alignSelf: 'stretch' as const, borderRadius: 12, overflow: 'hidden' as const, marginBottom: 10,
-    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6,
-  },
-  paywallPayBtnGrad: {
-    paddingVertical: 14, borderRadius: 12, alignItems: 'center' as const,
-  },
   modalBtnSecondary: {
     alignSelf: 'stretch' as const, paddingVertical: 14, borderRadius: 12, alignItems: 'center' as const,
     backgroundColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.5)',
@@ -905,18 +881,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(167, 139, 250, 0.15)',
   },
   readOnlyBannerText: { fontSize: 13, color: 'rgba(167, 139, 250, 0.7)', textAlign: 'center' },
-  freeNudgeBanner: {
-    backgroundColor: 'rgba(124, 58, 237, 0.12)', paddingHorizontal: 16, paddingVertical: 8,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(124, 58, 237, 0.2)',
-  },
-  freeNudgeText: { fontSize: 12, color: 'rgba(196, 181, 253, 0.75)', textAlign: 'center', lineHeight: 18 },
-  paywallBar: {
-    backgroundColor: 'rgba(124, 58, 237, 0.15)', paddingHorizontal: 20, paddingVertical: 16,
-    borderTopWidth: 1, borderTopColor: 'rgba(167, 139, 250, 0.3)',
-    alignItems: 'center',
-  },
-  paywallBarText: { fontSize: 14, color: '#C4B5FD', fontWeight: '600', textAlign: 'center' },
-
   // Messages
   messageList: { paddingTop: 16, paddingBottom: 8 },
   emptyState: { alignItems: 'center', marginTop: 80 },

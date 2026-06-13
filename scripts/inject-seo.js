@@ -63,6 +63,22 @@ const seoTags = `
       })(window, document, "clarity", "script", "wbn3kcnrth");
     </script>`;
 
+const mobileReadabilityCss = `
+    <style id="mobile-readability">
+      html { -webkit-text-size-adjust: 100%; }
+      body { word-break: keep-all; overflow-wrap: break-word; }
+    </style>`;
+
+const distApp = path.join(__dirname, '..', 'dist', 'app.html');
+if (fs.existsSync(distApp)) {
+  let appHtml = fs.readFileSync(distApp, 'utf-8');
+  if (!appHtml.includes('mobile-readability')) {
+    appHtml = appHtml.replace('</head>', mobileReadabilityCss + '\n  </head>');
+    fs.writeFileSync(distApp, appHtml, 'utf-8');
+    console.log('✅ Mobile readability CSS injected into app.html.');
+  }
+}
+
 let html = fs.readFileSync(distIndex, 'utf-8');
 
 // 이미 주입된 경우 스킵 (naver-site-verification 플레이스홀더 업데이트 시에는 재실행 필요)

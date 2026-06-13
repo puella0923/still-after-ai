@@ -15,8 +15,8 @@ const linking: LinkingOptions<RootStackParamList> = {
     'https://localhost:8081',
     'http://localhost:8082',
     'https://localhost:8082',
-    'https://dist-alpha-six-89.vercel.app',
-    'https://dist-5gsmr209l-puella0923-9626s-projects.vercel.app',
+    'https://stillafter.com',
+    'https://www.stillafter.com',
     'still-after://',
   ],
   config: {
@@ -38,21 +38,24 @@ const linking: LinkingOptions<RootStackParamList> = {
       PersonaCreate:   'PersonaCreate',
       PersonaEdit:     'PersonaEdit',
       AIGenerating:    'AIGenerating',
-      Paywall:         'Paywall',
       Settings:        'Settings',
       AccountProfile:  'AccountProfile',
       PrivacyPolicy:   'PrivacyPolicy',
       Terms:           'Terms',
       CustomerSupport: 'CustomerSupport',
       ClosureCeremony: 'ClosureCeremony',
-      Chat:            'Chat',
+      Chat: {
+        path: 'Chat/:personaId?',
+        parse: { personaId: String },
+      },
     },
   },
 }
 
 function AppContent() {
-  const { loading, session } = useAuth()
-  const isAuthed = !!session
+  const { loading, session, pendingPasswordRecovery } = useAuth()
+  const needsPasswordReset = pendingPasswordRecovery && !!session
+  const isAuthed = !!session && !needsPasswordReset
 
   if (loading) {
     return (
@@ -61,7 +64,11 @@ function AppContent() {
       </View>
     )
   }
-  const initialRoute: keyof RootStackParamList = isAuthed ? 'Main' : 'Onboarding'
+  const initialRoute: keyof RootStackParamList = needsPasswordReset
+    ? 'EmailAuth'
+    : isAuthed
+      ? 'Main'
+      : 'Onboarding'
 
   // Strip /ko or /en language prefix from URL path before routing
   // e.g.  /ko/Login → /Login,  /en/AccountProfile → /AccountProfile
@@ -71,7 +78,19 @@ function AppContent() {
   // 인증 상태별 딥링크 설정
   // - 로그인됨: 루트 URL('') → Main, Login/Onboarding URL 접근 시에도 Main으로
   // - 비인증: 루트 URL('') → Onboarding, 인증 화면만 URL 접근 허용
-  const activeLinking = isAuthed ? {
+  const activeLinking = needsPasswordReset ? {
+    ...linking,
+    config: {
+      screens: {
+        EmailAuth: {
+          path: '',
+          alias: ['auth/callback', 'auth/reset-password', 'EmailAuth'],
+        },
+      },
+    },
+    getStateFromPath: (path: string, options: any) =>
+      defaultGetStateFromPath(stripLangPrefix(path), options),
+  } : isAuthed ? {
     ...linking,
     config: {
       screens: {
@@ -83,14 +102,16 @@ function AppContent() {
         PersonaCreate: 'PersonaCreate',
         PersonaEdit: 'PersonaEdit',
         AIGenerating: 'AIGenerating',
-        Paywall: 'Paywall',
         Settings: 'Settings',
         AccountProfile: 'AccountProfile',
         PrivacyPolicy: 'PrivacyPolicy',
         Terms: 'Terms',
         CustomerSupport: 'CustomerSupport',
         ClosureCeremony: 'ClosureCeremony',
-        Chat: 'Chat',
+        Chat: {
+          path: 'Chat/:personaId?',
+          parse: { personaId: String },
+        },
         // Login, EmailAuth, Onboarding 제외 → URL로 접근해도 Main으로 이동
       },
     },
@@ -125,7 +146,7 @@ function AppContent() {
 
   return (
     <NavigationContainer
-      key={isAuthed ? 'authed' : 'guest'}
+      key={needsPasswordReset ? 'recovery' : isAuthed ? 'authed' : 'guest'}
       linking={activeLinking}
       documentTitle={{
         // 모든 화면에서 일관된 브랜드 title을 노출.

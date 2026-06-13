@@ -13,13 +13,12 @@ import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
 import CosmicBackground from '../../components/CosmicBackground'
 import TopStickyControls from '../../components/TopStickyControls'
+import { EDIT_RELATION_KEYS } from '../../constants/relations'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'PersonaEdit'>
   route: RouteProp<RootStackParamList, 'PersonaEdit'>
 }
-
-const RELATIONS = ['부모님', '배우자', '연인', '친구', '형제/자매', '자녀', '반려동물', '기타']
 
 const EDIT_ORBS = [
   { top: '-5%', right: '-15%', color: 'rgba(168, 85, 247, 0.1)', size: 280 },
@@ -175,11 +174,12 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
         <View style={styles.section}>
           <Text style={styles.label}>{t.personaEdit.relationLabel(name || personaName)}</Text>
           <View style={styles.chipRow}>
-            {RELATIONS.map(rel => {
+            {EDIT_RELATION_KEYS.map((key) => {
+              const rel = t.personaEdit.relations[key]
               const selected = relationship === rel
               return (
                 <TouchableOpacity
-                  key={rel}
+                  key={key}
                   style={[styles.chip, selected && styles.chipSelected]}
                   onPress={() => setRelationship(rel)}
                   activeOpacity={0.75}

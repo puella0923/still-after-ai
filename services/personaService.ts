@@ -296,11 +296,7 @@ export async function diagnoseDatabaseHealth(): Promise<{ ok: boolean; issues: s
 
     // personas 테이블 user_nickname 컬럼 확인
     const { error: pErr } = await supabase.from('personas').select('user_nickname').limit(1)
-    if (pErr) issues.push(`personas.user_nickname 컬럼 없음 — supabase_006 실행 필요`)
-
-    // user_usage 테이블 확인
-    const { error: uErr } = await supabase.from('user_usage').select('id').limit(1)
-    if (uErr) issues.push(`user_usage: ${uErr.message}`)
+    if (pErr) issues.push(`personas.user_nickname 컬럼 없음 — migration 003 실행 필요`)
 
   } catch (err) {
     issues.push(`DB 연결 실패: ${err instanceof Error ? err.message : String(err)}`)

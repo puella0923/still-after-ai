@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, Pressable, StyleSheet,
   ScrollView, Alert, ActivityIndicator, Platform, SafeAreaView, Image,
@@ -14,6 +14,7 @@ import { useLanguage } from '../../context/LanguageContext'
 import { C, RADIUS } from '../theme'
 import CosmicBackground from '../../components/CosmicBackground'
 import TopStickyControls from '../../components/TopStickyControls'
+import { PERSON_RELATION_KEYS_FULL, PET_TYPE_KEYS } from '../../constants/relations'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'PersonaCreate'>
@@ -25,9 +26,6 @@ type KakaoParseResult = {
   rawText: string
   fileName: string
 }
-
-const RELATIONS = ['부모님', '배우자', '연인', '친구', '형제/자매', '자녀', '기타']
-const PET_TYPES = ['강아지', '고양이', '앵무새', '햄스터', '토끼', '물고기', '기타']
 
 /** 이름 마지막 글자 받침 유무에 따라 "이름아/이름야" 반환 */
 function getCallingForm(name: string): string {
@@ -139,39 +137,52 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name, kakaoRawText, activeTab])
 
-  // 웹 파일 선택
+  const webKakaoFileRef = useRef<HTMLInputElement | null>(null)
+
+  const readKakaoWebFile = useCallback((file: File) => {
+    setIsParsing(true)
+    setErrorMsg('')
+    setFileName(file.name)
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const rawText = ev.target?.result as string
+      processKakaoFile(rawText || '', file.name)
+    }
+    reader.onerror = () => {
+      setErrorMsg(t.personaCreate.errorCannotRead)
+      setIsParsing(false)
+    }
+    reader.readAsText(file, 'UTF-8')
+  }, [t])
+
+  // 웹: DOM에 고정 file input 유지 (Playwright/접근성 + 매번 createElement 방지)
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return
+
+    let input = document.getElementById('kakao-chat-file-input') as HTMLInputElement | null
+    if (!input) {
+      input = document.createElement('input')
+      input.id = 'kakao-chat-file-input'
+      input.type = 'file'
+      input.accept = '.txt,.csv,text/plain,text/csv'
+      input.style.display = 'none'
+      document.body.appendChild(input)
+    }
+    webKakaoFileRef.current = input
+
+    const onChange = (e: Event) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) return
+      readKakaoWebFile(file)
+      ;(e.target as HTMLInputElement).value = ''
+    }
+    input.addEventListener('change', onChange)
+    return () => input?.removeEventListener('change', onChange)
+  }, [readKakaoWebFile])
+
   const handleWebFilePick = () => {
     if (Platform.OS !== 'web') return
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.txt,.csv,text/plain,text/csv'
-    input.style.display = 'none'
-    document.body.appendChild(input)
-    input.onchange = (e: Event) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      if (!file) {
-        document.body.removeChild(input)
-        return
-      }
-
-      setIsParsing(true)
-      setErrorMsg('')
-      setFileName(file.name)
-
-      const reader = new FileReader()
-      reader.onload = (ev) => {
-        const rawText = ev.target?.result as string
-        processKakaoFile(rawText || '', file.name)
-        document.body.removeChild(input)
-      }
-      reader.onerror = () => {
-        setErrorMsg(t.personaCreate.errorCannotRead)
-        setIsParsing(false)
-        document.body.removeChild(input)
-      }
-      reader.readAsText(file, 'UTF-8')
-    }
-    input.click()
+    webKakaoFileRef.current?.click()
   }
 
   // 네이티브 파일 선택
@@ -271,8 +282,10 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
     }
   }
 
-  const resolvedAnimalType = animalType === '다른 동물' ? customAnimal.trim() : animalType
-  const resolvedRelationship = relationship === '기타' ? customRelationship.trim() : relationship
+  const otherRelationLabel = t.personaEdit.relations.other
+  const otherPetLabel = t.relation.petTypes.other
+  const resolvedAnimalType = animalType === otherPetLabel ? customAnimal.trim() : animalType
+  const resolvedRelationship = relationship === otherRelationLabel ? customRelationship.trim() : relationship
 
   const canSubmit = (): boolean => {
     if (!name.trim() || !agreedToService) return false
@@ -281,7 +294,7 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
       return petLastMemory.trim().length >= 10
     }
     if (!relationship) return false
-    if (relationship === '기타' && !customRelationship.trim()) return false
+    if (relationship === otherRelationLabel && !customRelationship.trim()) return false
     if (activeTab === 'manual') return manualText.trim().length >= 20
     if (activeTab === 'kakao') return parseResult !== null && kakaoRawText.trim().length > 0
     return false
@@ -321,7 +334,7 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
           ? t.personaCreate.errorPetTypeRequired
           : !isPet && !relationship
           ? t.personaCreate.errorRelationRequired
-          : !isPet && relationship === '기타' && !customRelationship.trim()
+          : !isPet && relationship === otherRelationLabel && !customRelationship.trim()
           ? t.personaCreate.errorRelationCustomRequired
           : !isPet && activeTab === 'kakao' && !parseResult
           ? t.personaCreate.errorKakaoRequired
@@ -499,19 +512,21 @@ ${manualText.trim()}
           <View style={styles.section}>
             <Text style={styles.label}>{t.personaCreate.relationLabel}</Text>
             <View style={styles.relationRow}>
-              {RELATIONS.map(rel => (
+              {PERSON_RELATION_KEYS_FULL.map((key) => {
+                const rel = t.personaEdit.relations[key]
+                return (
                 <TouchableOpacity
-                  key={rel}
+                  key={key}
                   style={[styles.relationBtn, relationship === rel && styles.relationBtnActive]}
-                  onPress={() => { setRelationship(rel); if (rel !== '기타') setCustomRelationship('') }}
+                  onPress={() => { setRelationship(rel); if (key !== 'other') setCustomRelationship('') }}
                 >
                   <Text style={[styles.relationText, relationship === rel && styles.relationTextActive]}>
                     {rel}
                   </Text>
                 </TouchableOpacity>
-              ))}
+              )})}
             </View>
-            {relationship === '기타' && (
+            {relationship === otherRelationLabel && (
               <TextInput
                 style={[styles.input, { marginTop: 12 }]}
                 placeholder={t.personaCreate.relationOtherPlaceholder}
@@ -529,17 +544,19 @@ ${manualText.trim()}
           <View style={styles.section}>
             <Text style={styles.label}>{t.personaCreate.petTypeLabel}</Text>
             <View style={styles.relationRow}>
-              {PET_TYPES.map(pt => (
+              {PET_TYPE_KEYS.map((key) => {
+                const pt = t.relation.petTypes[key]
+                return (
                 <TouchableOpacity
-                  key={pt}
+                  key={key}
                   style={[styles.relationBtn, animalType === pt && styles.relationBtnActive]}
-                  onPress={() => { setAnimalType(pt); if (pt !== '다른 동물') setCustomAnimal('') }}
+                  onPress={() => { setAnimalType(pt); if (key !== 'other') setCustomAnimal('') }}
                 >
                   <Text style={[styles.relationText, animalType === pt && styles.relationTextActive]}>{pt}</Text>
                 </TouchableOpacity>
-              ))}
+              )})}
             </View>
-            {animalType === '다른 동물' && (
+            {animalType === otherPetLabel && (
               <TextInput
                 style={[styles.input, { marginTop: 12 }]}
                 placeholder={t.personaCreate.petOtherPlaceholder}
