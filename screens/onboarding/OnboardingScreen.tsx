@@ -8,6 +8,9 @@ import {
   Animated,
   Dimensions,
   Platform,
+  useWindowDimensions,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -26,8 +29,26 @@ export default function OnboardingScreen({ navigation }: Props) {
   const { session } = useAuth()
   const { t, language, toggleLanguage } = useLanguage()
   const o = t.onboarding
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions()
+  const isNarrow = screenWidth <= 380
   const [demoTab, setDemoTab] = useState<'replay' | 'stable' | 'closure' | 'pet'>('replay')
+  const [showStickyCta, setShowStickyCta] = useState(false)
   const fadeAnim = useRef(new Animated.Value(0)).current
+  const stickyAnim = useRef(new Animated.Value(0)).current
+
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const y = e.nativeEvent.contentOffset.y
+    const shouldShow = y > screenHeight
+    if (shouldShow !== showStickyCta) setShowStickyCta(shouldShow)
+  }
+
+  useEffect(() => {
+    Animated.timing(stickyAnim, {
+      toValue: showStickyCta ? 1 : 0,
+      duration: 200,
+      useNativeDriver: Platform.OS !== 'web',
+    }).start()
+  }, [showStickyCta, stickyAnim])
 
   useEffect(() => {
     if (session) {
@@ -61,7 +82,13 @@ export default function OnboardingScreen({ navigation }: Props) {
         )
       })}
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} style={styles.scroll}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        style={styles.scroll}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >
         <View style={styles.contentWrapper}>
 
         {/* ── 언어 토글 ── */}
@@ -323,25 +350,25 @@ export default function OnboardingScreen({ navigation }: Props) {
         </View>
 
         {/* ════ ⑤ 3단계 여정 ════ */}
-        <View style={[styles.section, styles.sectionDark]}>
-          <Text style={styles.sectionTitle}>{o.demoSectionTitle}</Text>
+        <View style={[styles.section, styles.sectionDark, isNarrow && styles.sectionNarrow]}>
+          <Text style={[styles.sectionTitle, isNarrow && styles.sectionTitleNarrow]}>{o.demoSectionTitle}</Text>
           <Text style={styles.sectionDesc}>{o.journeyTitle}</Text>
 
           <View style={styles.stageList}>
 
             {/* ── Step 01 재연 ── */}
-            <View style={[styles.stageRow, styles.stageRowBorder]}>
-              <View style={styles.stageLeft}>
+            <View style={[styles.stageRow, styles.stageRowBorder, isNarrow && styles.stageRowNarrow]}>
+              <View style={[styles.stageLeft, isNarrow && styles.stageLeftNarrow]}>
                 <Text style={styles.stageNum}>Step 01</Text>
                 <Text style={styles.stageName}>{o.stageReplayName}</Text>
               </View>
-              <View style={styles.stageRight}>
+              <View style={[styles.stageRight, isNarrow && styles.stageRightNarrow]}>
                 <Text style={styles.stageDesc}>{o.stage1Desc}</Text>
-                <View style={styles.stageMsg}>
+                <View style={[styles.stageMsg, isNarrow && styles.stageMsgNarrow]}>
                   <Text style={styles.stageMsgIcon}>💜</Text>
                   <Text style={styles.stageMsgText}>{o.demoReplayStatus1}</Text>
                 </View>
-                <View style={[styles.stageMsg, { marginTop: 8 }]}>
+                <View style={[styles.stageMsg, { marginTop: 8 }, isNarrow && styles.stageMsgNarrow]}>
                   <Text style={styles.stageMsgIcon}>💬</Text>
                   <Text style={styles.stageMsgText}>{o.demoReplayStatus2}</Text>
                 </View>
@@ -352,18 +379,18 @@ export default function OnboardingScreen({ navigation }: Props) {
             </View>
 
             {/* ── Step 02 안정 ── */}
-            <View style={[styles.stageRow, styles.stageRowBorder]}>
-              <View style={styles.stageLeft}>
+            <View style={[styles.stageRow, styles.stageRowBorder, isNarrow && styles.stageRowNarrow]}>
+              <View style={[styles.stageLeft, isNarrow && styles.stageLeftNarrow]}>
                 <Text style={styles.stageNum}>Step 02</Text>
                 <Text style={styles.stageName}>{o.stageHealingName}</Text>
               </View>
-              <View style={styles.stageRight}>
+              <View style={[styles.stageRight, isNarrow && styles.stageRightNarrow]}>
                 <Text style={styles.stageDesc}>{o.stage2Desc}</Text>
-                <View style={styles.stageMsg}>
+                <View style={[styles.stageMsg, isNarrow && styles.stageMsgNarrow]}>
                   <Text style={styles.stageMsgIcon}>💙</Text>
                   <Text style={styles.stageMsgText}>{o.demoStableStatus1}</Text>
                 </View>
-                <View style={[styles.stageMsg, { marginTop: 8 }]}>
+                <View style={[styles.stageMsg, { marginTop: 8 }, isNarrow && styles.stageMsgNarrow]}>
                   <Text style={styles.stageMsgIcon}>💬</Text>
                   <Text style={styles.stageMsgText}>{o.demoStableStatus2}</Text>
                 </View>
@@ -374,31 +401,31 @@ export default function OnboardingScreen({ navigation }: Props) {
             </View>
 
             {/* ── Step 03 이별 ── */}
-            <View style={styles.stageRow}>
-              <View style={styles.stageLeft}>
+            <View style={[styles.stageRow, isNarrow && styles.stageRowNarrow]}>
+              <View style={[styles.stageLeft, isNarrow && styles.stageLeftNarrow]}>
                 <Text style={styles.stageNum}>Step 03</Text>
                 <Text style={styles.stageName}>{o.stageClosureName}</Text>
                 <View style={styles.stageLimitBadge}>
                   <Text style={styles.stageLimitText}>{o.stageLimitBadge}</Text>
                 </View>
               </View>
-              <View style={styles.stageRight}>
+              <View style={[styles.stageRight, isNarrow && styles.stageRightNarrow]}>
                 <Text style={styles.stageDesc}>{o.stage3Desc}</Text>
-                <View style={styles.stageMsg}>
+                <View style={[styles.stageMsg, isNarrow && styles.stageMsgNarrow]}>
                   <Text style={styles.stageMsgIcon}>🌸</Text>
                   <Text style={styles.stageMsgText}>{o.demoClosureStatus1}</Text>
                 </View>
-                <View style={[styles.stageMsg, { marginTop: 8 }]}>
+                <View style={[styles.stageMsg, { marginTop: 8 }, isNarrow && styles.stageMsgNarrow]}>
                   <Text style={styles.stageMsgIcon}>💬</Text>
                   <Text style={styles.stageMsgText}>{o.demoClosureStatus2}</Text>
                 </View>
-                <View style={[styles.stageMsg, { marginTop: 8 }]}>
+                <View style={[styles.stageMsg, { marginTop: 8 }, isNarrow && styles.stageMsgNarrow]}>
                   <Text style={styles.stageMsgIcon}>🕊️</Text>
                   <Text style={styles.stageMsgText}>{o.demoClosureStatus3}</Text>
                 </View>
 
                 {/* 마지막 편지 */}
-                <View style={styles.closureLetterBox}>
+                <View style={[styles.closureLetterBox, isNarrow && styles.closureLetterBoxNarrow]}>
                   <Text style={styles.closureLetterTitle}>{o.demoClosureLetterTitle}</Text>
                   <Text style={styles.closureLetterDesc}>{o.stage3Hint}</Text>
                 </View>
@@ -409,13 +436,13 @@ export default function OnboardingScreen({ navigation }: Props) {
         </View>
 
         {/* ════ ⑥ CTA ════ */}
-        <View style={[styles.section, styles.ctaSection]}>
+        <View style={[styles.section, styles.ctaSection, isNarrow && styles.sectionNarrow, isNarrow && styles.ctaSectionNarrow]}>
           <LinearGradient
             colors={['rgba(124, 58, 237, 0.2)', 'rgba(59, 130, 246, 0.2)']}
-            style={styles.ctaCard}
+            style={[styles.ctaCard, isNarrow && styles.ctaCardNarrow]}
           >
-            <Text style={styles.ctaTitle}>{o.ctaTitle}</Text>
-            <Text style={styles.ctaDesc}>{o.ctaDesc}</Text>
+            <Text style={[styles.ctaTitle, isNarrow && styles.ctaTitleNarrow]}>{o.ctaTitle}</Text>
+            <Text style={[styles.ctaDesc, isNarrow && styles.ctaDescNarrow]}>{o.ctaDesc}</Text>
 
             <TouchableOpacity
               style={styles.ctaButton}
@@ -454,25 +481,40 @@ export default function OnboardingScreen({ navigation }: Props) {
           </View>
           <Text style={styles.footerCopy}>© 2026 Still After. All rights reserved.</Text>
         </View>
-
-        {/* ── 하단 CTA ── */}
-        <View style={styles.bottomCta}>
-          <TouchableOpacity
-            onPress={() => navigation.replace('Login')}
-            activeOpacity={0.85}
-            style={styles.stickyBtn}
-          >
-            <LinearGradient
-              colors={['#7C3AED', '#3B82F6']}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={styles.stickyBtnGradient}
-            >
-              <Text style={styles.stickyBtnText}>{o.startBtn}</Text>
-              <Text style={styles.stickyBtnArrow}>›</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
+
+      {/* ── 스크롤 시 하단 고정 CTA (첫 뷰포트 이후 노출) ── */}
+      <Animated.View
+        style={[
+          styles.stickyFooter,
+          Platform.OS === 'web' && styles.stickyFooterWeb,
+          {
+            opacity: stickyAnim,
+            transform: [{
+              translateY: stickyAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [80, 0],
+              }),
+            }],
+          },
+        ]}
+        pointerEvents={showStickyCta ? 'auto' : 'none'}
+      >
+        <TouchableOpacity
+          onPress={() => navigation.replace('Login')}
+          activeOpacity={0.85}
+          style={styles.stickyBtn}
+        >
+          <LinearGradient
+            colors={['#7C3AED', '#3B82F6']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={styles.stickyBtnGradient}
+          >
+            <Text style={styles.stickyBtnText}>{o.startBtn}</Text>
+            <Text style={styles.stickyBtnArrow}>›</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   )
 }
@@ -500,13 +542,15 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 40, alignItems: 'center' },
 
-  // Bottom CTA (scrolls with content)
-  bottomCta: {
-    width: '100%',
-    maxWidth: 680,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    paddingBottom: 32,
+  // Sticky CTA footer — 첫 뷰포트 스크롤 이후 노출
+  stickyFooter: {
+    position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 200,
+    paddingHorizontal: 20, paddingVertical: 12, paddingBottom: 20,
+    backgroundColor: 'rgba(10, 1, 24, 0.88)',
+    borderTopWidth: 1, borderTopColor: 'rgba(167, 139, 250, 0.15)',
+  },
+  stickyFooterWeb: {
+    position: 'fixed' as any,
   },
   stickyBtn: { borderRadius: 12, overflow: 'hidden' },
   stickyBtnGradient: {
@@ -598,9 +642,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(88, 28, 135, 0.08)',
     borderTopWidth: 1, borderBottomWidth: 1,
     borderColor: 'rgba(167, 139, 250, 0.1)',
-    height: 1380,
-    marginTop: 0,
-    marginBottom: 0,
+  },
+  sectionNarrow: {
+    paddingHorizontal: 20,
+    paddingVertical: 48,
+  },
+  sectionTitleNarrow: {
+    fontSize: 24,
+    lineHeight: 32,
   },
   sectionEyebrow: {
     fontSize: 11, color: 'rgba(167, 139, 250, 0.8)',
@@ -783,14 +832,21 @@ const styles = StyleSheet.create({
   // 여정
   stageList: {},
   stageRow: { flexDirection: 'row', gap: 24, paddingVertical: 28 },
+  stageRowNarrow: {
+    flexDirection: 'column',
+    gap: 12,
+    paddingVertical: 24,
+  },
   stageRowBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(167, 139, 250, 0.12)' },
   stageLeft: { width: 60, paddingTop: 2 },
+  stageLeftNarrow: { width: '100%', paddingTop: 0 },
   stageNum: {
     fontSize: 10, color: 'rgba(167, 139, 250, 0.7)',
     letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4,
   },
   stageName: { fontSize: 20, fontWeight: '500', color: C.TEXT },
-  stageRight: { flex: 1 },
+  stageRight: { flex: 1, minWidth: 0 },
+  stageRightNarrow: { flex: undefined, width: '100%' },
   stageDesc: {
     fontSize: 14, color: 'rgba(196, 181, 253, 0.7)',
     lineHeight: 22, marginBottom: 14,
@@ -800,6 +856,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(124, 58, 237, 0.1)',
     borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.18)',
     borderRadius: 10, padding: 12, alignSelf: 'flex-start', maxWidth: '100%',
+  },
+  stageMsgNarrow: {
+    alignSelf: 'stretch',
+    width: '100%',
   },
   stageMsgIcon: { fontSize: 14, flexShrink: 0 },
   stageMsgText: {
@@ -813,19 +873,31 @@ const styles = StyleSheet.create({
 
   // CTA
   ctaSection: { marginTop: 30, marginBottom: 30 },
+  ctaSectionNarrow: { marginTop: 24, marginBottom: 24 },
   ctaCard: {
     borderRadius: 20, padding: 36,
     borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.2)',
     alignItems: 'center',
+    width: '100%',
   },
+  ctaCardNarrow: { padding: 24 },
   ctaTitle: {
     fontSize: 30, fontWeight: '300', color: C.TEXT,
     textAlign: 'center', lineHeight: 40,
     marginBottom: 14, letterSpacing: -0.5,
   },
+  ctaTitleNarrow: {
+    fontSize: 24,
+    lineHeight: 32,
+  },
   ctaDesc: {
     fontSize: 16, color: 'rgba(196, 181, 253, 0.7)',
     textAlign: 'center', marginBottom: 36,
+  },
+  ctaDescNarrow: {
+    fontSize: 14,
+    lineHeight: 22,
+    marginBottom: 28,
   },
   ctaButton: { borderRadius: 10, overflow: 'hidden', marginBottom: 16 },
   ctaButtonGradient: { paddingHorizontal: 40, paddingVertical: 16, borderRadius: 10 },
@@ -852,6 +924,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(124, 58, 237, 0.08)',
     borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.2)',
     borderRadius: 12,
+    width: '100%',
+  },
+  closureLetterBoxNarrow: {
+    padding: 14,
   },
   closureLetterTitle: {
     fontSize: 13, fontWeight: '600', color: 'rgba(196, 181, 253, 0.9)',
