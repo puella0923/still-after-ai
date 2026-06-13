@@ -61,8 +61,21 @@ export default function OnboardingScreen({ navigation }: Props) {
         )
       })}
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} style={{ marginBottom: 72 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} style={styles.scroll}>
         <View style={styles.contentWrapper}>
+
+        {/* ── 언어 토글 ── */}
+        <View style={styles.langToggleRow}>
+          <TouchableOpacity
+            onPress={toggleLanguage}
+            activeOpacity={0.75}
+            style={styles.langToggle}
+          >
+            <Text style={[styles.langOption, language === 'ko' && styles.langOptionActive]}>한국어</Text>
+            <Text style={styles.langDivider}>/</Text>
+            <Text style={[styles.langOption, language === 'en' && styles.langOptionActive]}>English</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* ════ ① HERO ════ */}
         <Animated.View style={[styles.heroSection, { opacity: fadeAnim }]}>
@@ -136,9 +149,6 @@ export default function OnboardingScreen({ navigation }: Props) {
               colors={['rgba(124, 58, 237, 0.25)', 'rgba(59, 130, 246, 0.15)']}
               style={[styles.howMethod, styles.howMethodPrimary]}
             >
-              <View style={styles.howBadgePrimary}>
-                <Text style={styles.howBadgeTextPrimary}>{o.howChatTitle}</Text>
-              </View>
               <Text style={styles.howMethodTitle}>{o.howChatTitle}</Text>
               <Text style={styles.howMethodDesc}>{o.howChatDesc}</Text>
 
@@ -186,9 +196,6 @@ export default function OnboardingScreen({ navigation }: Props) {
               colors={['rgba(88, 28, 135, 0.2)', 'rgba(30, 58, 138, 0.2)']}
               style={styles.howMethod}
             >
-              <View style={styles.howBadgeAlt}>
-                <Text style={styles.howBadgeTextAlt}>{o.howWriteTitle}</Text>
-              </View>
               <Text style={styles.howMethodTitle}>{o.howWriteTitle}</Text>
               <Text style={styles.howMethodDesc}>{o.howWriteDesc}</Text>
               <View style={styles.howMethodQuote}>
@@ -401,21 +408,8 @@ export default function OnboardingScreen({ navigation }: Props) {
           </View>
         </View>
 
-        {/* ════ ⑥ 이별의 약속 ════ */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{o.promiseTitle}</Text>
-          <Text style={styles.promiseDesc}>
-            {o.promiseDesc1}{'\n'}
-            {o.promiseDesc2}
-          </Text>
-          <View style={styles.promiseQuote}>
-            <Text style={styles.promiseQuoteText}>{o.promiseQuote}</Text>
-          </View>
-          <Text style={styles.promiseHealingNote}>{o.promiseHealingNote}</Text>
-        </View>
-
-        {/* ════ ⑦ CTA ════ */}
-        <View style={styles.section}>
+        {/* ════ ⑥ CTA ════ */}
+        <View style={[styles.section, styles.ctaSection]}>
           <LinearGradient
             colors={['rgba(124, 58, 237, 0.2)', 'rgba(59, 130, 246, 0.2)']}
             style={styles.ctaCard}
@@ -460,36 +454,25 @@ export default function OnboardingScreen({ navigation }: Props) {
           </View>
           <Text style={styles.footerCopy}>© 2026 Still After. All rights reserved.</Text>
         </View>
-      </ScrollView>
 
-      {/* ── Sticky CTA footer ── */}
-      <View style={styles.stickyFooter}>
-        <TouchableOpacity
-          onPress={() => navigation.replace('Login')}
-          activeOpacity={0.85}
-          style={styles.stickyBtn}
-        >
-          <LinearGradient
-            colors={['#7C3AED', '#3B82F6']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={styles.stickyBtnGradient}
+        {/* ── 하단 CTA ── */}
+        <View style={styles.bottomCta}>
+          <TouchableOpacity
+            onPress={() => navigation.replace('Login')}
+            activeOpacity={0.85}
+            style={styles.stickyBtn}
           >
-            <Text style={styles.stickyBtnText}>{o.startBtn}</Text>
-            <Text style={styles.stickyBtnArrow}>›</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
-
-      {/* ── 언어 토글 (우측 상단 고정 — ScrollView 위에 렌더링) ── */}
-      <TouchableOpacity
-        onPress={toggleLanguage}
-        activeOpacity={0.75}
-        style={styles.langToggle}
-      >
-        <Text style={[styles.langOption, language === 'ko' && styles.langOptionActive]}>한국어</Text>
-        <Text style={styles.langDivider}>/</Text>
-        <Text style={[styles.langOption, language === 'en' && styles.langOptionActive]}>English</Text>
-      </TouchableOpacity>
+            <LinearGradient
+              colors={['#7C3AED', '#3B82F6']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={styles.stickyBtnGradient}
+            >
+              <Text style={styles.stickyBtnText}>{o.startBtn}</Text>
+              <Text style={styles.stickyBtnArrow}>›</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </View>
   )
 }
@@ -514,14 +497,16 @@ function DemoBubble({ from, name, text }: { from: 'user' | 'assistant'; name?: s
 /* ─── Styles ─── */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.BG },
+  scroll: { flex: 1 },
   scrollContent: { paddingBottom: 40, alignItems: 'center' },
 
-  // Sticky CTA footer
-  stickyFooter: {
-    position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 200,
-    paddingHorizontal: 20, paddingVertical: 12, paddingBottom: 20,
-    backgroundColor: 'rgba(10, 1, 24, 0.88)',
-    borderTopWidth: 1, borderTopColor: 'rgba(167, 139, 250, 0.15)',
+  // Bottom CTA (scrolls with content)
+  bottomCta: {
+    width: '100%',
+    maxWidth: 680,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    paddingBottom: 32,
   },
   stickyBtn: { borderRadius: 12, overflow: 'hidden' },
   stickyBtnGradient: {
@@ -532,8 +517,14 @@ const styles = StyleSheet.create({
   stickyBtnArrow: { fontSize: 20, color: '#fff' },
 
   // Language toggle
+  langToggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
   langToggle: {
-    position: 'absolute', top: 52, right: 16, zIndex: 100,
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
@@ -557,7 +548,7 @@ const styles = StyleSheet.create({
   // Hero
   heroSection: {
     paddingHorizontal: 28,
-    paddingTop: 100,
+    paddingTop: 48,
     paddingBottom: 80,
     alignItems: 'flex-start',
   },
@@ -607,6 +598,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(88, 28, 135, 0.08)',
     borderTopWidth: 1, borderBottomWidth: 1,
     borderColor: 'rgba(167, 139, 250, 0.1)',
+    height: 1380,
+    marginTop: 0,
+    marginBottom: 0,
   },
   sectionEyebrow: {
     fontSize: 11, color: 'rgba(167, 139, 250, 0.8)',
@@ -654,20 +648,6 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.15)',
   },
   howMethodPrimary: { borderColor: 'rgba(167, 139, 250, 0.3)' },
-  howBadgePrimary: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(124, 58, 237, 0.2)',
-    borderRadius: 99, paddingHorizontal: 12, paddingVertical: 4,
-    marginBottom: 14,
-  },
-  howBadgeTextPrimary: { fontSize: 11, color: 'rgba(196, 181, 253, 0.9)', fontWeight: '500' },
-  howBadgeAlt: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderRadius: 99, paddingHorizontal: 12, paddingVertical: 4,
-    marginBottom: 14,
-  },
-  howBadgeTextAlt: { fontSize: 11, color: 'rgba(196, 181, 253, 0.6)', fontWeight: '500' },
   howMethodTitle: {
     fontSize: 17, fontWeight: '500', color: C.TEXT,
     marginBottom: 10, lineHeight: 26,
@@ -804,7 +784,7 @@ const styles = StyleSheet.create({
   stageList: {},
   stageRow: { flexDirection: 'row', gap: 24, paddingVertical: 28 },
   stageRowBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(167, 139, 250, 0.12)' },
-  stageLeft: { width: 80, paddingTop: 2 },
+  stageLeft: { width: 60, paddingTop: 2 },
   stageNum: {
     fontSize: 10, color: 'rgba(167, 139, 250, 0.7)',
     letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4,
@@ -830,28 +810,9 @@ const styles = StyleSheet.create({
     fontSize: 11, color: 'rgba(134, 239, 172, 0.7)',
     lineHeight: 18, marginBottom: 14, paddingHorizontal: 2,
   },
-  promiseHealingNote: {
-    fontSize: 14, color: 'rgba(196, 181, 253, 0.55)',
-    lineHeight: 24, marginTop: 20, textAlign: 'center' as const, fontStyle: 'italic',
-  },
-
-  // 약속
-  promiseDesc: {
-    fontSize: 15, color: 'rgba(196, 181, 253, 0.7)',
-    lineHeight: 26, marginBottom: 28, maxWidth: 340,
-  },
-  promiseQuote: {
-    borderLeftWidth: 2, borderLeftColor: 'rgba(167, 139, 250, 0.5)',
-    backgroundColor: 'rgba(124, 58, 237, 0.07)',
-    borderTopRightRadius: 10, borderBottomRightRadius: 10,
-    padding: 22,
-  },
-  promiseQuoteText: {
-    fontSize: 17, color: C.TEXT, fontWeight: '300',
-    fontStyle: 'italic', lineHeight: 28,
-  },
 
   // CTA
+  ctaSection: { marginTop: 30, marginBottom: 30 },
   ctaCard: {
     borderRadius: 20, padding: 36,
     borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.2)',
