@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { LanguageProvider } from './context/LanguageContext'
 import RootNavigator, { RootStackParamList } from './navigation/RootNavigator'
 import VercelAnalytics from './components/VercelAnalytics'
+import { C } from './screens/theme'
 
 // URL 딥링크 설정 — 웹에서 /Login, /PersonaCreate 등 URL이 직접 작동하도록
 const linking: LinkingOptions<RootStackParamList> = {
@@ -59,8 +60,8 @@ function AppContent() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#FAF8F5', alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator size="large" color="#2C2C2C" />
+      <View style={{ flex: 1, backgroundColor: C.BG, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={C.BTN_PRIMARY} />
       </View>
     )
   }
@@ -155,7 +156,7 @@ function AppContent() {
         formatter: () => 'Still After — 아직 전하지 못한 말이 있다면',
       }}
     >
-      <StatusBar style="dark" backgroundColor="#FAF8F5" />
+      <StatusBar style="light" backgroundColor={C.BG} />
       <RootNavigator initialRouteName={initialRoute} />
     </NavigationContainer>
   )

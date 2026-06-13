@@ -697,7 +697,7 @@ ${manualText.trim()}
               >
                 {isParsing ? (
                   <View style={styles.uploadBtnRow}>
-                    <ActivityIndicator size="small" color="#2C2C2C" />
+                    <ActivityIndicator size="small" color={C.BTN_PRIMARY} />
                     <Text style={styles.uploadBtnText}>{t.personaCreate.analyzing}</Text>
                   </View>
                 ) : (

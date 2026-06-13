@@ -8,14 +8,18 @@
     <!-- ① Search Console 소유권 인증 -->
     <meta name="google-site-verification" content="42HCXffGpWRJRMDEoND2Qnu_9lqmGdbwBZygPF_jCvE" />
 
+    <!-- ① Naver 소유권 인증 -->
+    <meta name="naver-site-verification" content="afa6de24b0e1bd30f9bbe47cdcf45359fae9caee" />
+
     <!-- ② 기본 메타태그 -->
     <title>Still After — 아직 전하지 못한 말이 있다면</title>
     <meta name="description" content="사랑하는 사람을 떠나보낸 후, 못 다한 말을 전하는 공간. 천천히, 당신의 속도로." />
 
     <!-- ③ OG 태그 (카카오톡 / SNS 공유 미리보기) -->
+    <meta property="og:site_name" content="Still After" />
     <meta property="og:title" content="Still After — 아직 전하지 못한 말이 있다면" />
     <meta property="og:description" content="사랑하는 사람을 떠나보낸 후, 못 다한 말을 전하는 공간." />
-    <meta property="og:image" content="https://stillafter.com/og-image.jpg" />
+    <meta property="og:image" content="https://stillafter.com/og-image-v2.jpg" />
     <meta property="og:url" content="https://stillafter.com" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="ko_KR" />
@@ -24,7 +28,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Still After — 아직 전하지 못한 말이 있다면" />
     <meta name="twitter:description" content="사랑하는 사람을 떠나보낸 후, 못 다한 말을 전하는 공간." />
-    <meta name="twitter:image" content="https://stillafter.com/og-image.jpg" />
+    <meta name="twitter:image" content="https://stillafter.com/og-image-v2.jpg" />
 
     <!-- ⑤ GA4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q4KY5HKLRK"></script>
@@ -44,11 +48,22 @@
       })(window, document, "clarity", "script", "wbn3kcnrth");
     </script>
 
-    <!-- The `react-native-web` recommended style reset -->
+    <!-- react-native-web root reset -->
     <style id="expo-reset">
       html, body { height: 100%; }
       body { overflow: hidden; }
       #root { display: flex; height: 100%; flex: 1; }
+    </style>
+
+    <!-- 퍼플 코스믹 셸 (JS 로드 전 플래시 방지) -->
+    <style id="cosmic-shell">
+      html, body { background: #0a0118; color: #F3E8FF; }
+      #root { background: #0a0118; }
+    </style>
+
+    <style id="mobile-readability">
+      html { -webkit-text-size-adjust: 100%; }
+      body { word-break: keep-all; overflow-wrap: break-word; }
     </style>
   </head>
 
