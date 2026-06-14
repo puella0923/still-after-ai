@@ -177,7 +177,11 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
       ;(e.target as HTMLInputElement).value = ''
     }
     input.addEventListener('change', onChange)
-    return () => input?.removeEventListener('change', onChange)
+    return () => {
+      input?.removeEventListener('change', onChange)
+      if (input?.parentNode) input.parentNode.removeChild(input)
+      webKakaoFileRef.current = null
+    }
   }, [readKakaoWebFile])
 
   const handleWebFilePick = () => {
@@ -266,7 +270,10 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
           setPhotoBlob(blob)
         } catch {
           setPhotoBlob(null)
-          if (__DEV__) console.warn('[Photo] blob 변환 완전 실패 — 사진 없이 진행')
+          Alert.alert(
+            t.personaCreate.alertPhotoErrorTitle,
+            t.personaCreate.alertPhotoSkipMsg,
+          )
         }
       }
     } catch {

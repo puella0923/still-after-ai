@@ -16,7 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useAuth } from '../../context/AuthContext'
 import { C, RADIUS } from '../theme'
-import { signInWithGoogle, signInWithKakao } from '../../services/authService'
+import { signInWithGoogle } from '../../services/authService'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
 import CosmicBackground from '../../components/CosmicBackground'
@@ -36,13 +36,6 @@ export default function LoginScreen({ navigation }: Props) {
     const result = await signInWithGoogle()
     if (!result.success) {
       Alert.alert(t.login.googleBtn, result.error ?? t.login.googleError)
-    }
-  }
-
-  const handleKakaoSignIn = async (): Promise<void> => {
-    const result = await signInWithKakao()
-    if (!result.success) {
-      Alert.alert(t.login.kakaoBtn, result.error ?? t.login.kakaoError)
     }
   }
 
@@ -120,20 +113,6 @@ export default function LoginScreen({ navigation }: Props) {
                 <Text style={styles.title}>Still After</Text>
                 <Text style={styles.tagline}>{t.login.brand}</Text>
               </View>
-
-              {/* Kakao login button */}
-              <TouchableOpacity
-                style={styles.kakaoButton}
-                onPress={handleKakaoSignIn}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel={t.login.kakaoBtn}
-              >
-                <View style={styles.kakaoButtonInner}>
-                  <Text style={styles.kakaoButtonIcon}>💬</Text>
-                  <Text style={styles.kakaoButtonText}>{t.login.kakaoBtn}</Text>
-                </View>
-              </TouchableOpacity>
 
               {/* Google login button */}
               <TouchableOpacity
@@ -256,29 +235,6 @@ const styles = StyleSheet.create({
   tagline: {
     fontSize: 14,
     color: 'rgba(196, 181, 253, 0.8)',
-  },
-
-  // Kakao button
-  kakaoButton: {
-    borderRadius: RADIUS.MD,
-    overflow: 'hidden',
-    marginBottom: 12,
-    backgroundColor: '#FEE500',
-  },
-  kakaoButtonInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    gap: 8,
-  },
-  kakaoButtonIcon: { fontSize: 16 },
-  kakaoButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#191600',
-    letterSpacing: 0.3,
   },
 
   // Google button

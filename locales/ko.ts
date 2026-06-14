@@ -154,10 +154,8 @@ const ko = {
     freeTrial: '지금은 무료로 대화할 수 있어요',
     disclaimer: 'Still After는 실제 인물을 복원하지 않아요. 감정이 자연스럽게 자리 잡을 수 있도록 조심스럽게 함께하는 공간이에요.',
     googleBtn: '구글로 시작하기',
-    kakaoBtn: '카카오로 시작하기',
     emailBtn: '이메일로 시작하기',
     googleError: '구글 로그인에 실패했습니다.',
-    kakaoError: '카카오 로그인에 실패했습니다.',
   },
 
   // ── Email Auth ──
@@ -372,6 +370,7 @@ const ko = {
     alertPermissionMsg: '사진 접근 권한이 필요해요.',
     alertPhotoErrorTitle: '오류',
     alertPhotoErrorMsg: '사진을 불러올 수 없어요.',
+    alertPhotoSkipMsg: '사진을 불러오지 못했어요. 사진 없이 계속 진행합니다.',
   },
 
   // ── AI Generating ──
@@ -542,6 +541,8 @@ const ko = {
     petCompletedEmoji: '🐾',
     petCompletedSub: '그 아이와 함께한 모든 순간은 당신 안에 남아있어요.\n아무것도 잊혀지지 않아요. 다만 더 따뜻하게 기억될 뿐이에요.\n\n이제 조금 더 가볍게, 오늘을 살아가도 괜찮아요.\n편지와 대화 기록은 언제든 다시 읽을 수 있어요.',
     petHealingNote: '이별은 끝이 아니에요.\n그 아이는 당신이 살아가는 날들 안에서 함께 있어요.',
+    saveErrorTitle: '저장 실패',
+    saveErrorMsg: '편지를 저장하지 못했어요. 네트워크 연결을 확인하고 다시 시도해주세요.',
   },
 
   // ── Persona List ──

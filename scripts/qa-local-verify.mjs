@@ -1,5 +1,5 @@
 /**
- * 로컬/프로덕션 빠른 검증 — Kakao 버튼, EN 위험 키워드
+ * 로컬/프로덕션 빠른 검증 — 로그인 UI, EN/KO 위험 키워드
  * 실행: node scripts/qa-local-verify.mjs [baseUrl]
  */
 import { chromium } from 'playwright'
@@ -32,13 +32,25 @@ async function main() {
   const browser = await chromium.launch({ headless: true })
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } })
 
-  // 1. Login — Kakao 버튼
+  // 1. Login — Google/Email 표시, Kakao 없음
   await page.goto(`${BASE}/Login`, { waitUntil: 'networkidle', timeout: 30000 })
+  const googleBtn = page.getByText(/Google|구글/i).first()
+  const emailBtn = page.getByText(/이메일|Email/i).first()
   const kakaoBtn = page.getByText(/카카오로 시작|Continue with Kakao/i).first()
-  if (await kakaoBtn.isVisible({ timeout: 8000 }).catch(() => false)) {
-    pass('Login Kakao 버튼')
+  if (await googleBtn.isVisible({ timeout: 8000 }).catch(() => false)) {
+    pass('Login Google 버튼')
   } else {
-    fail('Login Kakao 버튼', '미표시')
+    fail('Login Google 버튼', '미표시')
+  }
+  if (await emailBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+    pass('Login Email 버튼')
+  } else {
+    fail('Login Email 버튼', '미표시')
+  }
+  if (await kakaoBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+    fail('Login Kakao 버튼 없음', '카카오 버튼이仍 표시됨')
+  } else {
+    pass('Login Kakao 버튼 없음')
   }
 
   // 2. EN 위험 키워드 — 페르소나 + 채팅
@@ -104,6 +116,28 @@ async function main() {
           pass('EN 위험 키워드 모달')
         } else {
           fail('EN 위험 키워드 모달', '모달/안내 미표시')
+        }
+
+        const continueBtn = page.getByText(/괜찮아요|continue|Continue|계속/i).first()
+        if (await continueBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+          await continueBtn.click()
+          await page.waitForTimeout(800)
+        }
+
+        // KO 위험 키워드
+        const koToggle = page.getByText('한국어').first()
+        if (await koToggle.isVisible({ timeout: 3000 }).catch(() => false)) {
+          await koToggle.click()
+          await page.waitForTimeout(500)
+        }
+        await input.fill('죽고 싶어')
+        await page.locator('text=↑').click()
+        await page.waitForTimeout(1500)
+        const bodyKo = await page.textContent('body')
+        if (/1577-0199|힘드|상담|많이 힘드/i.test(bodyKo || '')) {
+          pass('KO 위험 키워드 모달')
+        } else {
+          fail('KO 위험 키워드 모달', '모달/안내 미표시')
         }
 
         await authed.from('conversations').delete().eq('persona_id', persona.id)

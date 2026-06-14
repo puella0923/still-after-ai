@@ -156,10 +156,8 @@ const en: Translations = {
     freeTrial: 'Free conversations during the beta',
     disclaimer: "Still After doesn't restore real people. It's a careful space for your emotions to naturally find their place.",
     googleBtn: 'Continue with Google',
-    kakaoBtn: 'Continue with Kakao',
     emailBtn: 'Continue with Email',
     googleError: 'Google sign-in failed.',
-    kakaoError: 'Kakao sign-in failed.',
   },
 
   // ── Email Auth ──
@@ -380,6 +378,7 @@ const en: Translations = {
     alertPermissionMsg: 'Photo access permission is required.',
     alertPhotoErrorTitle: 'Error',
     alertPhotoErrorMsg: "Can't load photo.",
+    alertPhotoSkipMsg: "Couldn't load the photo. Continuing without it.",
   },
 
   // ── AI Generating ──
@@ -550,6 +549,8 @@ const en: Translations = {
     petCompletedEmoji: '🐾',
     petCompletedSub: "Every moment with them lives on inside you.\nNothing is forgotten — it only grows warmer in time.\n\nIt's okay to go on a little lighter from here.\nYou can always come back to read the letter.",
     petHealingNote: "Goodbye is not the end.\nThey live on in every day you keep going.",
+    saveErrorTitle: 'Save failed',
+    saveErrorMsg: "Couldn't save your letter. Check your connection and try again.",
   },
 
   // ── Persona List ──

@@ -285,51 +285,6 @@ export async function updatePassword(
   }
 }
 
-// ─── 카카오 OAuth ───────────────────────────
-
-export async function signInWithKakao(): Promise<{ success: boolean; error?: string }> {
-  if (!isSupabaseConfigured) {
-    return { success: false, error: connectionErrorMessage() }
-  }
-  try {
-    const redirectUrl = getOAuthRedirectUrl()
-    const isWeb = Platform.OS === 'web'
-
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'kakao',
-      options: {
-        redirectTo: redirectUrl,
-        ...(isWeb ? {} : { skipBrowserRedirect: true }),
-      },
-    })
-
-    if (error) return { success: false, error: error.message }
-    if (!data.url) return { success: false, error: '카카오 로그인 URL을 가져올 수 없습니다.' }
-
-    if (isWeb) {
-      if (typeof window !== 'undefined' && window.location.href !== data.url) {
-        window.location.assign(data.url)
-      }
-      return { success: true }
-    }
-
-    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl)
-
-    if (result.type === 'success' && result.url) {
-      await handleOAuthCallback(result.url)
-      return { success: true }
-    }
-
-    if (result.type === 'cancel' || result.type === 'dismiss') {
-      return { success: false, error: '로그인이 취소되었습니다.' }
-    }
-
-    return { success: false, error: '카카오 로그인에 실패했습니다.' }
-  } catch {
-    return { success: false, error: '카카오 로그인 중 오류가 발생했습니다.' }
-  }
-}
-
 // ─── 구글 OAuth ───────────────────────────
 
 export async function signInWithGoogle(): Promise<{ success: boolean; error?: string }> {

@@ -9,7 +9,7 @@ import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const BASE = 'https://stillafter.com'
+const BASE = process.argv[2] || process.env.QA_BASE_URL || 'https://stillafter.com'
 
 const results = []
 function pass(s, d = '') { results.push({ s, ok: true, d }); console.log(`✅ ${s}${d ? ` — ${d}` : ''}`) }

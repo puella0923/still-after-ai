@@ -173,7 +173,10 @@ export default function ChatScreen({ navigation, route }: Props) {
           const totalUserMsgs = history.filter(c => c.role === 'user').length
           setUserMessageCount(totalUserMsgs)
           const currentStage = p.emotional_stage ?? 'replay'
-          const stageMsgs = history.filter(c => c.role === 'user' && c.emotional_stage === currentStage).length
+          const stageMsgs = history.filter(c =>
+            c.role === 'user' &&
+            (c.emotional_stage === currentStage || c.emotional_stage == null)
+          ).length
           setStageMessageCount(stageMsgs)
         } else {
           const basePrompt = p.system_prompt || `당신은 ${p.name}입니다. 사용자와 ${p.relationship} 관계입니다. 따뜻하고 자연스럽게 대화하세요. AI임을 절대 부정하지 마세요.`

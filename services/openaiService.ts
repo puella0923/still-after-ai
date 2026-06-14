@@ -436,6 +436,29 @@ function backoffDelay(attempt: number): number {
   return Math.min(2000 * Math.pow(2, attempt), 10000)
 }
 
+const LOGIN_EXPIRED_MSG = '로그인이 만료되었어요. 다시 로그인해주세요.'
+const NETWORK_ERROR_MSG = '응답을 받지 못했어요. 네트워크 연결을 확인하고 다시 시도해주세요.'
+
+/** 재시도마다 호출 — 만료 임박 시 세션 갱신 */
+async function ensureValidSession() {
+  let session = (await supabase.auth.getSession()).data.session
+  if (!session) throw new Error(LOGIN_EXPIRED_MSG)
+  const expiresAt = session.expires_at ?? 0
+  const now = Math.floor(Date.now() / 1000)
+  if (expiresAt - now < 60) {
+    const { data, error } = await supabase.auth.refreshSession()
+    if (error || !data.session) throw new Error(LOGIN_EXPIRED_MSG)
+    session = data.session
+  }
+  return session
+}
+
+function isNetworkError(error: unknown): boolean {
+  if (!(error instanceof TypeError)) return false
+  const msg = error.message.toLowerCase()
+  return msg.includes('network') || msg.includes('failed to fetch') || msg.includes('fetch')
+}
+
 
 const MAX_RETRIES = 2  // 최초 시도 + 2회 재시도 = 총 3회
 
@@ -455,25 +478,6 @@ export async function getChatResponse(params: {
 
   const fullPrompt = buildSystemPrompt(systemPrompt, stage, phase, closurePhase, userNickname, relationship, careType)
 
-  // Supabase 세션에서 JWT 토큰 가져오기
-  // getSession()은 캐시된(만료 가능) 토큰을 반환하므로,
-  // refreshSession()으로 항상 유효한 토큰 확보
-  let session = (await supabase.auth.getSession()).data.session
-  if (session) {
-    // 토큰 만료 10초 전이면 갱신 시도
-    const expiresAt = session.expires_at ?? 0
-    const now = Math.floor(Date.now() / 1000)
-    if (expiresAt - now < 60) {
-      const { data, error } = await supabase.auth.refreshSession()
-      if (!error && data.session) {
-        session = data.session
-      }
-    }
-  }
-  if (!session?.access_token) {
-    throw new Error('로그인이 만료되었어요. 다시 로그인해주세요.')
-  }
-
   const requestBody = {
     systemPrompt: fullPrompt,
     messages: [
@@ -488,6 +492,8 @@ export async function getChatResponse(params: {
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
+      const session = await ensureValidSession()
+
       const resp = await fetch(EDGE_FUNCTION_URL, {
         method: 'POST',
         headers: {
@@ -501,6 +507,9 @@ export async function getChatResponse(params: {
 
       if (!resp.ok) {
         const errorMsg = data?.error || '응답을 받지 못했어요.'
+        if (resp.status === 401) {
+          throw new Error(LOGIN_EXPIRED_MSG)
+        }
         // 429, 5xx는 재시도 가능
         if ((resp.status === 429 || resp.status >= 500) && attempt < MAX_RETRIES) {
           if (__DEV__) console.warn(`[Chat] 요청 실패 (시도 ${attempt + 1}/${MAX_RETRIES + 1}): ${resp.status} ${errorMsg}`)
@@ -518,8 +527,10 @@ export async function getChatResponse(params: {
       lastError = error
       if (__DEV__) console.warn(`[Chat] 요청 실패 (시도 ${attempt + 1}/${MAX_RETRIES + 1}):`, error)
 
-      // 네트워크 에러도 재시도
-      if (attempt < MAX_RETRIES && !(error instanceof Error && error.message.includes('로그인'))) {
+      const isLoginError = error instanceof Error && error.message === LOGIN_EXPIRED_MSG
+      const canRetry = attempt < MAX_RETRIES && !isLoginError
+
+      if (canRetry) {
         const delay = backoffDelay(attempt)
         await new Promise(resolve => setTimeout(resolve, delay))
         continue
@@ -529,6 +540,10 @@ export async function getChatResponse(params: {
   }
 
   // 모든 시도 실패 → 사용자 친화적 메시지로 에러 전달
-  if (lastError instanceof Error) throw lastError
-  throw new Error('응답을 받지 못했어요. 잠시 후 다시 시도해주세요.')
+  if (lastError instanceof Error) {
+    if (lastError.message === LOGIN_EXPIRED_MSG) throw lastError
+    if (isNetworkError(lastError)) throw new Error(NETWORK_ERROR_MSG)
+    throw lastError
+  }
+  throw new Error(NETWORK_ERROR_MSG)
 }

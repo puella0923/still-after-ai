@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ScrollView, ActivityIndicator,
-  Animated, Modal, Dimensions, Platform,
+  Animated, Modal, Dimensions, Platform, Alert,
 } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -88,26 +88,39 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
     }))
   ).current
 
-  const saveLetterToDb = useCallback(async () => {
+  const saveLetterToDb = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      await supabase.from('closure_letters').insert({
+      if (!user) return { ok: false, error: t.closure.saveErrorMsg }
+
+      const { error: letterError } = await supabase.from('closure_letters').insert({
         user_id: user.id, persona_id: personaId,
         content: letter.trim(), ai_farewell: aiFarewell || '',
       })
-      await supabase.from('personas').update({
-        is_active: false, is_archived: true, archived_at: new Date().toISOString(),
-      }).eq('id', personaId)
-      // 봉인 완료 후 임시 저장 삭제
-      await AsyncStorage.removeItem(draftKey).catch(() => {})
-    } catch (err) { if (__DEV__) console.error('[ClosureCeremony] 저장 중 예외:', err) }
-  }, [personaId, letter, aiFarewell, draftKey])
+      if (letterError) return { ok: false, error: letterError.message }
 
-  const runFarewellAnimation = useCallback(() => {
+      const { error: personaError } = await supabase.from('personas').update({
+        is_active: false, is_archived: true, archived_at: new Date().toISOString(),
+      }).eq('id', personaId).eq('user_id', user.id)
+      if (personaError) return { ok: false, error: personaError.message }
+
+      await AsyncStorage.removeItem(draftKey).catch(() => {})
+      return { ok: true }
+    } catch (err) {
+      if (__DEV__) console.error('[ClosureCeremony] 저장 중 예외:', err)
+      return { ok: false, error: t.closure.saveErrorMsg }
+    }
+  }, [personaId, letter, aiFarewell, draftKey, t])
+
+  const runFarewellAnimation = useCallback(async () => {
     setShowConfirm(false)
+    const result = await saveLetterToDb()
+    if (!result.ok) {
+      Alert.alert(t.closure.saveErrorTitle, result.error ?? t.closure.saveErrorMsg)
+      return
+    }
+
     setIsAnimating(true)
-    saveLetterToDb()
 
     Animated.timing(overlayOpacity, { toValue: 1, duration: 500, useNativeDriver: Platform.OS !== 'web' }).start()
 
