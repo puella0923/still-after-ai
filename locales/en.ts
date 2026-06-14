@@ -20,6 +20,8 @@ const en: Translations = {
     no: 'No',
     goBack: '← Go Back',
     stepIndicator: (current: number, total: number) => `Create Memory · ${current}/${total}`,
+    langKo: '한국어',
+    langEn: 'EN',
   },
 
   // ── Onboarding ──
@@ -48,6 +50,7 @@ const en: Translations = {
     howPrivacy: '🔐 Uploaded files are deleted immediately after capturing memories, never stored or shared.',
     howWriteTitle: '✏️ Write it yourself',
     howWriteDesc: 'Write about how they spoke, phrases they used, habits or memories — and we\'ll talk like them.',
+    howWriteExample: '"Mom was always warm and a bit worried about everything — she\'d ask if I ate, and even when she got upset, she always came back with sorry."',
     demoTitle: 'Conversation example',
     demoSubtitle: 'We support farewells with people and pets alike. We learn from real tone and records to create conversations like these.',
     demoTabs: {
@@ -304,6 +307,13 @@ const en: Translations = {
     earlyGriefNote: "You're going through so much right now.\nIt's okay to grieve as long as you need.\nBegin whenever you feel ready.",
     laterBtn: "I'm not ready yet, I'll come back",
     timingCheckDesc: 'We gently adjust the conversation pace based on your answer.',
+    options: {
+      within_week:   { label: 'Within a week',   desc: 'Still feels unreal' },
+      within_month:  { label: 'Within a month',  desc: 'Slowly sinking in' },
+      within_3month: { label: 'Within 3 months', desc: 'Waves of longing' },
+      within_6month: { label: 'Within 6 months', desc: 'Slowly returning to daily life' },
+      over_year:     { label: 'Over a year',     desc: 'Still in a corner of my heart' },
+    },
   },
 
   // ── Service Consent ──
@@ -357,6 +367,9 @@ const en: Translations = {
       `Write freely about ${name}'s personality, favorite things, special moments you shared, and adorable habits.\nThe more specific you are, the better we can capture who they were.`,
     writeExamplePet: "e.g. Coco would sprint from anywhere in the house the moment she heard the front door open. She'd spin in circles and whimper when she saw the leash. Every time I ate, she'd sit right by my feet and stare up at me with those eyes. She always climbed onto my stomach before bed, and when she was happy her ears would go flat and her eyes would go soft. She'd tilt her head whenever I called her name — it was the cutest thing.",
     charCountHint: '(Please enter at least 20 characters)',
+    charCount: (n: number, min: number) => `${n} chars ${n < min ? `(${min}+ required)` : '✓'}`,
+    nameFallbackHuman: 'them',
+    nameFallbackPet: 'them',
     kakaoDesc: 'First export the chat from KakaoTalk and save it, then upload the file here. We\'ll carefully capture their unique tone and warmth.',
     kakaoStep1: '① KakaoTalk: Chat room → Top right ≡ → Export chat → Save as text file',
     kakaoStep2: '② Upload the saved file with the button below',
@@ -408,6 +421,12 @@ const en: Translations = {
     petQ6Label: 'Is there something you wish you had said?',
     petQ7Label: 'What did you usually call them?',
     petQ7Hint: 'The AI will use this name when talking to you',
+    petQ2Placeholder: 'e.g. Would sit beside me every time I ate\nWould go crazy just hearing the word "walk"',
+    petQ3Placeholder: 'e.g. Always came to greet me at the door\nWould stick right to my side whenever I was scared',
+    petQ4Placeholder: 'e.g. Belly rubs, treats, walks in the park',
+    petQ5Placeholder: 'e.g. Licked my hand one last time\nMet my eyes and gently wagged their tail',
+    petQ6Placeholder: "e.g. I love you so much\nI hope you're happy wherever you are",
+    petQ7Placeholder: 'e.g. Coco, baby, my little one',
     petCharCount: (n: number, min: number) => `${n} chars ${n < min ? `(min ${min})` : '✓'}`,
     petPersonalities: ['Energetic', 'Calm', 'Affectionate', 'Shy', 'Playful', 'Independent'],
   },
@@ -448,6 +467,7 @@ const en: Translations = {
 
   // ── Home ──
   home: {
+    tabLabel: 'Home',
     filterAll: 'All',
     filterReplay: 'Replay',
     filterStable: 'Healing',
@@ -513,6 +533,25 @@ const en: Translations = {
     systemClosureReady: "You're taking time to process your feelings. Move to the final stage when ready. No need to rush.",
     systemClosureEntered: "🌸 The closure stage has begun.\n\nIt's time to share our final story.",
     systemClosureMsg: "💬 It's okay to say what you've been wanting to say now.",
+    petGotoStableBtn: "Share what's on your heart →",
+    petGotoClosureBtn: 'Send them off with love →',
+    petStageTransitionToStable: "You've been talking with them.\n\nWhenever you're ready, you can share the guilt or regrets you've been carrying.\nThere's no rush.",
+    petStageTransitionToClosure: "You've shared so much together.\n\nWhen you're ready, we can gently say goodbye.\nTake all the time you need.",
+    petStageTransitionToLetter: (name: string) =>
+      `Now it's time to leave the words you wanted to say to ${name}.\n\nSorry, thank you, I love you — anything is okay.\nWrite when your heart is ready.`,
+    petSystemStableEntered: (name: string) =>
+      `🐾 ${name} is right here with you\n\nGuilt, regret, any feeling — it's okay to let it out.\n${name} doesn't blame you.`,
+    petSystemClosureEntered: (name: string) =>
+      `🌸 It's time to gently say goodbye to ${name}\n\nAnything left unsaid — it's okay to let it out now.`,
+    petSystemReturning: (name: string) =>
+      `🐾 You're together with ${name} again\n\nThank you for coming back today.`,
+    petSystemDeepening: (name: string) =>
+      `${name} can feel you near\n\nThe time you shared is remembered.`,
+    petSystemStableReady: "You're keeping the conversation going. When you're ready, you can let more of those feelings out.",
+    petSystemStableProgress: 'Thank you for sharing. They can feel it. 🐾',
+    petSystemStableDeep: "The guilt you've been carrying is slowly being heard. They don't blame you.",
+    petSystemClosureReady: 'Your heart is gently settling. When you\'re ready, you can send them off with love.',
+    petSystemClosureMsg: "🐾 It's okay to say what you need to say now",
     crisisTitle: 'It must be really hard right now',
     crisisMsg: "You don't have to carry these feelings alone.\nA counselor is available 24 hours a day.",
     crisisHotline: 'Connect with a counselor now (1577-0199)',
@@ -579,14 +618,19 @@ const en: Translations = {
     homeBtn: 'Return Home',
     memoryBtn: 'View my memories →',
     healingNote: "Goodbye is not the end.\nThey live on in every day you keep going.",
+    petHeader: 'Words Left Unsaid',
+    petFarewellGateMsg: (name: string) => `${name} left a last warmth for you.\nAre you ready to read it?`,
+    petSealNote: 'Once sealed, new messages will close — but your conversation and words can always be read again.',
+    petClosureConfirmTitle: 'Have you said all you need?',
+    petClosureConfirmDesc: 'Once sealed, new messages will close —\nbut your conversation and words can always be read again.\n\nHave you put in everything you wanted to say?',
+    petClosureConfirmBtn: 'Yes, send them off with love',
+    petClosureConfirmCancel: "I'd like to write a little more",
+    petClosureDoneTitle: 'You did so well',
     // Pet-specific overrides
     petAiLetterLabel: (name: string) => `The warmth ${name} left behind`,
     petIntro: "Now it's your turn. Let out what you've been holding for them. Take your time — there's no rush.",
     petPlaceholder: (name: string) => `Dear ${name}, ...`,
     petSealBtn: 'Seal the letter — Say goodbye 🐾',
-    petModalTitle: '🐾 Saying goodbye, gently',
-    petModalMsg: (name: string) =>
-      `Your letter to ${name} will be kept and the conversation carefully concluded. You can always come back to read it after sealing.`,
     petCompletedEmoji: '🐾',
     petCompletedSub: "Every moment with them lives on inside you.\nNothing is forgotten — it only grows warmer in time.\n\nIt's okay to go on a little lighter from here.\nYou can always come back to read the letter.",
     petHealingNote: "Goodbye is not the end.\nThey live on in every day you keep going.",
@@ -627,6 +671,7 @@ const en: Translations = {
       `Deleting will permanently remove all memories and records of '${name}'. Are you sure?`,
     deleteBtnFinal: 'Delete',
     deleteError: 'Failed to remove memory. Please try again.',
+    loadError: "Couldn't load your list. Please check your network connection.",
     closureConfirmTitle: "Let's prepare for goodbye",
     closureConfirmMsg: (name: string) =>
       `Are you ready to conclude your final conversation with '${name}'? Once in closure stage, you cannot go back.`,
@@ -762,6 +807,8 @@ const en: Translations = {
     logoutConfirmMsg: 'Your memories and conversation records are kept safely.',
     logoutConfirm: 'Log Out',
     logoutCancel: 'Cancel',
+    deleteErrorTitle: 'Deletion Failed',
+    deleteErrorMsg: 'An error occurred while deleting your account. Please try again later.',
   },
 
   // ── Paywall ──

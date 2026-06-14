@@ -9,7 +9,6 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Modal,
-  Image,
   Dimensions,
   Platform,
   Alert,
@@ -24,6 +23,7 @@ import { C, RADIUS } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
 import CosmicBackground from '../../components/CosmicBackground'
+import PersonaAvatar from '../../components/PersonaAvatar'
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 // label은 i18n에서 t.home.filter*로 가져옴
@@ -55,9 +55,13 @@ export default function PersonaListScreen({ navigation }: Props) {
       const [list, archived] = await Promise.all([getPersonas(), getArchivedPersonas()])
       setPersonas(list)
       setArchivedPersonas(archived)
-    } catch { setPersonas([]); setArchivedPersonas([]) }
+    } catch {
+      setPersonas([])
+      setArchivedPersonas([])
+      Alert.alert(t.personaList.loadError)
+    }
     finally { setLoading(false) }
-  }, [])
+  }, [t])
 
   useFocusEffect(useCallback(() => { loadPersonas() }, [loadPersonas]))
 
@@ -161,13 +165,12 @@ export default function PersonaListScreen({ navigation }: Props) {
 
           {/* Avatar */}
           <View style={styles.avatarWrap}>
-            {item.photo_url ? (
-              <Image source={{ uri: item.photo_url }} style={styles.avatarImg} />
-            ) : (
-              <LinearGradient colors={['rgba(168, 85, 247, 0.3)', 'rgba(59, 130, 246, 0.3)']} style={styles.avatarDefault}>
-                <Text style={styles.avatarEmoji}>💜</Text>
-              </LinearGradient>
-            )}
+            <PersonaAvatar
+              photoUrl={item.photo_url}
+              name={item.name}
+              size={56}
+              style={{ borderWidth: 2, borderColor: 'rgba(167, 139, 250, 0.3)' }}
+            />
           </View>
 
           {/* Info */}
@@ -243,11 +246,7 @@ export default function PersonaListScreen({ navigation }: Props) {
                       <TouchableOpacity key={item.id} onPress={() => navigation.navigate('Chat', { personaId: item.id })} activeOpacity={0.85}>
                         <LinearGradient colors={stageInfo.colors as [string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.archivedCard}>
                           <View style={styles.archivedAvatar}>
-                            {item.photo_url ? (
-                              <Image source={{ uri: item.photo_url }} style={styles.archivedAvatarPhoto} />
-                            ) : (
-                              <Text style={styles.archivedAvatarText}>{item.name.charAt(0)}</Text>
-                            )}
+                            <PersonaAvatar photoUrl={item.photo_url} name={item.name} size={42} />
                           </View>
                           <View style={styles.archivedInfo}>
                             <Text style={styles.archivedName}>{item.name}</Text>

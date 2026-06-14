@@ -18,17 +18,10 @@ const TIMING_ORBS = [
   { bottom: '20%', left: '-10%', color: 'rgba(219, 39, 119, 0.08)', size: 220 },
 ]
 
-// timing 값 → AI가 톤을 조절하는 데 사용
-const TIMING_OPTIONS = [
-  { key: 'within_week',   ko: '1주일 이내',  en: 'Within a week',   desc_ko: '아직 믿기지 않는 시간', desc_en: 'Still feels unreal' },
-  { key: 'within_month',  ko: '한 달 이내',  en: 'Within a month',  desc_ko: '조금씩 실감이 나고 있어요', desc_en: 'Slowly sinking in' },
-  { key: 'within_3month', ko: '3개월 이내',  en: 'Within 3 months', desc_ko: '그리움이 물결치는 시간', desc_en: 'Waves of longing' },
-  { key: 'within_6month', ko: '6개월 이내',  en: 'Within 6 months', desc_ko: '조금씩 일상으로 돌아가고 있어요', desc_en: 'Slowly returning to daily life' },
-  { key: 'over_year',     ko: '1년 이상',    en: 'Over a year',     desc_ko: '여전히 마음 한켠에 있어요', desc_en: 'Still in a corner of my heart' },
-]
+const TIMING_KEYS = ['within_week', 'within_month', 'within_3month', 'within_6month', 'over_year'] as const
 
 export default function TimingCheckScreen({ navigation, route }: Props) {
-  const { t, language } = useLanguage()
+  const { t } = useLanguage()
   const { careType, relation, name } = route.params
   const [selected, setSelected] = useState<string | null>(null)
 
@@ -82,20 +75,21 @@ export default function TimingCheckScreen({ navigation, route }: Props) {
         </View>
 
         <View style={styles.options}>
-          {TIMING_OPTIONS.map((opt) => {
-            const isSelected = selected === opt.key
+          {TIMING_KEYS.map((key) => {
+            const isSelected = selected === key
+            const opt = t.timingCheck.options[key]
             return (
               <TouchableOpacity
-                key={opt.key}
-                onPress={() => setSelected(opt.key)}
+                key={key}
+                onPress={() => setSelected(key)}
                 activeOpacity={0.8}
                 style={styles.optionWrap}
               >
                 {isSelected ? (
                   <LinearGradient colors={['rgba(168,85,247,0.25)', 'rgba(219,39,119,0.15)']} style={[styles.option, styles.optionSelected]}>
                     <View style={styles.optionInner}>
-                      <Text style={styles.optionLabel}>{language === 'ko' ? opt.ko : opt.en}</Text>
-                      <Text style={styles.optionDesc}>{language === 'ko' ? opt.desc_ko : opt.desc_en}</Text>
+                      <Text style={styles.optionLabel}>{opt.label}</Text>
+                      <Text style={styles.optionDesc}>{opt.desc}</Text>
                     </View>
                     <View style={styles.optionCheck}>
                       <LinearGradient colors={['#a855f7', '#db2777']} style={styles.checkGrad}>
@@ -106,8 +100,8 @@ export default function TimingCheckScreen({ navigation, route }: Props) {
                 ) : (
                   <View style={styles.option}>
                     <View style={styles.optionInner}>
-                      <Text style={styles.optionLabel}>{language === 'ko' ? opt.ko : opt.en}</Text>
-                      <Text style={styles.optionDesc}>{language === 'ko' ? opt.desc_ko : opt.desc_en}</Text>
+                      <Text style={styles.optionLabel}>{opt.label}</Text>
+                      <Text style={styles.optionDesc}>{opt.desc}</Text>
                     </View>
                     <View style={styles.optionCheckEmpty} />
                   </View>

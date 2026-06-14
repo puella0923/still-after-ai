@@ -98,9 +98,9 @@ export default function OnboardingScreen({ navigation }: Props) {
             activeOpacity={0.75}
             style={styles.langToggle}
           >
-            <Text style={[styles.langOption, language === 'ko' && styles.langOptionActive]}>한국어</Text>
+            <Text style={[styles.langOption, language === 'ko' && styles.langOptionActive]}>{t.common.langKo}</Text>
             <Text style={styles.langDivider}>/</Text>
-            <Text style={[styles.langOption, language === 'en' && styles.langOptionActive]}>English</Text>
+            <Text style={[styles.langOption, language === 'en' && styles.langOptionActive]}>{t.common.langEn}</Text>
           </TouchableOpacity>
         </View>
 
@@ -226,7 +226,7 @@ export default function OnboardingScreen({ navigation }: Props) {
               <Text style={styles.howMethodTitle}>{o.howWriteTitle}</Text>
               <Text style={styles.howMethodDesc}>{o.howWriteDesc}</Text>
               <View style={styles.howMethodQuote}>
-                <Text style={styles.howMethodQuoteText}>{language === 'ko' ? '"엄마는 항상 걱정이 많았어. 밥 먹었냐고 자주 물어봤고, 화낼 때도 결국 미안해했어. 따뜻한 사람이었어."' : '"Mom was always warm and a bit worried about everything — she\'d ask if I ate, and even when she got upset, she always came back with sorry."'}</Text>
+                <Text style={styles.howMethodQuoteText}>{o.howWriteExample}</Text>
               </View>
             </LinearGradient>
           </View>

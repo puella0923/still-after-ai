@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Modal, ActivityIndicator, Platform, TextInput, KeyboardAvoidingView,
+  Modal, ActivityIndicator, Platform, TextInput, KeyboardAvoidingView, Alert,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -99,12 +99,25 @@ export default function AccountProfileScreen({ navigation }: Props) {
       }).then(() => {})  // fire-and-forget, table may not exist
     } catch { /* no-op */ }
     try {
+      await supabase.from('closure_letters').delete().eq('user_id', user.id)
       await supabase.from('conversations').delete().eq('user_id', user.id)
       await supabase.from('personas').delete().eq('user_id', user.id)
+
+      const { data: { session } } = await supabase.auth.getSession()
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL
+      if (session?.access_token && supabaseUrl) {
+        const res = await fetch(`${supabaseUrl}/functions/v1/delete-account`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        })
+        if (!res.ok) throw new Error('Account deletion failed')
+      }
+
       await signOut()
     } catch {
       setDeleting(false)
       setDeleteStep(0)
+      Alert.alert(t.account.deleteErrorTitle, t.account.deleteErrorMsg)
     } finally {
       setDeleting(false)
     }
@@ -301,7 +314,7 @@ export default function AccountProfileScreen({ navigation }: Props) {
 
               <View style={styles.modalActions}>
                 <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setDeleteStep(0)} activeOpacity={0.7}>
-                  <Text style={styles.modalCancelText}>{language === 'ko' ? '취소' : 'Cancel'}</Text>
+                  <Text style={styles.modalCancelText}>{t.common.cancel}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalConfirmBtn, !canProceedDelete && { opacity: 0.4 }]}
@@ -378,7 +391,7 @@ export default function AccountProfileScreen({ navigation }: Props) {
                       activeOpacity={0.7}
                       disabled={feedbackLoading}
                     >
-                      <Text style={styles.modalCancelText}>{language === 'ko' ? '취소' : 'Cancel'}</Text>
+                      <Text style={styles.modalCancelText}>{t.common.cancel}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.modalConfirmBtn, (!feedbackText.trim() || feedbackLoading) && { opacity: 0.4 }]}

@@ -680,7 +680,7 @@ ${manualText.trim()}
             <View style={styles.section}>
               <Text style={styles.label}>{t.personaCreate.petQ2Label} <Text style={styles.labelOptional}>{t.personaCreate.petQ2Optional}</Text></Text>
               <TextInput style={styles.input}
-                placeholder={`예) 밥 먹을 때 항상 옆에 앉았어요\n산책 가자는 말만 들어도 빙글빙글 돌았어요`}
+                placeholder={t.personaCreate.petQ2Placeholder}
                 value={petHabits} onChangeText={setPetHabits}
                 multiline numberOfLines={3} placeholderTextColor="rgba(255,255,255,0.3)" textAlignVertical="top" />
             </View>
@@ -689,7 +689,7 @@ ${manualText.trim()}
             <View style={styles.section}>
               <Text style={styles.label}>{t.personaCreate.petQ3Label} <Text style={styles.labelOptional}>{t.personaCreate.petQ2Optional}</Text></Text>
               <TextInput style={styles.input}
-                placeholder={`예) 항상 현관까지 마중 나왔어요\n무서울 때마다 제 옆에 꼭 붙었어요`}
+                placeholder={t.personaCreate.petQ3Placeholder}
                 value={petBond} onChangeText={setPetBond}
                 multiline numberOfLines={3} placeholderTextColor="rgba(255,255,255,0.3)" textAlignVertical="top" />
             </View>
@@ -698,7 +698,7 @@ ${manualText.trim()}
             <View style={styles.section}>
               <Text style={styles.label}>{t.personaCreate.petQ4Label} <Text style={styles.labelOptional}>{t.personaCreate.petQ2Optional}</Text></Text>
               <TextInput style={styles.input}
-                placeholder={`예) 배 만져주기, 간식, 공원 산책`}
+                placeholder={t.personaCreate.petQ4Placeholder}
                 value={petFavorites} onChangeText={setPetFavorites}
                 placeholderTextColor="rgba(255,255,255,0.3)" />
             </View>
@@ -707,7 +707,7 @@ ${manualText.trim()}
             <View style={styles.section}>
               <Text style={styles.label}>{t.personaCreate.petQ5Label} <Text style={styles.labelRequired}>{t.personaCreate.petQ5Required}</Text></Text>
               <TextInput style={[styles.input, styles.inputTall]}
-                placeholder={`예) 마지막에 제 손을 핥아줬어요\n눈을 마주치며 꼬리를 흔들었어요`}
+                placeholder={t.personaCreate.petQ5Placeholder}
                 value={petLastMemory} onChangeText={setPetLastMemory}
                 multiline numberOfLines={4} placeholderTextColor="rgba(255,255,255,0.3)" textAlignVertical="top" />
               <Text style={styles.charCount}>
@@ -719,7 +719,7 @@ ${manualText.trim()}
             <View style={styles.section}>
               <Text style={styles.label}>{t.personaCreate.petQ6Label} <Text style={styles.labelOptional}>{t.personaCreate.petQ2Optional}</Text></Text>
               <TextInput style={[styles.input, styles.inputTall]}
-                placeholder={`예) 많이 사랑해\n좋은 곳에서 행복하게 지내길 바라`}
+                placeholder={t.personaCreate.petQ6Placeholder}
                 value={petUnsaid} onChangeText={setPetUnsaid}
                 multiline numberOfLines={4} placeholderTextColor="rgba(255,255,255,0.3)" textAlignVertical="top" />
             </View>
@@ -728,7 +728,7 @@ ${manualText.trim()}
             <View style={styles.section}>
               <Text style={styles.label}>{t.personaCreate.petQ7Label} <Text style={styles.labelOptional}>{t.personaCreate.petQ2Optional}</Text></Text>
               <TextInput style={styles.input}
-                placeholder={`예) 코코야, 강아지야, 우리 아기`}
+                placeholder={t.personaCreate.petQ7Placeholder}
                 value={petNickname} onChangeText={setPetNickname}
                 maxLength={30} placeholderTextColor="rgba(255,255,255,0.3)" />
               <Text style={styles.inputHint}>{t.personaCreate.petQ7Hint}</Text>
@@ -756,12 +756,12 @@ ${manualText.trim()}
               <TextInput
                 style={styles.manualInput}
                 placeholder={isPet
-                  ? `${t.personaCreate.writePlaceholderPet(name || '그 아이')}\n\n${t.personaCreate.writeExamplePet}`
-                  : `${t.personaCreate.writePlaceholder(name || '그분')}\n\n${t.personaCreate.writeExample}`}
+                  ? `${t.personaCreate.writePlaceholderPet(name || t.personaCreate.nameFallbackPet)}\n\n${t.personaCreate.writeExamplePet}`
+                  : `${t.personaCreate.writePlaceholder(name || t.personaCreate.nameFallbackHuman)}\n\n${t.personaCreate.writeExample}`}
                 value={manualText} onChangeText={setManualText}
                 multiline numberOfLines={12} placeholderTextColor="rgba(255,255,255,0.3)" textAlignVertical="top"
               />
-              <Text style={styles.charCount}>{manualText.length}자 {manualText.length < 20 ? t.personaCreate.charCountHint : '✓'}</Text>
+              <Text style={styles.charCount}>{t.personaCreate.charCount(manualText.length, 20)}</Text>
             </View>
           ) : (
             <View>

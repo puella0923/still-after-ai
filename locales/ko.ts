@@ -18,6 +18,8 @@ const ko = {
     no: '아니요',
     goBack: '← 돌아가기',
     stepIndicator: (current: number, total: number) => `기억 만들기 · ${current}/${total}`,
+    langKo: '한국어',
+    langEn: 'EN',
   },
 
   // ── Onboarding ──
@@ -46,6 +48,7 @@ const ko = {
     howPrivacy: '🔐 업로드한 파일은 기억을 담은 뒤 즉시 삭제되며, 외부에 저장·공유되지 않아요.',
     howWriteTitle: '✏️ 직접 작성',
     howWriteDesc: '그 사람의 평소 말투, 자주 하던 말, 습관이나 기억을 직접 작성하면 그 사람처럼 대화합니다.',
+    howWriteExample: '"엄마는 항상 걱정이 많았어. 밥 먹었냐고 자주 물어봤고, 화낼 때도 결국 미안해했어. 따뜻한 사람이었어."',
     demoTitle: '대화 예시',
     demoSubtitle: '사람뿐 아니라 반려동물과의 이별도 함께합니다. 실제 말투와 기록을 학습하여 아래와 같이 대화합니다.',
     demoTabs: {
@@ -296,6 +299,13 @@ const ko = {
     earlyGriefNote: '아직 많이 힘드실 거예요.\n지금은 충분히 슬퍼도 괜찮아요.\n준비가 될 때 언제든 시작하세요.',
     laterBtn: '지금은 괜찮아요, 나중에 시작할게요',
     timingCheckDesc: '답변에 따라 대화의 속도와 방식을 조심스럽게 맞춰드려요.',
+    options: {
+      within_week:   { label: '1주일 이내',  desc: '아직 믿기지 않는 시간' },
+      within_month:  { label: '한 달 이내',  desc: '조금씩 실감이 나고 있어요' },
+      within_3month: { label: '3개월 이내',  desc: '그리움이 물결치는 시간' },
+      within_6month: { label: '6개월 이내',  desc: '조금씩 일상으로 돌아가고 있어요' },
+      over_year:     { label: '1년 이상',    desc: '여전히 마음 한켠에 있어요' },
+    },
   },
 
   // ── Service Consent ──
@@ -349,6 +359,9 @@ const ko = {
       `${name}의 성격, 좋아하던 것들, 함께한 특별한 순간들, 귀여운 버릇들을 자유롭게 적어주세요.\n아래 예시처럼 구체적으로 적을수록 더 잘 담아낼 수 있어요.`,
     writeExamplePet: `예) 초코는 내가 현관문 열리는 소리만 들어도 집 안 어디서든 달려왔어. 산책 준비할 때 리드줄 보이면 제자리에서 빙글빙글 돌면서 낑낑댔고, 밥 먹을 때마다 내 발 옆에 앉아서 빤히 쳐다봤어. 자기 전에 꼭 내 배 위에 올라와서 잠들었고, 좋을 때 귀가 납작해지면서 눈을 가늘게 뜨는 게 있었어. 이름 부르면 고개를 갸웃거리던 것도 너무 귀여웠어.`,
     charCountHint: '(20자 이상 입력해주세요)',
+    charCount: (n: number, min: number) => `${n}자 ${n < min ? `(${min}자 이상)` : '✓'}`,
+    nameFallbackHuman: '그분',
+    nameFallbackPet: '그 아이',
     kakaoDesc: '카카오톡에서 대화를 먼저 내보내 저장한 뒤, 여기에 업로드해주세요. 그 분만의 말투와 온기를 조심스럽게 담아낼게요.',
     kakaoStep1: '① 카카오톡: 채팅방 → 우측 상단 ≡ → 대화 내보내기 → 텍스트 파일로 저장',
     kakaoStep2: '② 저장된 파일을 아래 버튼으로 업로드',
@@ -400,6 +413,12 @@ const ko = {
     petQ6Label: '꼭 하고 싶었던 말이 있나요?',
     petQ7Label: '평소에 어떻게 불렀나요?',
     petQ7Hint: 'AI가 대화할 때 이 호칭으로 불러드려요',
+    petQ2Placeholder: '예) 밥 먹을 때 항상 옆에 앉았어요\n산책 가자는 말만 들어도 빙글빙글 돌았어요',
+    petQ3Placeholder: '예) 항상 현관까지 마중 나왔어요\n무서울 때마다 제 옆에 꼭 붙었어요',
+    petQ4Placeholder: '예) 배 만져주기, 간식, 공원 산책',
+    petQ5Placeholder: '예) 마지막에 제 손을 핥아줬어요\n눈을 마주치며 꼬리를 흔들었어요',
+    petQ6Placeholder: '예) 많이 사랑해\n좋은 곳에서 행복하게 지내길 바라',
+    petQ7Placeholder: '예) 코코야, 강아지야, 우리 아기',
     petCharCount: (n: number, min: number) => `${n}자 ${n < min ? `(${min}자 이상)` : '✓'}`,
     petPersonalities: ['활발해요', '차분해요', '애교가 많아요', '겁이 많아요', '장난꾸러기예요', '독립적이에요'],
   },
@@ -440,6 +459,7 @@ const ko = {
 
   // ── Home ──
   home: {
+    tabLabel: '홈',
     filterAll: '모두',
     filterReplay: '재연',
     filterStable: '안정',
@@ -505,6 +525,25 @@ const ko = {
     systemClosureReady: '감정을 정리하는 시간을 보내고 있어요. 준비가 되면 마지막 단계로 넘어갈 수 있어요. 아직 더 이야기하고 싶다면, 서두르지 않아도 돼요.',
     systemClosureEntered: '🌸 이별 단계가 시작됐어요\n\n이제, 마지막 이야기를 나눌 시간이에요.',
     systemClosureMsg: '💬 이제, 전하고 싶었던 말을 해도 괜찮아요',
+    petGotoStableBtn: '미안한 마음 털어놓기 →',
+    petGotoClosureBtn: '마음으로 보내주기 →',
+    petStageTransitionToStable: '그 아이와의 대화가 이어지고 있어요.\n\n이제 담아두셨던 미안한 마음을 꺼내봐도 좋아요.\n서두르지 않아도 괜찮아요.',
+    petStageTransitionToClosure: '그 아이와 많은 이야기를 나누셨어요.\n\n준비가 되면, 마음으로 보내드릴 수 있어요.\n천천히 해도 괜찮아요.',
+    petStageTransitionToLetter: (name: string) =>
+      `이제, ${name}이(에게) 하고 싶었던 말을 남길 시간이에요.\n\n미안해, 고마워, 사랑해 — 뭐든 괜찮아요.\n마음이 준비됐을 때 써주세요.`,
+    petSystemStableEntered: (name: string) =>
+      `🐾 ${name}이(가) 곁에 있어요\n\n미안한 마음, 죄책감, 뭐든 꺼내도 괜찮아요.\n${name}은 원망하지 않아요.`,
+    petSystemClosureEntered: (name: string) =>
+      `🌸 ${name}이(를) 마음으로 보내줄 시간이에요\n\n하고 싶었던 말, 아직 남아있는 말을 꺼내도 괜찮아요.`,
+    petSystemReturning: (name: string) =>
+      `🐾 ${name}이(와) 다시 함께하고 있어요\n\n오늘도 찾아와줘서 고마워요.`,
+    petSystemDeepening: (name: string) =>
+      `${name}이(가) 당신 곁을 느끼고 있어요\n\n함께한 시간을 기억하고 있어요.`,
+    petSystemStableReady: '그 아이와의 대화가 이어지고 있어요. 준비가 되면, 담아두신 마음을 좀 더 털어낼 수 있어요.',
+    petSystemStableProgress: '마음을 나눠주셔서 고마워요. 그 아이도 느끼고 있어요. 🐾',
+    petSystemStableDeep: '미안했던 마음이 조금씩 전해지고 있어요. 그 아이는 원망하지 않아요.',
+    petSystemClosureReady: '마음이 조금씩 정리되고 있어요. 준비가 되면, 그 아이를 마음으로 보내드릴 수 있어요.',
+    petSystemClosureMsg: '🐾 이제, 하고 싶었던 말을 해도 괜찮아요',
     crisisTitle: '지금 많이 힘드시겠어요',
     crisisMsg: '지금 느끼는 감정을 혼자 감당하지 않아도 괜찮아요.\n전문 상담사가 24시간 곁에 있어요.',
     crisisHotline: '지금 상담사와 연결하기 (1577-0199)',
@@ -571,14 +610,24 @@ const ko = {
     homeBtn: '홈으로 돌아가기',
     memoryBtn: '기록 보러가기 →',
     healingNote: '이별은 끝이 아니에요.\n그 분은 당신이 살아가는 날들 안에서 함께 있어요.',
+    petHeader: '하고 싶었던 말',
+    petFarewellGateMsg: (name: string) => `${name}이(가) 마지막 온기를 남겼어요.\n읽을 준비가 되셨나요?`,
+    petSealNote: '봉인하면 새 대화는 마무리되지만, 나눈 이야기와 남긴 말은 언제든 다시 읽을 수 있어요.',
+    petClosureConfirmTitle: '마음을 담으셨나요?',
+    petClosureConfirmDesc: '봉인하면 새 대화는 마무리되지만,\n나눈 이야기와 남긴 말은 언제든 다시 읽을 수 있어요.\n\n충분히 하고 싶은 말을 담으셨나요?',
+    petClosureConfirmBtn: '네, 잘 보내드릴게요',
+    petClosureConfirmCancel: '조금 더 써볼게요',
+    petClosureDoneTitle: '잘 보내드렸어요',
     // Pet-specific overrides
-    petAiLetterLabel: (name: string) => `${name}이/가 남긴 온기`,
+    petAiLetterLabel: (name: string) => {
+      const last = name[name.length - 1]
+      const code = last?.charCodeAt(0) ?? 0
+      const hasJongseong = code >= 0xAC00 && code <= 0xD7A3 && ((code - 0xAC00) % 28) !== 0
+      return `${name}${hasJongseong ? '이' : '가'} 남긴 온기`
+    },
     petIntro: '이제 당신이 답할 차례예요. 그 아이에게 담아두셨던 말씀을 꺼내보세요. 서두르지 않아도 돼요.',
     petPlaceholder: (name: string) => `사랑하는 ${name}에게, ...`,
-    petSealBtn: '편지 봉인하기 — 작별 인사 🐾',
-    petModalTitle: '🐾 천천히 보내드릴게요',
-    petModalMsg: (name: string) =>
-      `${name}에게 쓴 편지를 간직하고 대화를 조심스럽게 마무리할게요. 봉인 후에도 편지와 대화 기록은 언제든 다시 읽을 수 있어요.`,
+    petSealBtn: '마음 봉인하기 — 작별 인사 🐾',
     petCompletedEmoji: '🐾',
     petCompletedSub: '그 아이와 함께한 모든 순간은 당신 안에 남아있어요.\n아무것도 잊혀지지 않아요. 다만 더 따뜻하게 기억될 뿐이에요.\n\n이제 조금 더 가볍게, 오늘을 살아가도 괜찮아요.\n편지와 대화 기록은 언제든 다시 읽을 수 있어요.',
     petHealingNote: '이별은 끝이 아니에요.\n그 아이는 당신이 살아가는 날들 안에서 함께 있어요.',
@@ -619,6 +668,7 @@ const ko = {
       `삭제하면 '${name}'의 기억과 모든 대화 기록이 복구되지 않아요. 그래도 지우시겠어요?`,
     deleteBtnFinal: '삭제하기',
     deleteError: '기억을 지우는 데 실패했어요. 잠시 후 다시 시도해주세요.',
+    loadError: '목록을 불러오지 못했어요. 네트워크를 확인해주세요.',
     closureConfirmTitle: '이별을 준비할게요',
     closureConfirmMsg: (name: string) =>
       `'${name}'과의 마지막 대화를 함께 마무리할 준비가 되셨나요? 이별 단계로 전환되면 다시 이전 단계로 돌아올 수 없어요.`,
@@ -754,6 +804,8 @@ const ko = {
     logoutConfirmMsg: '기억과 대화 기록은 안전하게 보관돼요.',
     logoutConfirm: '로그아웃',
     logoutCancel: '취소',
+    deleteErrorTitle: '탈퇴 실패',
+    deleteErrorMsg: '계정 삭제 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.',
   },
 
   // ── Paywall ──

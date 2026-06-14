@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, ActivityIndicator } from 'react-native'
+import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { NavigationContainer, LinkingOptions, getStateFromPath as defaultGetStateFromPath } from '@react-navigation/native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { StatusBar } from 'expo-status-bar'
@@ -8,6 +8,76 @@ import { LanguageProvider } from './context/LanguageContext'
 import RootNavigator, { RootStackParamList } from './navigation/RootNavigator'
 import VercelAnalytics from './components/VercelAnalytics'
 import { C } from './screens/theme'
+
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('[GlobalError]', error, info)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={errStyles.container}>
+          <Text style={errStyles.emoji}>🌑</Text>
+          <Text style={errStyles.title}>잠시 문제가 생겼어요</Text>
+          <Text style={errStyles.desc}>
+            불편을 드려 죄송해요.{'\n'}아래 버튼을 눌러 다시 시도해주세요.
+          </Text>
+          <TouchableOpacity
+            style={errStyles.btn}
+            onPress={() => this.setState({ hasError: false })}
+          >
+            <Text style={errStyles.btnText}>다시 시도</Text>
+          </TouchableOpacity>
+        </View>
+      )
+    }
+    return this.props.children
+  }
+}
+
+const errStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0a0a1a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  emoji: { fontSize: 48, marginBottom: 20 },
+  title: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  desc: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 15,
+    marginBottom: 32,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  btn: {
+    backgroundColor: 'rgba(168,85,247,0.3)',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderWidth: 1,
+    borderColor: 'rgba(168,85,247,0.5)',
+  },
+  btnText: { color: '#c084fc', fontSize: 16, fontWeight: '600' },
+})
 
 // URL 딥링크 설정 — 웹에서 /Login, /PersonaCreate 등 URL이 직접 작동하도록
 const linking: LinkingOptions<RootStackParamList> = {
@@ -164,13 +234,15 @@ function AppContent() {
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <LanguageProvider>
-        <AuthProvider>
-          <AppContent />
-          <VercelAnalytics />
-        </AuthProvider>
-      </LanguageProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <LanguageProvider>
+          <AuthProvider>
+            <AppContent />
+            <VercelAnalytics />
+          </AuthProvider>
+        </LanguageProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   )
 }

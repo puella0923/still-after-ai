@@ -14,13 +14,12 @@ import {
   Alert,
   Linking,
   ActivityIndicator,
-  Image,
   Modal,
   Dimensions,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { RouteProp } from '@react-navigation/native'
+import { RouteProp, useFocusEffect } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { getPersonaById, getConversations, saveConversation, diagnoseDatabaseHealth, Persona } from '../../services/personaService'
 import { getChatResponse, detectDanger, ClosurePhase } from '../../services/openaiService'
@@ -29,11 +28,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { C, RADIUS } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
 import CosmicBackground from '../../components/CosmicBackground'
+import PersonaAvatar from '../../components/PersonaAvatar'
 import {
   STAGE_TRANSITION_MIN,
   CLOSURE_MESSAGE_LIMIT,
   STABLE_TRANSITION_MIN,
   MAX_HISTORY_LENGTH,
+  FREE_MESSAGE_LIMIT,
 } from '../../constants/chat'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
@@ -124,10 +125,12 @@ export default function ChatScreen({ navigation, route }: Props) {
   const [errorMsg, setErrorMsg] = useState('')
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null)
   const isReadOnly = !!(persona?.is_archived)
+  const isPet = persona?.care_type === 'pet'
 
   const listRef = useRef<FlatList<Message>>(null)
   const toastOpacity = useRef(new Animated.Value(0)).current
   const emotionalStageRef = useRef<'replay' | 'stable' | 'closure'>('replay')
+  const isTransitioningRef = useRef(false)
 
   useEffect(() => {
     if (persona?.emotional_stage) {
@@ -251,6 +254,13 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
     load()
   }, [personaId])
 
+  useFocusEffect(useCallback(() => {
+    if (!personaId || loading) return
+    getPersonaById(personaId).then(p => {
+      if (p) setPersona(p)
+    })
+  }, [personaId, loading]))
+
   // AI 고지 배너 — 최초 1회 표시 후 영구 숨김
   useEffect(() => {
     AsyncStorage.getItem('@stillafter/ai_banner_dismissed')
@@ -265,7 +275,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
 
   // 초기 로드 후 stage transition 버튼 노출 체크
   useEffect(() => {
-    if (loading || !persona) return
+    if (loading || !persona || isReadOnly) return
     const stage = persona.emotional_stage ?? 'replay'
 
     if (stage === 'replay' && stageMessageCount >= STAGE_TRANSITION_MIN) {
@@ -273,7 +283,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         if (prev.some(m => m.action === 'goto_stable')) return prev
         return [...prev, {
           id: makeId(), role: 'system',
-          content: t.chat.stageTransitionToStable,
+          content: isPet ? t.chat.petStageTransitionToStable : t.chat.stageTransitionToStable,
           action: 'goto_stable' as const,
         }]
       })
@@ -284,7 +294,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         if (prev.some(m => m.action === 'goto_closure')) return prev
         return [...prev, {
           id: makeId(), role: 'system',
-          content: t.chat.stageTransitionToClosure,
+          content: isPet ? t.chat.petStageTransitionToClosure : t.chat.stageTransitionToClosure,
           action: 'goto_closure' as const,
         }]
       })
@@ -295,12 +305,14 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         if (prev.some(m => m.action === 'goto_letter')) return prev
         return [...prev, {
           id: makeId(), role: 'system',
-          content: t.chat.stageTransitionToLetter,
+          content: isPet
+            ? t.chat.petStageTransitionToLetter(persona?.name ?? '')
+            : t.chat.stageTransitionToLetter,
           action: 'goto_letter' as const,
         }]
       })
     }
-  }, [loading, persona?.emotional_stage, stageMessageCount, t, makeId])
+  }, [loading, persona?.emotional_stage, persona?.care_type, persona?.name, stageMessageCount, isReadOnly, t, makeId, isPet])
 
   const showDangerAlert = useCallback((userMessage: string) => {
     setShowDangerModal(true)
@@ -352,7 +364,8 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
   }, [persona, messages, makeId, showToast, language])
 
   const handleStableTransition = useCallback(async () => {
-    if (!persona) return
+    if (!persona || isTransitioningRef.current) return
+    isTransitioningRef.current = true
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -361,9 +374,12 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       setPersona(prev => prev ? { ...prev, emotional_stage: 'stable' } : prev)
       setStageMessageCount(0)
       setMessages(prev => prev.filter(m => m.action !== 'goto_stable'))
-      setMessages(prev => [...prev, { id: makeId(), role: 'system', content: t.chat.systemStableEntered }])
+      setMessages(prev => [...prev, { id: makeId(), role: 'system', content: isPet
+        ? t.chat.petSystemStableEntered(persona.name)
+        : t.chat.systemStableEntered }])
     } catch { showToast(t.chat.retryLater) }
-  }, [persona, showToast, t, makeId])
+    finally { isTransitioningRef.current = false }
+  }, [persona, showToast, t, makeId, isPet])
 
   const navigateToClosureLetter = useCallback((aiFarewell?: string) => {
     if (!persona) return
@@ -383,7 +399,8 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
   }, [persona, messages, navigation, showToast, t])
 
   const handleClosureTransition = useCallback(async () => {
-    if (!persona) return
+    if (!persona || isTransitioningRef.current) return
+    isTransitioningRef.current = true
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -392,9 +409,12 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       setPersona(prev => prev ? { ...prev, emotional_stage: 'closure' } : prev)
       setStageMessageCount(0)
       setMessages(prev => prev.filter(m => m.action !== 'goto_closure'))
-      setMessages(prev => [...prev, { id: makeId(), role: 'system', content: t.chat.systemClosureEntered }])
+      setMessages(prev => [...prev, { id: makeId(), role: 'system', content: isPet
+        ? t.chat.petSystemClosureEntered(persona.name)
+        : t.chat.systemClosureEntered }])
     } catch { showToast(t.chat.retryLater) }
-  }, [persona, showToast, t, makeId])
+    finally { isTransitioningRef.current = false }
+  }, [persona, showToast, t, makeId, isPet])
 
   const handleSendError = useCallback((err: unknown, trimmed: string) => {
     const msg = err instanceof Error ? err.message : ''
@@ -425,13 +445,18 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       // PM-008: 위험 감지 시 메시지를 대화에 추가하지 않고 기록만 남김
       if (detectDanger(trimmed)) { showDangerAlert(trimmed); setInputText(''); return }
 
+      const newUserCount = userMessageCount + 1
+      if (newUserCount > FREE_MESSAGE_LIMIT) {
+        navigation.navigate('Paywall', { personaId: persona.id })
+        return
+      }
+
       const userMsg: Message = { id: makeId(), role: 'user', content: trimmed }
       setMessages(prev => [...prev, userMsg])
       setInputText('')
       setLastFailedMessage(null)
       setIsTyping(true)
 
-      const newUserCount = userMessageCount + 1
       setUserMessageCount(newUserCount)
       const newStageCount = stageMessageCount + 1
       setStageMessageCount(newStageCount)
@@ -464,8 +489,14 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       // Replay: 중간 마일스톤 메시지
       if (currentStage === 'replay') {
         let replayGuide: string | null = null
-        if (newStageCount === 5) replayGuide = t.chat.systemReturning(persona.name)
-        else if (newStageCount === 10) replayGuide = t.chat.systemDeepening(persona.name)
+        if (newStageCount === 5)
+          replayGuide = isPet
+            ? t.chat.petSystemReturning(persona.name)
+            : t.chat.systemReturning(persona.name)
+        else if (newStageCount === 10)
+          replayGuide = isPet
+            ? t.chat.petSystemDeepening(persona.name)
+            : t.chat.systemDeepening(persona.name)
         if (replayGuide) setMessages(prev => [...prev, { id: makeId(), role: 'system', content: replayGuide! }])
       }
 
@@ -476,7 +507,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
           if (alreadyHasBtn) return prev
           return [...prev, {
             id: makeId(), role: 'system',
-            content: t.chat.systemStableReady,
+            content: isPet ? t.chat.petSystemStableReady : t.chat.systemStableReady,
             action: 'goto_stable' as const,
           }]
         })
@@ -485,8 +516,10 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       // Stable: 중간 마일스톤 메시지
       if (currentStage === 'stable') {
         let stableGuide: string | null = null
-        if (newStageCount === 5) stableGuide = t.chat.systemStableProgress
-        else if (newStageCount === 10) stableGuide = t.chat.systemStableDeep
+        if (newStageCount === 5)
+          stableGuide = isPet ? t.chat.petSystemStableProgress : t.chat.systemStableProgress
+        else if (newStageCount === 10)
+          stableGuide = isPet ? t.chat.petSystemStableDeep : t.chat.systemStableDeep
         if (stableGuide) setMessages(prev => [...prev, { id: makeId(), role: 'system', content: stableGuide! }])
       }
 
@@ -497,7 +530,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
           if (alreadyHasBtn) return prev
           return [...prev, {
             id: makeId(), role: 'system',
-            content: t.chat.systemClosureReady,
+            content: isPet ? t.chat.petSystemClosureReady : t.chat.systemClosureReady,
             action: 'goto_closure' as const,
           }]
         })
@@ -506,7 +539,8 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       // Closure milestones
       if (currentStage === 'closure') {
         let closureGuide: string | null = null
-        if (newStageCount === 11) closureGuide = t.chat.systemClosureMsg
+        if (newStageCount === 11)
+          closureGuide = isPet ? t.chat.petSystemClosureMsg : t.chat.systemClosureMsg
         else if (newStageCount === 16) closureGuide = t.chat.closureProgress[3]
         else if (newStageCount === 18) closureGuide = t.chat.closureProgress[4]
         if (closureGuide) setMessages(prev => [...prev, { id: makeId(), role: 'system', content: closureGuide! }])
@@ -515,7 +549,9 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
             if (prev.some(m => m.action === 'goto_letter')) return prev
             return [...prev, {
               id: makeId(), role: 'system',
-              content: t.chat.stageTransitionToLetter,
+              content: isPet
+                ? t.chat.petStageTransitionToLetter(persona.name)
+                : t.chat.stageTransitionToLetter,
               action: 'goto_letter' as const,
             }]
           })
@@ -557,13 +593,12 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       if (__DEV__) console.error('[Chat] sendMessage retry error:', err)
       handleSendError(err, trimmed)
     } finally { setIsTyping(false) }
-  }, [inputText, isTyping, isReadOnly, persona, messages, userMessageCount, stageMessageCount, showDangerAlert, showToast, t, makeId, language, handleSendError])
+  }, [inputText, isTyping, isReadOnly, persona, messages, userMessageCount, stageMessageCount, showDangerAlert, showToast, t, makeId, language, handleSendError, navigation, isPet])
 
   // Current theme
   const currentStage = (persona?.emotional_stage ?? 'replay') as 'replay' | 'stable' | 'closure'
   const theme = STAGE_THEMES[currentStage]
   const personaName = persona?.name ?? '...'
-  const avatarChar = personaName.charAt(0)
   const photoUrl = persona?.photo_url ?? null
 
   const headerSubtitleText = (() => {
@@ -628,7 +663,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
             </View>
             <View style={styles.modalBtnRow}>
               <TouchableOpacity style={styles.modalBtnCancel} onPress={() => setStageConfirmTarget(null)} activeOpacity={0.7}>
-                <Text style={styles.modalBtnCancelText}>{t.chat.stageModalCancel}</Text>
+                <Text style={styles.modalBtnCancelText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{t.chat.stageModalCancel}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
@@ -641,7 +676,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
                 style={styles.modalBtnPrimary}
               >
                 <LinearGradient colors={['#7C3AED', '#3B82F6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalBtnPrimaryGrad}>
-                  <Text style={styles.modalBtnPrimaryText}>{t.chat.stageModalConfirm}</Text>
+                  <Text style={styles.modalBtnPrimaryText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{t.chat.stageModalConfirm}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -686,11 +721,12 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
           </TouchableOpacity>
           <View style={styles.headerInfo}>
             <View style={styles.headerAvatar}>
-              {photoUrl ? <Image source={{ uri: photoUrl }} style={styles.headerAvatarImg} /> : (
-                <LinearGradient colors={['rgba(168, 85, 247, 0.3)', 'rgba(59, 130, 246, 0.3)']} style={styles.headerAvatarDefault}>
-                  <Text style={styles.headerAvatarEmoji}>💜</Text>
-                </LinearGradient>
-              )}
+              <PersonaAvatar
+                photoUrl={photoUrl}
+                name={personaName}
+                size={40}
+                style={{ borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)' }}
+              />
             </View>
             <View>
               <View style={styles.headerNameRow}>
@@ -768,7 +804,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
                   {isTyping ? (
                     <View style={styles.aiRow}>
                       <View style={styles.avatar}>
-                        {photoUrl ? <Image source={{ uri: photoUrl }} style={styles.avatarPhoto} /> : <Text style={styles.avatarText}>{avatarChar}</Text>}
+                        <PersonaAvatar photoUrl={photoUrl} name={personaName} size={36} />
                       </View>
                       <View>
                         <Text style={styles.senderName}>{personaName}</Text>
@@ -801,8 +837,10 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
                 const isRecentEnough = index >= messages.length - 5
                 const showCta = hasCta && (item.action === 'goto_letter' || isRecentEnough)
                 const ctaLabel =
-                  item.action === 'goto_stable' ? t.chat.gotoStableBtn
-                  : item.action === 'goto_closure' ? t.chat.gotoClosureBtn
+                  item.action === 'goto_stable'
+                    ? (isPet ? t.chat.petGotoStableBtn : t.chat.gotoStableBtn)
+                  : item.action === 'goto_closure'
+                    ? (isPet ? t.chat.petGotoClosureBtn : t.chat.gotoClosureBtn)
                   : t.chat.gotoLetterBtn
                 const ctaHandler =
                   item.action === 'goto_stable' ? () => setStageConfirmTarget('stable')
@@ -844,7 +882,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
               return (
                 <View style={styles.aiRow}>
                   <View style={styles.avatar}>
-                    {photoUrl ? <Image source={{ uri: photoUrl }} style={styles.avatarPhoto} /> : <Text style={styles.avatarText}>{avatarChar}</Text>}
+                    <PersonaAvatar photoUrl={photoUrl} name={personaName} size={36} />
                   </View>
                   <View>
                     <Text style={styles.senderName}>{personaName}</Text>

@@ -182,6 +182,12 @@ export default function SettingsScreen({ navigation }: Props) {
     setLoading(true)
     try {
       closeModal()
+      try {
+        await AsyncStorage.multiRemove([
+          '@stillafter/persona_draft',
+          NOTIF_KEY,
+        ])
+      } catch { /* 스토리지 클리어 실패는 무시 */ }
       await signOut()
       // 네비게이션은 App.tsx의 key 변경으로 자동 처리
     } catch {
@@ -267,9 +273,9 @@ export default function SettingsScreen({ navigation }: Props) {
                   backgroundColor: 'rgba(168,85,247,0.15)', borderRadius: 20,
                   paddingHorizontal: 12, paddingVertical: 5,
                   borderWidth: 1, borderColor: 'rgba(168,85,247,0.35)' }}>
-                <Text style={{ fontSize: 13, color: language === 'ko' ? '#c084fc' : 'rgba(255,255,255,0.4)', fontWeight: language === 'ko' ? '600' : '400' }}>한</Text>
+                <Text style={{ fontSize: 13, color: language === 'ko' ? '#c084fc' : 'rgba(255,255,255,0.4)', fontWeight: language === 'ko' ? '600' : '400' }}>{t.common.langKo}</Text>
                 <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>|</Text>
-                <Text style={{ fontSize: 13, color: language === 'en' ? '#c084fc' : 'rgba(255,255,255,0.4)', fontWeight: language === 'en' ? '600' : '400' }}>EN</Text>
+                <Text style={{ fontSize: 13, color: language === 'en' ? '#c084fc' : 'rgba(255,255,255,0.4)', fontWeight: language === 'en' ? '600' : '400' }}>{t.common.langEn}</Text>
               </TouchableOpacity>
             }
           />

@@ -9,6 +9,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { updatePersona, uploadPersonaPhoto } from '../../services/personaService'
+import { supabase } from '../../services/supabase'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
 import CosmicBackground from '../../components/CosmicBackground'
@@ -97,6 +98,12 @@ export default function PersonaEditScreen({ navigation, route }: Props) {
     try {
       let newPhotoUrl: string | null | undefined = undefined
       if (photoChanged) {
+        if (currentPhotoUrl) {
+          const oldPath = currentPhotoUrl.split('/persona-photos/')[1]
+          if (oldPath) {
+            await supabase.storage.from('persona-photos').remove([decodeURIComponent(oldPath.split('?')[0])])
+          }
+        }
         newPhotoUrl = photoBlob && photoFileName ? await uploadPersonaPhoto(user.id, photoBlob, photoFileName) : null
       }
       await updatePersona(personaId, {

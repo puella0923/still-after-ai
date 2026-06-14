@@ -202,16 +202,20 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
 
           {completed && (
             <Animated.View style={[styles.completedContainer, { opacity: completedOpacity }]}>
-              <Text style={styles.completedEmoji}>{t.closure.closureDoneEmoji}</Text>
+              <Text style={styles.completedEmoji}>{isPet ? t.closure.petCompletedEmoji : t.closure.closureDoneEmoji}</Text>
             </Animated.View>
           )}
 
           <Modal visible={showDoneModal} transparent animationType="fade" onRequestClose={() => {}}>
             <View style={styles.modalBackdrop}>
               <View style={styles.modalBox}>
-                <Text style={styles.doneModalEmoji}>{t.closure.closureDoneEmoji}</Text>
-                <Text style={styles.modalTitle}>{t.closure.closureDoneTitle}</Text>
-                <Text style={styles.modalMessage}>{t.closure.closureDoneDesc}</Text>
+                <Text style={styles.doneModalEmoji}>{isPet ? t.closure.petCompletedEmoji : t.closure.closureDoneEmoji}</Text>
+                <Text style={styles.modalTitle}>
+                  {isPet ? t.closure.petClosureDoneTitle : t.closure.closureDoneTitle}
+                </Text>
+                <Text style={styles.modalMessage}>
+                  {isPet ? t.closure.petCompletedSub : t.closure.closureDoneDesc}
+                </Text>
                 <TouchableOpacity
                   onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Main' }] })}
                   activeOpacity={0.85}
@@ -239,7 +243,7 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
           if (navigation.canGoBack()) navigation.goBack()
           else navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
         }}
-        title={t.closure.header}
+        title={isPet ? t.closure.petHeader : t.closure.header}
       />
 
       <ScrollView style={styles.scroll}>
@@ -247,7 +251,7 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
           {!!aiFarewell && !farewellRevealed && (
             <View style={styles.farewellGate}>
               <Text style={styles.farewellGateText}>
-                {t.closure.farewellGateMsg(personaName)}
+                {isPet ? t.closure.petFarewellGateMsg(personaName) : t.closure.farewellGateMsg(personaName)}
               </Text>
               <TouchableOpacity onPress={() => setFarewellRevealed(true)} activeOpacity={0.7} style={styles.farewellGateBtn}>
                 <Text style={styles.farewellGateBtnText}>{t.closure.farewellGateBtn}</Text>
@@ -293,7 +297,7 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
             )}
           </TouchableOpacity>
 
-          <Text style={styles.notice}>{t.closure.sealNote}</Text>
+          <Text style={styles.notice}>{isPet ? t.closure.petSealNote : t.closure.sealNote}</Text>
         </View>
       </ScrollView>
 
@@ -301,16 +305,24 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
       <Modal visible={showConfirm} transparent animationType="fade" onRequestClose={() => setShowConfirm(false)}>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>{t.closure.closureConfirmTitle}</Text>
-            <Text style={styles.modalMessage}>{t.closure.closureConfirmDesc}</Text>
+            <Text style={styles.modalTitle}>
+              {isPet ? t.closure.petClosureConfirmTitle : t.closure.closureConfirmTitle}
+            </Text>
+            <Text style={styles.modalMessage}>
+              {isPet ? t.closure.petClosureConfirmDesc : t.closure.closureConfirmDesc}
+            </Text>
             <View style={styles.modalActionsColumn}>
               <TouchableOpacity style={styles.modalConfirmBtn} onPress={runFarewellAnimation} activeOpacity={0.85}>
                 <LinearGradient colors={['#6366f1', '#a855f7']} style={styles.modalConfirmGrad}>
-                  <Text style={styles.modalConfirmText}>{t.closure.closureConfirmBtn}</Text>
+                  <Text style={styles.modalConfirmText}>
+                    {isPet ? t.closure.petClosureConfirmBtn : t.closure.closureConfirmBtn}
+                  </Text>
                 </LinearGradient>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setShowConfirm(false)} activeOpacity={0.7}>
-                <Text style={styles.modalCancelTextOnly}>{t.closure.closureConfirmCancel}</Text>
+                <Text style={styles.modalCancelTextOnly}>
+                  {isPet ? t.closure.petClosureConfirmCancel : t.closure.closureConfirmCancel}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

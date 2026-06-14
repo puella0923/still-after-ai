@@ -11,7 +11,7 @@ export type TabParamList = {
 const Tab = createBottomTabNavigator<TabParamList>()
 
 export default function TabNavigator() {
-  const { language } = useLanguage()
+  const { t } = useLanguage()
 
   return (
     <Tab.Navigator
@@ -25,7 +25,7 @@ export default function TabNavigator() {
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarLabel: language === 'ko' ? '홈' : 'Home',
+          tabBarLabel: t.home.tabLabel,
           tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🏠</Text>,
         }}
       />

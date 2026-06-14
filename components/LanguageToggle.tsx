@@ -7,7 +7,7 @@ type Props = {
 }
 
 export default function LanguageToggle({ style }: Props) {
-  const { language, toggleLanguage } = useLanguage()
+  const { language, toggleLanguage, t } = useLanguage()
 
   return (
     <TouchableOpacity
@@ -16,9 +16,9 @@ export default function LanguageToggle({ style }: Props) {
       activeOpacity={0.7}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
-      <Text style={[styles.label, language === 'ko' && styles.active]}>한국어</Text>
+      <Text style={[styles.label, language === 'ko' && styles.active]}>{t.common.langKo}</Text>
       <View style={styles.divider} />
-      <Text style={[styles.label, language === 'en' && styles.active]}>English</Text>
+      <Text style={[styles.label, language === 'en' && styles.active]}>{t.common.langEn}</Text>
     </TouchableOpacity>
   )
 }

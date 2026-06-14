@@ -14,3 +14,6 @@ export const STABLE_TRANSITION_MIN = 5
 
 /** 최근 대화 기록을 AI 컨텍스트에 포함할 최대 개수 */
 export const MAX_HISTORY_LENGTH = 20
+
+/** 페르소나당 무료 대화 한도 */
+export const FREE_MESSAGE_LIMIT = 10

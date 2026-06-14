@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Pressable,
   ScrollView,
-  Image,
   ActivityIndicator,
   Animated,
   Dimensions,
@@ -27,6 +26,7 @@ import { C, RADIUS } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
 import CosmicBackground from '../../components/CosmicBackground'
+import PersonaAvatar from '../../components/PersonaAvatar'
 
 const { width } = Dimensions.get('window')
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList>
@@ -363,16 +363,12 @@ export default function HomeScreen() {
                     >
                       {/* Avatar */}
                       <View style={styles.avatarWrap}>
-                        {persona.photo_url ? (
-                          <Image source={{ uri: persona.photo_url }} style={styles.avatarImg} />
-                        ) : (
-                          <LinearGradient
-                            colors={['rgba(168, 85, 247, 0.3)', 'rgba(59, 130, 246, 0.3)']}
-                            style={styles.avatarDefault}
-                          >
-                            <Text style={styles.avatarEmoji}>💜</Text>
-                          </LinearGradient>
-                        )}
+                        <PersonaAvatar
+                          photoUrl={persona.photo_url}
+                          name={persona.name}
+                          size={56}
+                          style={{ borderWidth: 2, borderColor: 'rgba(167, 139, 250, 0.3)' }}
+                        />
                       </View>
 
                       {/* Name & Relationship */}
@@ -471,13 +467,12 @@ export default function HomeScreen() {
                 activeOpacity={0.75}
               >
                 <View style={styles.archivedAvatarWrap}>
-                  {persona.photo_url ? (
-                    <Image source={{ uri: persona.photo_url }} style={styles.archivedAvatarImg} />
-                  ) : (
-                    <View style={styles.archivedAvatarDefault}>
-                      <Text style={styles.archivedAvatarEmoji}>🌸</Text>
-                    </View>
-                  )}
+                  <PersonaAvatar
+                    photoUrl={persona.photo_url}
+                    name={persona.name}
+                    size={44}
+                    style={{ opacity: 0.7 }}
+                  />
                 </View>
                 <View style={styles.archivedInfo}>
                   <Text style={styles.archivedName}>{persona.name}</Text>
