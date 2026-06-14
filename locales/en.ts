@@ -346,7 +346,7 @@ const en: Translations = {
     charCountHint: '(Please enter at least 20 characters)',
     kakaoDesc: 'First export the chat from KakaoTalk and save it, then upload the file here. We\'ll carefully capture their unique tone and warmth.',
     kakaoStep1: '① KakaoTalk: Chat room → Top right ≡ → Export chat → Save as text file',
-    kakaoStep2: '② Come back here and upload the saved file below',
+    kakaoStep2: '② Upload the saved file with the button below',
     kakaoOnlyDirect: '⚠️ Only 1-on-1 chats are supported. Group chats cannot be analyzed.',
     dataDeleteNote: '🔐 Uploaded files are deleted immediately after capturing memories, never stored or shared.',
     uploadBtn: '📂 Upload saved file',
