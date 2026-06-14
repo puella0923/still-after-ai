@@ -37,14 +37,14 @@ export default function CustomerSupportScreen({ navigation }: Props) {
 
   const openEmail = () => {
     Linking.openURL('mailto:ysk@soomukstudio.com?subject=Still After 고객 지원 문의').catch(() => {
-      Alert.alert('이메일 앱을 열 수 없어요', 'ysk@soomukstudio.com으로 직접 이메일을 보내주세요.')
+      Alert.alert(t.customerSupport.emailErrorTitle, t.customerSupport.emailErrorMsg)
     })
   }
 
   const openCrisisLine = () => {
-    Alert.alert('정신건강위기상담전화', '1577-0199로 연결됩니다.\n24시간 운영합니다.', [
-      { text: '취소', style: 'cancel' },
-      { text: '전화 연결', onPress: () => Linking.openURL('tel:15770199') },
+    Alert.alert(t.customerSupport.crisisTitle, t.customerSupport.crisisMsg, [
+      { text: t.customerSupport.crisisCancel, style: 'cancel' },
+      { text: t.customerSupport.crisisCall, onPress: () => Linking.openURL('tel:15770199') },
     ])
   }
 

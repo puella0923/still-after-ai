@@ -104,14 +104,17 @@ export default function HomeScreen() {
       setPersonas(list)
 
       if (list.length > 0) {
+        const personaIds = list.map(p => p.id)
+        const { data: convRows } = await supabase
+          .from('conversations')
+          .select('persona_id')
+          .in('persona_id', personaIds)
+          .eq('role', 'user')
+
         const counts: Record<string, number> = {}
-        for (const p of list) {
-          const { count } = await supabase
-            .from('conversations')
-            .select('*', { count: 'exact', head: true })
-            .eq('persona_id', p.id)
-            .eq('role', 'user')
-          counts[p.id] = count ?? 0
+        for (const id of personaIds) counts[id] = 0
+        for (const row of convRows ?? []) {
+          counts[row.persona_id] = (counts[row.persona_id] ?? 0) + 1
         }
         setConversationCounts(counts)
       }
@@ -244,7 +247,7 @@ export default function HomeScreen() {
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={['#7C3AED', '#3B82F6']}
+              colors={['#a855f7', '#db2777']}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={styles.createBtnGradient}
             >
@@ -267,7 +270,7 @@ export default function HomeScreen() {
               >
                 {filter === key ? (
                   <LinearGradient
-                    colors={['#7C3AED', '#3B82F6']}
+                    colors={['#a855f7', '#db2777']}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                     style={styles.filterPillActive}
                   >
@@ -319,7 +322,7 @@ export default function HomeScreen() {
                 activeOpacity={0.85}
               >
                 <LinearGradient
-                  colors={['#7C3AED', '#3B82F6']}
+                  colors={['#a855f7', '#db2777']}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                   style={styles.emptyBtn}
                 >
@@ -401,6 +404,7 @@ export default function HomeScreen() {
                               onPress={(e) => { e.stopPropagation?.(); handleEditPersona(persona) }}
                             >
                               <Text style={styles.dropdownItemText}>{t.home.menuEdit}</Text>
+                              <Text style={styles.dropdownItemSub}>{t.home.menuEditSub}</Text>
                             </TouchableOpacity>
                             <View style={styles.dropdownDivider} />
                             <TouchableOpacity
@@ -511,12 +515,12 @@ const styles = StyleSheet.create({
 
   // AI Banner
   aiBanner: {
-    backgroundColor: 'rgba(120, 53, 15, 0.3)',
-    borderBottomWidth: 1, borderBottomColor: 'rgba(251, 191, 36, 0.2)',
+    backgroundColor: 'rgba(30, 58, 138, 0.4)',
+    borderBottomWidth: 1, borderBottomColor: 'rgba(96, 165, 250, 0.2)',
     paddingVertical: 8, paddingHorizontal: 16,
   },
   aiBannerText: {
-    fontSize: 11, color: '#FDE68A', textAlign: 'center',
+    fontSize: 11, color: '#93C5FD', textAlign: 'center',
   },
 
   // Section Header
@@ -659,6 +663,7 @@ const styles = StyleSheet.create({
   },
   dropdownItem: { paddingHorizontal: 16, paddingVertical: 11 },
   dropdownItemText: { fontSize: 13, color: 'rgba(196, 181, 253, 0.9)', fontWeight: '500' },
+  dropdownItemSub: { fontSize: 10, color: 'rgba(167, 139, 250, 0.5)', marginTop: 2 },
   dropdownDivider: { height: 1, backgroundColor: 'rgba(167, 139, 250, 0.12)' },
 
 

@@ -155,6 +155,31 @@ const SYSTEM_MESSAGE_PATTERNS = [
   /^(입금|출금)\s/,                             // 입금/출금 알림
   /님이\s(나갔|들어왔|입장|퇴장)/,              // 입퇴장 알림
   /^https?:\/\//,                               // URL만 있는 메시지
+  /송금|이체|카카오페이/,                       // 메시지 어느 위치든 결제 관련 단어 포함
+  /내역\s*상세화면/,                            // "내역 상세화면"
+  /취소할\s*수\s*있어요/,                       // "취소할 수 있어요"
+  /받기\s*전까지/,                              // "받기 전까지"
+  /정산하기|더치페이|1\/[0-9]/,                 // 카카오페이 정산 메시지
+  /선물하기|쿠폰|기프티콘/,                     // 선물/쿠폰 메시지
+  /톡서랍|캘린더에\s*추가/,                     // 톡서랍 시스템 메시지
+  /오픈채팅|채널|카카오\s*채널/,                // 오픈채팅/채널 시스템
+  /구독\s*중|구독이\s*시작/,                    // 구독 시스템 메시지
+  /^[A-Z0-9]{6,}$/,                             // 인증코드 (영숫자만 6자 이상)
+  // 인증번호
+  /인증번호|인증 번호|인증코드/,
+  /^\[.{1,20}\].*번호/,                          // "[카카오] 인증번호입니다" 형태
+  /^[0-9]{4,8}$/,                               // 숫자만 4~8자리 (OTP)
+  // 앱/채널 알림
+  /주문(이|을|번호)|배송(이|을|조회)|결제(가|를|완료)/,
+  /처리(가|되었|됐)|승인(이|됐)|완료(되었|됐)/,
+  /알림(을|이|톡)|카카오\s*채널/,
+  // UI 지시어 포함 메시지
+  /눌러\s*주세요|클릭\s*하세요|확인\s*하세요/,
+  /하시려면|하려면.*누르/,
+  // 일정/투표/공지
+  /일정을?\s*(등록|추가|공유)/,
+  /투표(가|를)\s*(시작|종료|생성)/,
+  /공지(가|를)\s*(등록|수정)/,
 ]
 
 function isSystemMessage(content: string): boolean {
@@ -648,6 +673,7 @@ function extractFrequentWords(messages: KakaoMessage[], allSenderNames?: string[
   for (const m of messages) {
     if (isSystemMessage(m.content)) continue
     if (/^[ㅋㅎㅠㅜㅡ.!?~\s]+$/.test(m.content.trim())) continue
+    if (m.content.trim().length > 100) continue   // 복붙 콘텐츠 방어
 
     const normalized = m.content
       .replace(/[^\p{L}\p{N}\s]/gu, ' ')
@@ -660,7 +686,8 @@ function extractFrequentWords(messages: KakaoMessage[], allSenderNames?: string[
       !stopTokens.has(t) &&
       !/^[ㅋㅎㅠㅜㅡ]+$/.test(t) &&
       !/^[a-zA-Z]{1,2}$/.test(t) &&
-      !/^\d+$/.test(t)               // 순수 숫자 제외
+      !/^\d+$/.test(t) &&             // 순수 숫자 제외
+      !/\d/.test(t)                  // "7시", "3층", "32000원" 등 숫자 혼합 토큰 제외
     )
 
     // 단일 단어: isSpeechCharacteristic 통과한 것만
@@ -710,10 +737,24 @@ function extractFrequentWords(messages: KakaoMessage[], allSenderNames?: string[
       // 같은 길이면 빈도 순
       return b[1] - a[1]
     })
-    .slice(0, 40)
-    .map(([word, count]) => ({ word, count }))
 
-  return combined
+  // 시스템 UI 어휘가 포함된 n-gram 제거
+  const SYSTEM_VOCAB = new Set([
+    '화면', '취소', '내역', '상세', '완료', '처리', '승인', '알림',
+    '클릭', '누르', '확인하', '시작되', '등록', '발송', '수신',
+    '발신', '주문', '배송', '결제', '인증', '번호', '코드',
+    '보냈어요', '받기', '전까지', '분은',
+  ])
+
+  function containsSystemVocab(phrase: string): boolean {
+    return phrase.split(' ').some(token =>
+      [...SYSTEM_VOCAB].some(v => token.includes(v))
+    )
+  }
+
+  const filtered = combined.filter(([phrase]) => !containsSystemVocab(phrase))
+
+  return filtered.slice(0, 40).map(([word, count]) => ({ word, count }))
 }
 
 /** 종합 말투 분석 */

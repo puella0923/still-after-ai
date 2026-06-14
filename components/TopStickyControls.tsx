@@ -4,6 +4,7 @@ import LanguageToggle from './LanguageToggle'
 import StepIndicator from './StepIndicator'
 
 export const TOP_STICKY_HEADER_HEIGHT = 51
+export const TOP_STICKY_WITH_STEP_HEIGHT = 96
 
 type Props = {
   backLabel: string
@@ -28,8 +29,14 @@ export default function TopStickyControls({
   containerStyle,
   style,
 }: Props) {
+  const hasStep = typeof stepCurrent === 'number' && typeof stepTotal === 'number'
+
   return (
-    <View style={[styles.stickyHeader, containerStyle]}>
+    <View style={[
+      styles.stickyHeader,
+      hasStep && styles.stickyHeaderWithStep,
+      containerStyle,
+    ]}>
       <View style={styles.headerRow}>
         <View style={styles.sideSlot}>
           <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
@@ -39,14 +46,15 @@ export default function TopStickyControls({
         <View style={styles.centerSlot}>
           {title ? (
             <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
-          ) : typeof stepCurrent === 'number' && typeof stepTotal === 'number' ? (
-            <StepIndicator current={stepCurrent} total={stepTotal} />
           ) : null}
         </View>
         <View style={[styles.sideSlot, styles.sideSlotRight]}>
           {rightSlot ?? (showLanguageToggle ? <LanguageToggle style={style} /> : null)}
         </View>
       </View>
+      {hasStep && (
+        <StepIndicator current={stepCurrent} total={stepTotal} />
+      )}
     </View>
   )
 }
@@ -68,6 +76,11 @@ const styles = StyleSheet.create({
     backdropFilter: 'blur(8px)',
     WebkitBackdropFilter: 'blur(8px)',
   } as any,
+  stickyHeaderWithStep: {
+    height: TOP_STICKY_WITH_STEP_HEIGHT,
+    justifyContent: 'flex-start',
+    paddingBottom: 8,
+  },
   headerRow: { flexDirection: 'row', alignItems: 'center', width: '100%' },
   sideSlot: { width: 140, justifyContent: 'center' },
   sideSlotRight: { alignItems: 'flex-end' },

@@ -78,6 +78,7 @@ export default function TimingCheckScreen({ navigation, route }: Props) {
               ? t.timingCheck.subtitlePet
               : t.timingCheck.subtitleHuman}
           </Text>
+          <Text style={styles.desc}>{t.timingCheck.timingCheckDesc}</Text>
         </View>
 
         <View style={styles.options}>
@@ -138,8 +139,9 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: 28, paddingTop: 110, paddingBottom: 120, gap: 32 },
   header: { alignItems: 'center', gap: 12 },
   emoji: { fontSize: 36 },
-  title: { fontSize: 24, fontWeight: '300', color: '#fff', letterSpacing: 0.3, textAlign: 'center', lineHeight: 34 },
-  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.55)', textAlign: 'center', lineHeight: 22 },
+  title: { fontSize: 26, fontWeight: '300', color: '#fff', letterSpacing: 0.3, textAlign: 'center', lineHeight: 34 },
+  subtitle: { fontSize: 15, color: 'rgba(255,255,255,0.55)', textAlign: 'center', lineHeight: 22 },
+  desc: { fontSize: 14, color: 'rgba(196, 181, 253, 0.7)', textAlign: 'center', lineHeight: 22 },
   options: { gap: 12 },
   optionWrap: { borderRadius: 16, overflow: 'hidden' },
   option: {
@@ -162,7 +164,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
   },
   earlyGriefBanner: {
-    position: 'absolute', top: 90, left: 20, right: 20, zIndex: 10,
+    position: 'absolute', top: 56, left: 20, right: 20, zIndex: 10,
     backgroundColor: 'rgba(168, 85, 247, 0.15)',
     borderWidth: 1, borderColor: 'rgba(168, 85, 247, 0.3)',
     borderRadius: 16, padding: 16,

@@ -899,8 +899,8 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 28,
   },
-  ctaButton: { borderRadius: 10, overflow: 'hidden', marginBottom: 16 },
-  ctaButtonGradient: { paddingHorizontal: 40, paddingVertical: 16, borderRadius: 10 },
+  ctaButton: { borderRadius: 14, overflow: 'hidden', marginBottom: 16 },
+  ctaButtonGradient: { paddingHorizontal: 40, paddingVertical: 16, borderRadius: 14 },
   ctaButtonText: { fontSize: 16, fontWeight: '500', color: '#fff' },
   ctaNote: { fontSize: 12, color: 'rgba(167, 139, 250, 0.5)' },
 

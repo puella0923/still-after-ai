@@ -341,10 +341,10 @@ const styles = StyleSheet.create({
 
   // AI Banner
   aiBanner: {
-    backgroundColor: 'rgba(120, 53, 15, 0.3)', borderBottomWidth: 1,
-    borderBottomColor: 'rgba(251, 191, 36, 0.2)', paddingVertical: 8, paddingHorizontal: 16,
+    backgroundColor: 'rgba(30, 58, 138, 0.4)', borderBottomWidth: 1,
+    borderBottomColor: 'rgba(96, 165, 250, 0.2)', paddingVertical: 8, paddingHorizontal: 16,
   },
-  aiBannerText: { fontSize: 11, color: '#FDE68A', textAlign: 'center' },
+  aiBannerText: { fontSize: 11, color: '#93C5FD', textAlign: 'center' },
 
   // List
   list: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 24, gap: 16 },

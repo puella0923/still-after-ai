@@ -49,6 +49,7 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
   const [isAnimating, setIsAnimating] = useState(false)
   const [completed, setCompleted] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [showDoneModal, setShowDoneModal] = useState(false)
   const [draftLoaded, setDraftLoaded] = useState(false)
 
   // 화면 진입 시 임시 저장된 편지 복원
@@ -168,6 +169,7 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
 
     setTimeout(() => {
       setCompleted(true)
+      setShowDoneModal(true)
       Animated.timing(completedOpacity, { toValue: 1, duration: 1100, useNativeDriver: Platform.OS !== 'web' }).start()
     }, 1900)
   }, [saveLetterToDb])
@@ -199,26 +201,28 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
 
           {completed && (
             <Animated.View style={[styles.completedContainer, { opacity: completedOpacity }]}>
-              <Text style={styles.completedEmoji}>{isPet ? t.closure.petCompletedEmoji : '🌸'}</Text>
-              <Text style={styles.completedTitle}>{t.closure.completedTitle}</Text>
-              <Text style={styles.completedSub}>{isPet ? t.closure.petCompletedSub : t.closure.completedSub}</Text>
-              <View style={styles.completedActions}>
-                <TouchableOpacity onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Main' }] })} activeOpacity={0.85}>
-                  <LinearGradient colors={['#6366f1', '#a855f7']} style={styles.homeBtn}>
-                    <Text style={styles.homeBtnText}>{t.closure.homeBtn}</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => navigation.reset({ index: 0, routes: [{ name: 'PersonaList' }] })}
-                  activeOpacity={0.75}
-                  style={styles.memoryBtn}
-                >
-                  <Text style={styles.memoryBtnText}>{t.closure.memoryBtn}</Text>
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.healingNote}>{isPet ? t.closure.petHealingNote : t.closure.healingNote}</Text>
+              <Text style={styles.completedEmoji}>{t.closure.closureDoneEmoji}</Text>
             </Animated.View>
           )}
+
+          <Modal visible={showDoneModal} transparent animationType="fade" onRequestClose={() => {}}>
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalBox}>
+                <Text style={styles.doneModalEmoji}>{t.closure.closureDoneEmoji}</Text>
+                <Text style={styles.modalTitle}>{t.closure.closureDoneTitle}</Text>
+                <Text style={styles.modalMessage}>{t.closure.closureDoneDesc}</Text>
+                <TouchableOpacity
+                  onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Main' }] })}
+                  activeOpacity={0.85}
+                  style={styles.doneModalBtnWrap}
+                >
+                  <LinearGradient colors={['#6366f1', '#a855f7']} style={styles.modalConfirmGrad}>
+                    <Text style={styles.modalConfirmText}>{t.closure.closureDoneBtn}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
         </Animated.View>
       </View>
     )
@@ -283,23 +287,22 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
 
       {/* Confirm Modal */}
       <Modal visible={showConfirm} transparent animationType="fade" onRequestClose={() => setShowConfirm(false)}>
-        <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setShowConfirm(false)}>
-          <TouchableOpacity style={styles.modalBox} activeOpacity={1} onPress={() => {}}>
-            <Text style={styles.modalEmoji}>{isPet ? '🐾' : '🌸'}</Text>
-            <Text style={styles.modalTitle}>{isPet ? t.closure.petModalTitle : t.closure.modalTitle}</Text>
-            <Text style={styles.modalMessage}>{isPet ? t.closure.petModalMsg(personaName) : t.closure.modalMsg(personaName)}</Text>
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowConfirm(false)} activeOpacity={0.7}>
-                <Text style={styles.modalCancelText}>{t.closure.modalCancel}</Text>
-              </TouchableOpacity>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>{t.closure.closureConfirmTitle}</Text>
+            <Text style={styles.modalMessage}>{t.closure.closureConfirmDesc}</Text>
+            <View style={styles.modalActionsColumn}>
               <TouchableOpacity style={styles.modalConfirmBtn} onPress={runFarewellAnimation} activeOpacity={0.85}>
                 <LinearGradient colors={['#6366f1', '#a855f7']} style={styles.modalConfirmGrad}>
-                  <Text style={styles.modalConfirmText}>{t.closure.modalConfirm}</Text>
+                  <Text style={styles.modalConfirmText}>{t.closure.closureConfirmBtn}</Text>
                 </LinearGradient>
               </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowConfirm(false)} activeOpacity={0.7}>
+                <Text style={styles.modalCancelTextOnly}>{t.closure.closureConfirmCancel}</Text>
+              </TouchableOpacity>
             </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
     </View>
   )
@@ -351,14 +354,18 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 18, fontWeight: '700', color: '#fff', textAlign: 'center' },
   modalMessage: { fontSize: 14, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 22 },
   modalActions: { flexDirection: 'row', gap: 10, marginTop: 8, width: '100%' },
+  modalActionsColumn: { width: '100%', gap: 12, marginTop: 8, alignItems: 'center' },
   modalCancelBtn: {
     flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)',
   },
   modalCancelText: { fontSize: 14, color: 'rgba(255,255,255,0.6)' },
-  modalConfirmBtn: { flex: 1, borderRadius: 12, overflow: 'hidden' },
+  modalCancelTextOnly: { fontSize: 14, color: 'rgba(255,255,255,0.55)', paddingVertical: 8 },
+  modalConfirmBtn: { width: '100%', borderRadius: 12, overflow: 'hidden' },
   modalConfirmGrad: { paddingVertical: 12, alignItems: 'center', borderRadius: 12 },
   modalConfirmText: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  doneModalEmoji: { fontSize: 48 },
+  doneModalBtnWrap: { width: '100%', borderRadius: 12, overflow: 'hidden', marginTop: 4 },
 
   // Animation overlay
   fullScreen: { flex: 1, overflow: 'hidden' },

@@ -150,9 +150,9 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1, overflow: 'hidden' },
   scrollContent: { paddingHorizontal: 28, paddingTop: 110, paddingBottom: 20, gap: 32 },
-  header: { gap: 10 },
-  title: { fontSize: 24, fontWeight: '300', color: '#fff', letterSpacing: 0.3 },
-  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 22 },
+  header: { alignItems: 'center', gap: 10 },
+  title: { fontSize: 26, fontWeight: '300', color: '#fff', letterSpacing: 0.3, textAlign: 'center' },
+  subtitle: { fontSize: 15, color: 'rgba(255,255,255,0.6)', lineHeight: 22 },
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   // 외부 컨테이너: 크기 고정 (패딩 없이 overflow hidden + border)
   chip: {

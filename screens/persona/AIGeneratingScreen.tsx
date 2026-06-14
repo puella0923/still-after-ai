@@ -34,6 +34,7 @@ export default function AIGeneratingScreen({ navigation, route }: Props) {
   const dot1 = useRef(new Animated.Value(0.3)).current
   const dot2 = useRef(new Animated.Value(0.3)).current
   const dot3 = useRef(new Animated.Value(0.3)).current
+  const progressAnim = useRef(new Animated.Value(0)).current
   const [currentStep, setCurrentStep] = React.useState(0)
 
   useEffect(() => {
@@ -49,6 +50,11 @@ export default function AIGeneratingScreen({ navigation, route }: Props) {
         tension: 60,
         friction: 8,
         useNativeDriver: Platform.OS !== 'web',
+      }),
+      Animated.timing(progressAnim, {
+        toValue: 1,
+        duration: 3500,
+        useNativeDriver: false,
       }),
     ]).start()
 
@@ -165,7 +171,15 @@ export default function AIGeneratingScreen({ navigation, route }: Props) {
 
         {/* Progress bar */}
         <View style={styles.progressBg}>
-          <Animated.View style={styles.progressFill}>
+          <Animated.View style={[
+            styles.progressFill,
+            {
+              width: progressAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: ['0%', '100%'],
+              }),
+            },
+          ]}>
             <LinearGradient
               colors={['#a855f7', '#db2777']}
               start={{ x: 0, y: 0 }}
@@ -251,7 +265,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressFill: {
-    width: '100%',
     height: '100%',
     borderRadius: 2,
     overflow: 'hidden',

@@ -42,6 +42,7 @@ function ConfirmModal({
   visible: boolean; steps: ConfirmStep[]; currentStep: number
   loading: boolean; onCancel: () => void; onConfirm: () => void
 }) {
+  const { t } = useLanguage()
   if (!visible || currentStep >= steps.length) return null
   const step = steps[currentStep]
   const isLastStep = currentStep === steps.length - 1
@@ -61,7 +62,7 @@ function ConfirmModal({
           <Text style={styles.modalMessage}>{step.message}</Text>
           <View style={styles.modalActions}>
             <TouchableOpacity style={styles.modalCancelBtn} onPress={onCancel} activeOpacity={0.7}>
-              <Text style={styles.modalCancelText}>{step.cancelLabel ?? '취소'}</Text>
+              <Text style={styles.modalCancelText}>{step.cancelLabel ?? t.common.cancel}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.modalConfirmBtn, (step.isDanger ?? false) && styles.modalConfirmBtnDanger, loading && { opacity: 0.6 }]}
@@ -85,6 +86,7 @@ function ConfirmModal({
 function ResultModal({ visible, title, message, onClose }: {
   visible: boolean; title: string; message: string; onClose: () => void
 }) {
+  const { t } = useLanguage()
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={onClose}>
@@ -93,7 +95,7 @@ function ResultModal({ visible, title, message, onClose }: {
           <Text style={styles.modalMessage}>{message}</Text>
           <TouchableOpacity onPress={onClose} activeOpacity={0.8}>
             <LinearGradient colors={['#a855f7', '#db2777']} style={[styles.gradBtnInner, { paddingVertical: 13 }]}>
-              <Text style={styles.modalConfirmText}>확인</Text>
+              <Text style={styles.modalConfirmText}>{t.common.ok}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </TouchableOpacity>

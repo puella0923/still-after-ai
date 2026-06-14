@@ -4,7 +4,14 @@
  */
 
 import { supabase } from './supabase'
-import type { KakaoMessage } from './kakaoParser'
+import {
+  parseKakaoChat,
+  generateSystemPrompt,
+  generatePetSystemPrompt,
+  type KakaoMessage,
+  type ParsedKakaoChat,
+  type SpeechPatterns,
+} from './kakaoParser'
 
 /** 카카오톡 파싱 후 저장하는 메시지 스타일 데이터 */
 export type MessageStyleData = {
@@ -57,6 +64,74 @@ async function getCurrentUserId(): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('로그인이 필요합니다.')
   return user.id
+}
+
+function buildParsedFromStoredPersona(persona: Persona, name: string): ParsedKakaoChat {
+  const messages = (Array.isArray(persona.parsed_messages) ? persona.parsed_messages : []) as KakaoMessage[]
+  const partnerMessages = messages.filter(m => m.isPartner)
+  const style = persona.message_style ?? {}
+  const commonPhrases = Array.isArray(style.commonPhrases) ? style.commonPhrases as string[] : []
+  const avgMessageLength = typeof style.avgMessageLength === 'number' ? style.avgMessageLength : 0
+
+  const speechPatterns: SpeechPatterns = {
+    endingPatterns: [],
+    characteristicPhrases: commonPhrases,
+    frequentWords: [],
+    sentenceStarters: [],
+    reactionWords: [],
+    questionPatterns: [],
+    avgLength: avgMessageLength,
+    emojiRatio: 0,
+    questionRatio: 0,
+    informalRatio: 0.7,
+  }
+
+  return {
+    partnerName: name,
+    messages,
+    partnerMessageCount: partnerMessages.length,
+    totalMessages: messages.length,
+    commonPhrases,
+    speechPatterns,
+    avgMessageLength,
+  }
+}
+
+/** 이름·관계 변경 시 persona system_prompt 재생성 */
+function regeneratePersonaSystemPrompt(
+  persona: Persona,
+  name: string,
+  relationship: string,
+): string {
+  if (persona.care_type === 'pet') {
+    return generatePetSystemPrompt(
+      name,
+      relationship,
+      persona.raw_chat_text ?? '',
+      {
+        personality: persona.pet_personality ?? undefined,
+        habits: persona.pet_habits ?? undefined,
+        bond: persona.pet_bond ?? undefined,
+        favorites: persona.pet_favorites ?? undefined,
+        lastMemory: persona.pet_last_memory ?? undefined,
+        unsaid: persona.pet_unsaid ?? undefined,
+        nickname: persona.pet_nickname ?? undefined,
+      },
+    )
+  }
+
+  let parsed: ParsedKakaoChat
+  if (persona.raw_chat_text?.trim()) {
+    try {
+      parsed = parseKakaoChat(persona.raw_chat_text, name)
+    } catch {
+      parsed = buildParsedFromStoredPersona(persona, name)
+    }
+  } else {
+    parsed = buildParsedFromStoredPersona(persona, name)
+  }
+
+  return generateSystemPrompt(parsed, relationship)
 }
 
 /** 페르소나 생성 → persona id 반환 */
@@ -208,6 +283,26 @@ export async function updatePersona(id: string, data: {
   if ('relationship' in data && data.relationship !== undefined && data.relationship !== null) payload.relationship = data.relationship
 
   if (Object.keys(payload).length === 0) return
+
+  const shouldRegeneratePrompt =
+    ('name' in data && data.name !== undefined) ||
+    ('relationship' in data && data.relationship !== undefined && data.relationship !== null)
+
+  if (shouldRegeneratePrompt) {
+    try {
+      const existing = await getPersonaById(id)
+      if (existing) {
+        const newName = ('name' in data && data.name !== undefined) ? data.name : existing.name
+        const newRelationship =
+          ('relationship' in data && data.relationship !== undefined && data.relationship !== null)
+            ? data.relationship
+            : existing.relationship
+        payload.system_prompt = regeneratePersonaSystemPrompt(existing, newName, newRelationship)
+      }
+    } catch (err) {
+      if (__DEV__) console.warn('[updatePersona] system_prompt 재생성 실패 — 기본 정보는 업데이트합니다:', err)
+    }
+  }
 
   const { error } = await supabase
     .from('personas')

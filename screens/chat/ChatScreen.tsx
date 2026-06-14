@@ -100,7 +100,7 @@ type Message = {
 
 export default function ChatScreen({ navigation, route }: Props) {
   const personaId = route.params?.personaId
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
 
   // 모듈 레벨 뮤터블 대신 컴포넌트 인스턴스 범위의 ref 사용
   const msgCounterRef = useRef(0)
@@ -122,6 +122,7 @@ export default function ChatScreen({ navigation, route }: Props) {
   const [stageConfirmTarget, setStageConfirmTarget] = useState<'stable' | 'closure' | null>(null)
   const [aiBannerDismissed, setAiBannerDismissed] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null)
   const isReadOnly = !!(persona?.is_archived)
 
   const listRef = useRef<FlatList<Message>>(null)
@@ -175,20 +176,34 @@ export default function ChatScreen({ navigation, route }: Props) {
           const currentStage = p.emotional_stage ?? 'replay'
           const stageMsgs = history.filter(c =>
             c.role === 'user' &&
-            (c.emotional_stage === currentStage || c.emotional_stage == null)
+            c.emotional_stage === currentStage
           ).length
           setStageMessageCount(stageMsgs)
         } else {
           const basePrompt = p.system_prompt || `당신은 ${p.name}입니다. 사용자와 ${p.relationship} 관계입니다. 따뜻하고 자연스럽게 대화하세요. AI임을 절대 부정하지 마세요.`
           const isPetPersona = p.care_type === 'pet'
-          const greetingMessage = isPetPersona
-            ? `(처음으로 주인과 대화를 시작하는 순간입니다.
+          const greetingMessage = language === 'en'
+            ? isPetPersona
+              ? `(This is the moment you first speak to your owner.
+Instructions:
+- Speak from the pet's perspective, initiating the conversation with warmth
+- Naturally reflect specific memories from the persona data
+- 1–2 sentences, short and heartfelt, pure like a pet.
+- Start with something sensory: "I missed you", "You're here!", "It's me")`
+              : `(This is the moment you speak first. This person has gathered the courage to be here.
+Instructions:
+- Use the exact speech style, expressions, and nicknames from the persona data
+- Start the way you'd naturally speak to them as a '${p.relationship}'
+- As if you've been waiting — speak like you've missed them
+${p.user_nickname ? `- Call the user '${p.user_nickname}'\n` : ''}- 1–2 sentences, short and meaningful.)`
+            : isPetPersona
+              ? `(처음으로 주인과 대화를 시작하는 순간입니다.
 반드시 지킬 것:
 - 반려동물의 시선에서 주인에게 먼저 말을 걸어요
 - 기억 데이터에 있는 구체적인 내용을 자연스럽게 반영하세요
 - 1~2문장, 짧고 따뜻하게. 반려동물답게 순수하게.
 - "보고 싶었어", "왔어?", "나야" 같은 감각적인 첫 마디로)`
-            : `(처음으로 대화를 시작하는 순간입니다. 이 사람은 용기를 내어 들어왔어요.
+              : `(처음으로 대화를 시작하는 순간입니다. 이 사람은 용기를 내어 들어왔어요.
 반드시 지킬 것:
 - 위 페르소나 데이터에 있는 실제 말투·표현·호칭을 그대로 사용하세요
 - '${p.relationship}' 관계답게, 평소에 이 사람에게 말 걸던 방식으로 시작하세요
@@ -203,6 +218,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
               userNickname: p.user_nickname ?? undefined,
               relationship: p.relationship ?? undefined,
               careType: p.care_type ?? 'human',
+              language,
             })
             setMessages([{ id: makeId(), role: 'assistant', content: greeting }])
             saveConversation({ personaId: p.id, role: 'assistant', content: greeting }).catch(() => {})
@@ -284,6 +300,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
   // Bug 4 fix: 위기 모달 닫힌 후 따뜻한 AI 복귀 응답
   const handleDangerContinue = useCallback(async () => {
     setShowDangerModal(false)
+    setInputText('')
     if (!persona) return
     setIsTyping(true)
     try {
@@ -310,13 +327,14 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         userNickname: persona.user_nickname ?? undefined,
         relationship: persona.relationship ?? undefined,
         careType: persona.care_type ?? 'human',
+        language,
       })
       setMessages(prev => [...prev, { id: makeId(), role: 'assistant', content: reply }])
       saveConversation({ personaId: persona.id, role: 'assistant', content: reply, emotionalStage: persona.emotional_stage }).catch(() => {})
     } catch { /* 실패 시 조용히 무시 */ } finally {
       setIsTyping(false)
     }
-  }, [persona, messages, makeId, showToast])
+  }, [persona, messages, makeId, showToast, language])
 
   const handleStableTransition = useCallback(async () => {
     if (!persona) return
@@ -326,6 +344,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       await supabase.from('personas').update({ emotional_stage: 'stable' }).eq('id', persona.id).eq('user_id', user.id)
       setPersona(prev => prev ? { ...prev, emotional_stage: 'stable' } : prev)
       setStageMessageCount(0)
+      setMessages(prev => prev.filter(m => m.action !== 'goto_stable'))
       setMessages(prev => [...prev, { id: makeId(), role: 'system', content: t.chat.systemStableEntered }])
     } catch { showToast(t.chat.retryLater) }
   }, [persona, showToast])
@@ -349,34 +368,38 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       await supabase.from('personas').update({ emotional_stage: 'closure' }).eq('id', persona.id).eq('user_id', user.id)
       setPersona(prev => prev ? { ...prev, emotional_stage: 'closure' } : prev)
       setStageMessageCount(0)
+      setMessages(prev => prev.filter(m => m.action !== 'goto_closure'))
       setMessages(prev => [...prev, { id: makeId(), role: 'system', content: t.chat.systemClosureEntered }])
     } catch { showToast(t.chat.retryLater) }
   }, [persona, showToast])
 
-  const sendMessage = useCallback(async () => {
-    const trimmed = inputText.trim()
-    if (!trimmed || isTyping || !persona) return
+  const sendMessage = useCallback(async (retryText?: string) => {
+    const isRetry = typeof retryText === 'string'
+    const trimmed = (isRetry ? retryText : inputText).trim()
+    if (!trimmed || isTyping || !persona || isReadOnly) return
 
-    // PM-008: 위험 감지 시 메시지를 대화에 추가하지 않고 기록만 남김
-    if (detectDanger(trimmed)) { showDangerAlert(trimmed); setInputText(''); return }
+    if (!isRetry) {
+      // PM-008: 위험 감지 시 메시지를 대화에 추가하지 않고 기록만 남김
+      if (detectDanger(trimmed)) { showDangerAlert(trimmed); setInputText(''); return }
 
-    const userMsg: Message = { id: makeId(), role: 'user', content: trimmed }
-    setMessages(prev => [...prev, userMsg])
-    setInputText('')
-    setIsTyping(true)
+      const userMsg: Message = { id: makeId(), role: 'user', content: trimmed }
+      setMessages(prev => [...prev, userMsg])
+      setInputText('')
+      setLastFailedMessage(null)
+      setIsTyping(true)
 
-    const newUserCount = userMessageCount + 1
-    setUserMessageCount(newUserCount)
-    const newStageCount = stageMessageCount + 1
-    setStageMessageCount(newStageCount)
+      const newUserCount = userMessageCount + 1
+      setUserMessageCount(newUserCount)
+      const newStageCount = stageMessageCount + 1
+      setStageMessageCount(newStageCount)
 
-    saveConversation({ personaId: persona.id, role: 'user', content: trimmed, emotionalStage: persona.emotional_stage }).catch(err => {
-      showToast(t.chat.saveError)
-    })
+      saveConversation({ personaId: persona.id, role: 'user', content: trimmed, emotionalStage: persona.emotional_stage }).catch(() => {
+        showToast(t.chat.saveError)
+      })
 
-    try {
-      const basePrompt = persona.system_prompt || `당신은 ${persona.name}입니다. 사용자와 ${persona.relationship} 관계입니다. 따뜻하고 자연스럽게 대화하세요. AI임을 절대 부정하지 마세요.`
-      const history = messages.filter(m => m.role === 'user' || m.role === 'assistant').slice(-MAX_HISTORY_LENGTH).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
+      try {
+        const basePrompt = persona.system_prompt || `당신은 ${persona.name}입니다. 사용자와 ${persona.relationship} 관계입니다. 따뜻하고 자연스럽게 대화하세요. AI임을 절대 부정하지 마세요.`
+        const history = [...messages, userMsg].filter(m => m.role === 'user' || m.role === 'assistant').slice(-MAX_HISTORY_LENGTH).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
       const stage = (persona.emotional_stage === 'stable' ? 'stable' : persona.emotional_stage === 'closure' ? 'closure' : 'replay') as 'replay' | 'stable' | 'closure'
       const closurePhase = stage === 'closure' ? getClosurePhase(newStageCount) : undefined
       const stagePhase = stage !== 'closure' ? getStagePhase(newStageCount) : undefined
@@ -387,9 +410,11 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         userNickname: persona.user_nickname ?? undefined,
         relationship: persona.relationship ?? undefined,
         careType: persona.care_type ?? 'human',
+        language,
       })
 
       setMessages(prev => [...prev, { id: makeId(), role: 'assistant', content: reply }])
+      setLastFailedMessage(null)
       saveConversation({ personaId: persona.id, role: 'assistant', content: reply, emotionalStage: persona.emotional_stage }).catch(() => {})
 
       // Replay: 중간 마일스톤 메시지
@@ -437,8 +462,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       // Closure milestones
       if (persona.emotional_stage === 'closure') {
         let closureGuide: string | null = null
-        if (newStageCount === 1) closureGuide = t.chat.systemClosureEntered
-        else if (newStageCount === 11) closureGuide = t.chat.systemClosureMsg
+        if (newStageCount === 11) closureGuide = t.chat.systemClosureMsg
         else if (newStageCount === 16) closureGuide = t.chat.closureProgress[3]
         else if (newStageCount === 18) closureGuide = t.chat.closureProgress[4]
         if (closureGuide) setMessages(prev => [...prev, { id: makeId(), role: 'system', content: closureGuide! }])
@@ -456,9 +480,44 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
 
     } catch (err) {
       if (__DEV__) console.error('[Chat] sendMessage error:', err)
+      setLastFailedMessage(trimmed)
       setErrorMsg(err instanceof Error ? err.message : t.chat.sendError)
+      showToast(t.chat.sendError)
     } finally { setIsTyping(false) }
-  }, [inputText, isTyping, persona, messages, userMessageCount, stageMessageCount, showDangerAlert, showToast])
+      return
+    }
+
+    // 재시도: 사용자 메시지는 이미 목록에 있음
+    setLastFailedMessage(null)
+    setErrorMsg('')
+    setIsTyping(true)
+
+    try {
+      const basePrompt = persona.system_prompt || `당신은 ${persona.name}입니다. 사용자와 ${persona.relationship} 관계입니다. 따뜻하고 자연스럽게 대화하세요. AI임을 절대 부정하지 마세요.`
+      const history = messages.filter(m => m.role === 'user' || m.role === 'assistant').slice(-MAX_HISTORY_LENGTH).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
+      const stage = (persona.emotional_stage === 'stable' ? 'stable' : persona.emotional_stage === 'closure' ? 'closure' : 'replay') as 'replay' | 'stable' | 'closure'
+      const closurePhase = stage === 'closure' ? getClosurePhase(stageMessageCount) : undefined
+      const stagePhase = stage !== 'closure' ? getStagePhase(stageMessageCount) : undefined
+
+      const reply = await getChatResponse({
+        systemPrompt: basePrompt, conversationHistory: history, userMessage: trimmed, stage,
+        phase: stagePhase, closurePhase,
+        userNickname: persona.user_nickname ?? undefined,
+        relationship: persona.relationship ?? undefined,
+        careType: persona.care_type ?? 'human',
+        language,
+      })
+
+      setMessages(prev => [...prev, { id: makeId(), role: 'assistant', content: reply }])
+      setLastFailedMessage(null)
+      saveConversation({ personaId: persona.id, role: 'assistant', content: reply, emotionalStage: persona.emotional_stage }).catch(() => {})
+    } catch (err) {
+      if (__DEV__) console.error('[Chat] sendMessage retry error:', err)
+      setLastFailedMessage(trimmed)
+      setErrorMsg(err instanceof Error ? err.message : t.chat.sendError)
+      showToast(t.chat.sendError)
+    } finally { setIsTyping(false) }
+  }, [inputText, isTyping, isReadOnly, persona, messages, userMessageCount, stageMessageCount, showDangerAlert, showToast, t, makeId, language])
 
   // Current theme
   const currentStage = (persona?.emotional_stage ?? 'replay') as 'replay' | 'stable' | 'closure'
@@ -557,6 +616,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
               <Text style={styles.modalIcon}>⚠️</Text>
               <Text style={styles.modalTitle}>{t.chat.crisisTitle}</Text>
               <Text style={styles.modalDesc}>{t.chat.crisisMsg}</Text>
+              <Text style={styles.modalDangerNote}>{t.chat.dangerNotSent}</Text>
               <TouchableOpacity activeOpacity={0.85} onPress={() => Linking.openURL('tel:1577-0199')} style={styles.dangerCallBtn}>
                 <LinearGradient colors={['#DC2626', '#DB2777']} style={styles.dangerCallBtnGrad}>
                   <Text style={styles.modalBtnText}>{t.chat.crisisHotline}</Text>
@@ -630,8 +690,8 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
 
         {/* Read-only banner */}
         {isReadOnly && (
-          <View style={styles.readOnlyBanner}>
-            <Text style={styles.readOnlyBannerText}>{t.chat.closureEndBanner}</Text>
+          <View style={styles.archivedBanner}>
+            <Text style={styles.archivedBannerText}>{t.chat.archivedBanner}</Text>
           </View>
         )}
 
@@ -663,17 +723,29 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
                     </View>
                   </View>
                 ) : null
-              ) : isTyping ? (
-                <View style={styles.aiRow}>
-                  <View style={styles.avatar}>
-                    {photoUrl ? <Image source={{ uri: photoUrl }} style={styles.avatarPhoto} /> : <Text style={styles.avatarText}>{avatarChar}</Text>}
-                  </View>
-                  <View>
-                    <Text style={styles.senderName}>{personaName}</Text>
-                    <View style={styles.aiBubble}><Text style={styles.typingDots}>• • •</Text></View>
-                  </View>
-                </View>
-              ) : null
+              ) : (
+                <>
+                  {isTyping ? (
+                    <View style={styles.aiRow}>
+                      <View style={styles.avatar}>
+                        {photoUrl ? <Image source={{ uri: photoUrl }} style={styles.avatarPhoto} /> : <Text style={styles.avatarText}>{avatarChar}</Text>}
+                      </View>
+                      <View>
+                        <Text style={styles.senderName}>{personaName}</Text>
+                        <View style={styles.aiBubble}><Text style={styles.typingDots}>• • •</Text></View>
+                      </View>
+                    </View>
+                  ) : null}
+                  {lastFailedMessage && !isTyping ? (
+                    <View style={styles.retryBox}>
+                      <Text style={styles.retryBoxText}>{t.chat.chatErrorMsg}</Text>
+                      <TouchableOpacity onPress={() => sendMessage(lastFailedMessage)} activeOpacity={0.7}>
+                        <Text style={styles.retryBtnText}>{t.chat.chatRetryBtn}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : null}
+                </>
+              )
             }
             ListEmptyComponent={
               <View style={styles.emptyState}>
@@ -707,6 +779,12 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
                             <Text style={styles.systemCtaBtnText}>{ctaLabel}</Text>
                           </LinearGradient>
                         </TouchableOpacity>
+                      )}
+                      {showCta && item.action === 'goto_stable' && (
+                        <Text style={styles.stageHint}>{t.chat.stageHintToStable}</Text>
+                      )}
+                      {showCta && item.action === 'goto_closure' && (
+                        <Text style={styles.stageHint}>{t.chat.stageHintToClosure}</Text>
                       )}
                     </View>
                   </View>
@@ -745,38 +823,45 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
           ) : null}
 
           {/* Input Area */}
-          {!isReadOnly && (
-            <View style={styles.inputArea}>
-              <TextInput
-                style={styles.textInput}
-                value={inputText}
-                onChangeText={setInputText}
-                placeholder={persona?.emotional_stage === 'stable' ? t.chat.inputPlaceholderStable : persona?.emotional_stage === 'closure' ? t.chat.inputPlaceholderClosure : t.chat.inputPlaceholderDefault(personaName)}
-                placeholderTextColor="rgba(167, 139, 250, 0.5)"
-                multiline
-                maxLength={500}
-                returnKeyType="send"
-                blurOnSubmit={false}
-                onSubmitEditing={Platform.OS !== 'web' ? sendMessage : undefined}
-                onKeyPress={Platform.OS === 'web' ? (e: any) => {
-                  if (e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey) { e.preventDefault?.(); sendMessage() }
-                } : undefined}
-              />
-              <TouchableOpacity
-                onPress={sendMessage}
-                disabled={!inputText.trim() || isTyping}
-                activeOpacity={0.85}
-                style={styles.sendBtnWrap}
+          <View style={styles.inputArea}>
+            <TextInput
+              style={[styles.textInput, isReadOnly && styles.textInputArchived]}
+              value={inputText}
+              onChangeText={setInputText}
+              editable={!isReadOnly}
+              placeholder={
+                isReadOnly
+                  ? t.chat.archivedInputPlaceholder
+                  : persona?.emotional_stage === 'stable'
+                    ? t.chat.inputPlaceholderStable
+                    : persona?.emotional_stage === 'closure'
+                      ? t.chat.inputPlaceholderClosure
+                      : t.chat.inputPlaceholderDefault(personaName)
+              }
+              placeholderTextColor={isReadOnly ? 'rgba(167, 139, 250, 0.4)' : 'rgba(167, 139, 250, 0.5)'}
+              multiline
+              maxLength={500}
+              returnKeyType="send"
+              blurOnSubmit={false}
+              onSubmitEditing={Platform.OS !== 'web' && !isReadOnly ? () => sendMessage() : undefined}
+              onKeyPress={Platform.OS === 'web' && !isReadOnly ? (e: any) => {
+                if (e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey) { e.preventDefault?.(); sendMessage() }
+              } : undefined}
+            />
+            <TouchableOpacity
+              onPress={() => sendMessage()}
+              disabled={isReadOnly || !inputText.trim() || isTyping}
+              activeOpacity={0.85}
+              style={styles.sendBtnWrap}
+            >
+              <LinearGradient
+                colors={(isReadOnly || !inputText.trim() || isTyping) ? ['rgba(124, 58, 237, 0.3)', 'rgba(59, 130, 246, 0.3)'] : ['#7C3AED', '#3B82F6']}
+                style={styles.sendBtn}
               >
-                <LinearGradient
-                  colors={(!inputText.trim() || isTyping) ? ['rgba(124, 58, 237, 0.3)', 'rgba(59, 130, 246, 0.3)'] : ['#7C3AED', '#3B82F6']}
-                  style={styles.sendBtn}
-                >
-                  {isTyping ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={styles.sendIcon}>↑</Text>}
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          )}
+                {isTyping ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={styles.sendIcon}>↑</Text>}
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
 
@@ -817,7 +902,8 @@ const styles = StyleSheet.create({
   },
   modalIcon: { fontSize: 40, marginBottom: 12 },
   modalTitle: { fontSize: 20, fontWeight: '700', color: '#F3E8FF', textAlign: 'center', marginBottom: 10 },
-  modalDesc: { fontSize: 14, color: '#E9D5FF', textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  modalDesc: { fontSize: 14, color: '#E9D5FF', textAlign: 'center', lineHeight: 22, marginBottom: 8 },
+  modalDangerNote: { fontSize: 12, color: 'rgba(252, 165, 165, 0.8)', textAlign: 'center', lineHeight: 18, marginBottom: 24 },
   modalBtnWrap: { width: '100%' as any, marginBottom: 10 },
   modalBtnDanger: { width: '100%' as any, paddingVertical: 14, borderRadius: 12, alignItems: 'center' as const },
   // Stage confirm modal — row layout (두 버튼이 flex: 1씩 공평하게 분할)
@@ -879,6 +965,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(129, 140, 248, 0.3)',
   },
   closureBannerText: { fontSize: 13, color: '#A5B4FC', textAlign: 'center', fontWeight: '600' },
+  archivedBanner: {
+    backgroundColor: 'rgba(88, 28, 135, 0.3)', paddingHorizontal: 16, paddingVertical: 12,
+    borderBottomWidth: 1, borderBottomColor: 'rgba(167, 139, 250, 0.15)',
+  },
+  archivedBannerText: { fontSize: 13, color: 'rgba(243, 232, 255, 0.9)', textAlign: 'center', lineHeight: 20 },
   readOnlyBanner: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)', paddingHorizontal: 16, paddingVertical: 10,
     borderBottomWidth: 1, borderBottomColor: 'rgba(167, 139, 250, 0.15)',
@@ -933,6 +1024,13 @@ const styles = StyleSheet.create({
   systemCtaBtn: { marginTop: 10, borderRadius: 10, overflow: 'hidden' },
   systemCtaBtnGradient: { paddingVertical: 9, paddingHorizontal: 14, borderRadius: 10, alignItems: 'center' },
   systemCtaBtnText: { fontSize: 13, color: '#FFFFFF', fontWeight: '600' },
+  stageHint: {
+    fontSize: 11,
+    color: 'rgba(196, 181, 253, 0.6)',
+    textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 16,
+  },
 
   // Error
   errorBar: {
@@ -940,6 +1038,14 @@ const styles = StyleSheet.create({
     borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.5)',
   },
   errorBarText: { fontSize: 13, color: '#FCA5A5' },
+
+  retryBox: {
+    marginHorizontal: 16, marginTop: 8, marginBottom: 4,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)', borderRadius: 12, padding: 12,
+    borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.3)', alignItems: 'center', gap: 8,
+  },
+  retryBoxText: { fontSize: 13, color: '#FCA5A5', textAlign: 'center' },
+  retryBtnText: { fontSize: 13, color: '#F87171', fontWeight: '600' },
 
   // Input
   inputArea: {
@@ -953,6 +1059,10 @@ const styles = StyleSheet.create({
     fontSize: 14, color: '#FFFFFF', maxHeight: 120,
     borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)', lineHeight: 22,
     ...(({ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }) as any),
+  },
+  textInputArchived: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    color: 'rgba(167, 139, 250, 0.4)',
   },
   sendBtnWrap: { borderRadius: 24, overflow: 'hidden' },
   sendBtn: {

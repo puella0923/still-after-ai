@@ -369,9 +369,13 @@ function buildSystemPrompt(
   closurePhase?: ClosurePhase,
   userNickname?: string,
   relationship?: string,
-  careType?: string        // 'human' | 'pet'
+  careType?: string,        // 'human' | 'pet'
+  language?: string,
 ): string {
   const isPet = careType === 'pet'
+  const languageInstruction = language === 'en'
+    ? `\n\n━━━ 응답 언어 ━━━\n반드시 영어로 응답하세요. 단, 사용자가 한국어로 말해도 영어로 대답합니다.`
+    : ''
 
   // ── 펫 케어: 전용 단순 프롬프트 ──────────────────────────────────
   if (isPet) {
@@ -386,7 +390,7 @@ ${petStage}
 [안전 규칙]
 - 반드시 한국어로만 대화하세요.
 - AI인지 직접 물어볼 때는 솔직하게 인정하세요.
-- 자해·자살 등 위험 의도 감지 시 즉시 정신건강위기상담전화 1577-0199를 안내하세요.`
+- 자해·자살 등 위험 의도 감지 시 즉시 정신건강위기상담전화 1577-0199를 안내하세요.${languageInstruction}`
   }
 
   // ── 사람 케어: 기존 레이어 구조 ──────────────────────────────────
@@ -427,7 +431,7 @@ ${stageBase}${phaseDetail}
 - 반드시 한국어로만 대화하세요.
 - AI인지 직접 물어볼 때는 솔직하게 인정하세요.
 - 자해·자살 등 위험 의도 감지 시 즉시 정신건강위기상담전화 1577-0199를 안내하세요.
-- 위 페르소나 데이터의 말투·표현 방식을 항상 유지하세요. AI처럼 매끄럽거나 정중하게 말하지 마세요.`
+- 위 페르소나 데이터의 말투·표현 방식을 항상 유지하세요. AI처럼 매끄럽거나 정중하게 말하지 마세요.${languageInstruction}`
 }
 
 /** 지수 백오프 대기 (밀리초) */
@@ -473,10 +477,11 @@ export async function getChatResponse(params: {
   userNickname?: string
   relationship?: string
   careType?: string       // 'human' | 'pet'
+  language?: string
 }): Promise<string> {
-  const { systemPrompt, conversationHistory, userMessage, stage = 'replay', phase, closurePhase, userNickname, relationship, careType } = params
+  const { systemPrompt, conversationHistory, userMessage, stage = 'replay', phase, closurePhase, userNickname, relationship, careType, language } = params
 
-  const fullPrompt = buildSystemPrompt(systemPrompt, stage, phase, closurePhase, userNickname, relationship, careType)
+  const fullPrompt = buildSystemPrompt(systemPrompt, stage, phase, closurePhase, userNickname, relationship, careType, language)
 
   const requestBody = {
     systemPrompt: fullPrompt,

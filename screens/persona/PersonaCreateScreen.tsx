@@ -72,7 +72,6 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null)
   const [photoFileName, setPhotoFileName] = useState('')
   // ── 펫 전용 질문지 필드 ──────────────────────────────────────────
-  const PET_PERSONALITIES = ['활발해요', '차분해요', '애교가 많아요', '겁이 많아요', '장난꾸러기예요', '독립적이에요']
   const [petPersonality, setPetPersonality] = useState<string[]>([])
   const [petHabits, setPetHabits] = useState('')      // 특별한 습관/버릇
   const [petBond, setPetBond] = useState('')           // 나와 어떤 관계였나요?
@@ -82,17 +81,43 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
   const [petNickname, setPetNickname] = useState('')   // 평소 부르던 호칭 (선택)
 
   // 파일 파싱 처리 (공통)
+  const resolveKakaoError = (message: string, fName: string, partnerCount?: number): string => {
+    const lowerName = fName.toLowerCase()
+    if (fName && !lowerName.endsWith('.txt') && !lowerName.endsWith('.csv')) {
+      return t.personaCreate.kakaoErrFormat
+    }
+    if (/단체|그룹/i.test(message)) {
+      return t.personaCreate.kakaoErrGroup
+    }
+    if (partnerCount !== undefined && partnerCount < 10) {
+      return t.personaCreate.kakaoErrTooFew
+    }
+    return message
+  }
+
   const processKakaoFile = (rawText: string, fName: string) => {
     setIsParsing(true)
     setErrorMsg('')
     setParseResult(null)
 
     try {
+      const lowerName = fName.toLowerCase()
+      if (fName && !lowerName.endsWith('.txt') && !lowerName.endsWith('.csv')) {
+        throw new Error(t.personaCreate.kakaoErrFormat)
+      }
+
       if (!rawText || rawText.trim().length === 0) {
         throw new Error(t.personaCreate.errorEmptyFile)
       }
 
       const parsed = parseKakaoChat(rawText, name.trim() || undefined)
+
+      if (parsed.partnerMessageCount < 10) {
+        setErrorMsg(t.personaCreate.kakaoErrTooFew)
+        setKakaoRawText('')
+        setFileName('')
+        return
+      }
 
       setKakaoRawText(rawText)
       setFileName(fName)
@@ -104,7 +129,7 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : t.personaCreate.errorCannotAnalyze
-      setErrorMsg(message)
+      setErrorMsg(resolveKakaoError(message, fName))
       setKakaoRawText('')
       setFileName('')
       if (__DEV__) console.error('[PersonaCreate] 파싱 오류:', error)
@@ -126,9 +151,17 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
     const timer = setTimeout(() => {
       try {
         const parsed = parseKakaoChat(kakaoRawText, trimmed || undefined)
+        if (parsed.partnerMessageCount < 10) {
+          setErrorMsg(t.personaCreate.kakaoErrTooFew)
+          setParseResult(null)
+          return
+        }
         setParseResult({ parsed, rawText: kakaoRawText, fileName })
         setErrorMsg('')
       } catch (e) {
+        const message = e instanceof Error ? e.message : t.personaCreate.errorCannotAnalyze
+        setErrorMsg(resolveKakaoError(message, fileName))
+        setParseResult(null)
         if (__DEV__) console.error('[PersonaCreate] 이름 변경 후 재파싱 오류:', e)
       }
     }, 400)
@@ -138,6 +171,7 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
   }, [name, kakaoRawText, activeTab])
 
   const webKakaoFileRef = useRef<HTMLInputElement | null>(null)
+  const webPhotoFileRef = useRef<HTMLInputElement | null>(null)
 
   const readKakaoWebFile = useCallback((file: File) => {
     setIsParsing(true)
@@ -184,6 +218,41 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
     }
   }, [readKakaoWebFile])
 
+  const readPhotoWebFile = useCallback((file: File) => {
+    const uri = URL.createObjectURL(file)
+    setPhotoUri(uri)
+    setPhotoBlob(file)
+    setPhotoFileName(file.name)
+  }, [])
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return
+
+    let input = document.getElementById('persona-photo-file-input') as HTMLInputElement | null
+    if (!input) {
+      input = document.createElement('input')
+      input.id = 'persona-photo-file-input'
+      input.type = 'file'
+      input.accept = 'image/*'
+      input.style.display = 'none'
+      document.body.appendChild(input)
+    }
+    webPhotoFileRef.current = input
+
+    const onChange = (e: Event) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) return
+      readPhotoWebFile(file)
+      ;(e.target as HTMLInputElement).value = ''
+    }
+    input.addEventListener('change', onChange)
+    return () => {
+      input?.removeEventListener('change', onChange)
+      if (input?.parentNode) input.parentNode.removeChild(input)
+      webPhotoFileRef.current = null
+    }
+  }, [readPhotoWebFile])
+
   const handleWebFilePick = () => {
     if (Platform.OS !== 'web') return
     webKakaoFileRef.current?.click()
@@ -209,21 +278,7 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
   // ─── 사진 선택 ───
   const handlePickPhotoWeb = () => {
     if (Platform.OS !== 'web') return
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'image/*'
-    input.style.display = 'none'
-    document.body.appendChild(input)
-    input.onchange = (e: Event) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      document.body.removeChild(input)
-      if (!file) return
-      const uri = URL.createObjectURL(file)
-      setPhotoUri(uri)
-      setPhotoBlob(file)
-      setPhotoFileName(file.name)
-    }
-    input.click()
+    webPhotoFileRef.current?.click()
   }
 
   const handlePickPhotoNative = async () => {
@@ -443,7 +498,8 @@ ${manualText.trim()}
         <TopStickyControls
           backLabel={t.common.back}
           onBackPress={handleBack}
-          title={t.personaCreate.headerTitle}
+          stepCurrent={4}
+          stepTotal={4}
           showLanguageToggle={false}
         />
 
@@ -490,7 +546,7 @@ ${manualText.trim()}
             value={name}
             onChangeText={setName}
             maxLength={20}
-            placeholderTextColor="#B0A89E"
+            placeholderTextColor="rgba(255,255,255,0.3)"
           />
         </View>
 
@@ -506,7 +562,7 @@ ${manualText.trim()}
               value={userNickname}
               onChangeText={setUserNickname}
               maxLength={20}
-              placeholderTextColor="#B0A89E"
+              placeholderTextColor="rgba(255,255,255,0.3)"
             />
             <Text style={styles.inputHint}>
               {t.personaCreate.myNameHint}
@@ -524,12 +580,19 @@ ${manualText.trim()}
                 return (
                 <TouchableOpacity
                   key={key}
-                  style={[styles.relationBtn, relationship === rel && styles.relationBtnActive]}
+                  style={styles.relationBtn}
                   onPress={() => { setRelationship(rel); if (key !== 'other') setCustomRelationship('') }}
+                  activeOpacity={0.8}
                 >
-                  <Text style={[styles.relationText, relationship === rel && styles.relationTextActive]}>
-                    {rel}
-                  </Text>
+                  {relationship === rel ? (
+                    <LinearGradient colors={['#a855f7', '#db2777']} style={styles.relationBtnInner}>
+                      <Text style={styles.relationTextActive}>{rel}</Text>
+                    </LinearGradient>
+                  ) : (
+                    <View style={styles.relationBtnInner}>
+                      <Text style={styles.relationText}>{rel}</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               )})}
             </View>
@@ -540,7 +603,7 @@ ${manualText.trim()}
                 value={customRelationship}
                 onChangeText={setCustomRelationship}
                 maxLength={20}
-                placeholderTextColor="#B0A89E"
+                placeholderTextColor="rgba(255,255,255,0.3)"
               />
             )}
           </View>
@@ -556,10 +619,19 @@ ${manualText.trim()}
                 return (
                 <TouchableOpacity
                   key={key}
-                  style={[styles.relationBtn, animalType === pt && styles.relationBtnActive]}
+                  style={styles.relationBtn}
                   onPress={() => { setAnimalType(pt); if (key !== 'other') setCustomAnimal('') }}
+                  activeOpacity={0.8}
                 >
-                  <Text style={[styles.relationText, animalType === pt && styles.relationTextActive]}>{pt}</Text>
+                  {animalType === pt ? (
+                    <LinearGradient colors={['#a855f7', '#db2777']} style={styles.relationBtnInner}>
+                      <Text style={styles.relationTextActive}>{pt}</Text>
+                    </LinearGradient>
+                  ) : (
+                    <View style={styles.relationBtnInner}>
+                      <Text style={styles.relationText}>{pt}</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               )})}
             </View>
@@ -570,7 +642,7 @@ ${manualText.trim()}
                 value={customAnimal}
                 onChangeText={setCustomAnimal}
                 maxLength={20}
-                placeholderTextColor='#B0A89E'
+                placeholderTextColor='rgba(255,255,255,0.3)'
               />
             )}
           </View>
@@ -581,15 +653,23 @@ ${manualText.trim()}
           <>
             {/* Q1: 성격 (복수 선택 칩) */}
             <View style={styles.section}>
-              <Text style={styles.label}>어떤 성격이었나요? <Text style={styles.labelOptional}>(복수 선택)</Text></Text>
+              <Text style={styles.label}>{t.personaCreate.petQ1Label} <Text style={styles.labelOptional}>{t.personaCreate.petQ1Multi}</Text></Text>
               <View style={styles.relationRow}>
-                {PET_PERSONALITIES.map(p => {
+                {t.personaCreate.petPersonalities.map(p => {
                   const isOn = petPersonality.includes(p)
                   return (
                     <TouchableOpacity key={p} activeOpacity={0.8}
-                      style={[styles.relationBtn, isOn && styles.relationBtnActive]}
+                      style={styles.relationBtn}
                       onPress={() => setPetPersonality(prev => isOn ? prev.filter(x => x !== p) : [...prev, p])}>
-                      <Text style={[styles.relationText, isOn && styles.relationTextActive]}>{p}</Text>
+                      {isOn ? (
+                        <LinearGradient colors={['#a855f7', '#db2777']} style={styles.relationBtnInner}>
+                          <Text style={styles.relationTextActive}>{p}</Text>
+                        </LinearGradient>
+                      ) : (
+                        <View style={styles.relationBtnInner}>
+                          <Text style={styles.relationText}>{p}</Text>
+                        </View>
+                      )}
                     </TouchableOpacity>
                   )
                 })}
@@ -598,60 +678,60 @@ ${manualText.trim()}
 
             {/* Q2: 특별한 습관/버릇 */}
             <View style={styles.section}>
-              <Text style={styles.label}>특별한 습관이나 버릇이 있었나요? <Text style={styles.labelOptional}>(선택)</Text></Text>
+              <Text style={styles.label}>{t.personaCreate.petQ2Label} <Text style={styles.labelOptional}>{t.personaCreate.petQ2Optional}</Text></Text>
               <TextInput style={styles.input}
                 placeholder={`예) 밥 먹을 때 항상 옆에 앉았어요\n산책 가자는 말만 들어도 빙글빙글 돌았어요`}
                 value={petHabits} onChangeText={setPetHabits}
-                multiline numberOfLines={3} placeholderTextColor="#B0A89E" textAlignVertical="top" />
+                multiline numberOfLines={3} placeholderTextColor="rgba(255,255,255,0.3)" textAlignVertical="top" />
             </View>
 
             {/* Q3: 나와의 관계/유대 */}
             <View style={styles.section}>
-              <Text style={styles.label}>나를 어떻게 대했나요? <Text style={styles.labelOptional}>(선택)</Text></Text>
+              <Text style={styles.label}>{t.personaCreate.petQ3Label} <Text style={styles.labelOptional}>{t.personaCreate.petQ2Optional}</Text></Text>
               <TextInput style={styles.input}
                 placeholder={`예) 항상 현관까지 마중 나왔어요\n무서울 때마다 제 옆에 꼭 붙었어요`}
                 value={petBond} onChangeText={setPetBond}
-                multiline numberOfLines={3} placeholderTextColor="#B0A89E" textAlignVertical="top" />
+                multiline numberOfLines={3} placeholderTextColor="rgba(255,255,255,0.3)" textAlignVertical="top" />
             </View>
 
             {/* Q4: 제일 좋아하던 것 */}
             <View style={styles.section}>
-              <Text style={styles.label}>제일 좋아하던 게 뭐였나요? <Text style={styles.labelOptional}>(선택)</Text></Text>
+              <Text style={styles.label}>{t.personaCreate.petQ4Label} <Text style={styles.labelOptional}>{t.personaCreate.petQ2Optional}</Text></Text>
               <TextInput style={styles.input}
                 placeholder={`예) 배 만져주기, 간식, 공원 산책`}
                 value={petFavorites} onChangeText={setPetFavorites}
-                placeholderTextColor="#B0A89E" />
+                placeholderTextColor="rgba(255,255,255,0.3)" />
             </View>
 
             {/* Q5: 마지막 기억 (필수) */}
             <View style={styles.section}>
-              <Text style={styles.label}>마지막으로 기억하는 순간을 적어주세요 <Text style={styles.labelRequired}>*</Text></Text>
+              <Text style={styles.label}>{t.personaCreate.petQ5Label} <Text style={styles.labelRequired}>{t.personaCreate.petQ5Required}</Text></Text>
               <TextInput style={[styles.input, styles.inputTall]}
                 placeholder={`예) 마지막에 제 손을 핥아줬어요\n눈을 마주치며 꼬리를 흔들었어요`}
                 value={petLastMemory} onChangeText={setPetLastMemory}
-                multiline numberOfLines={4} placeholderTextColor="#B0A89E" textAlignVertical="top" />
+                multiline numberOfLines={4} placeholderTextColor="rgba(255,255,255,0.3)" textAlignVertical="top" />
               <Text style={styles.charCount}>
-                {petLastMemory.length}자 {petLastMemory.length < 10 ? '(10자 이상)' : '✓'}
+                {t.personaCreate.petCharCount(petLastMemory.length, 10)}
               </Text>
             </View>
 
             {/* Q6: 하고 싶었던 말 */}
             <View style={styles.section}>
-              <Text style={styles.label}>꼭 하고 싶었던 말이 있나요? <Text style={styles.labelOptional}>(선택)</Text></Text>
+              <Text style={styles.label}>{t.personaCreate.petQ6Label} <Text style={styles.labelOptional}>{t.personaCreate.petQ2Optional}</Text></Text>
               <TextInput style={[styles.input, styles.inputTall]}
                 placeholder={`예) 많이 사랑해\n좋은 곳에서 행복하게 지내길 바라`}
                 value={petUnsaid} onChangeText={setPetUnsaid}
-                multiline numberOfLines={4} placeholderTextColor="#B0A89E" textAlignVertical="top" />
+                multiline numberOfLines={4} placeholderTextColor="rgba(255,255,255,0.3)" textAlignVertical="top" />
             </View>
 
             {/* Q7: 평소 부르던 호칭 */}
             <View style={styles.section}>
-              <Text style={styles.label}>평소에 어떻게 불렀나요? <Text style={styles.labelOptional}>(선택)</Text></Text>
+              <Text style={styles.label}>{t.personaCreate.petQ7Label} <Text style={styles.labelOptional}>{t.personaCreate.petQ2Optional}</Text></Text>
               <TextInput style={styles.input}
                 placeholder={`예) 코코야, 강아지야, 우리 아기`}
                 value={petNickname} onChangeText={setPetNickname}
-                maxLength={30} placeholderTextColor="#B0A89E" />
-              <Text style={styles.inputHint}>AI가 대화할 때 이 호칭으로 불러드려요</Text>
+                maxLength={30} placeholderTextColor="rgba(255,255,255,0.3)" />
+              <Text style={styles.inputHint}>{t.personaCreate.petQ7Hint}</Text>
             </View>
           </>
         )}
@@ -679,7 +759,7 @@ ${manualText.trim()}
                   ? `${t.personaCreate.writePlaceholderPet(name || '그 아이')}\n\n${t.personaCreate.writeExamplePet}`
                   : `${t.personaCreate.writePlaceholder(name || '그분')}\n\n${t.personaCreate.writeExample}`}
                 value={manualText} onChangeText={setManualText}
-                multiline numberOfLines={12} placeholderTextColor="#B0A89E" textAlignVertical="top"
+                multiline numberOfLines={12} placeholderTextColor="rgba(255,255,255,0.3)" textAlignVertical="top"
               />
               <Text style={styles.charCount}>{manualText.length}자 {manualText.length < 20 ? t.personaCreate.charCountHint : '✓'}</Text>
             </View>
@@ -833,7 +913,7 @@ const styles = StyleSheet.create({
   snackbarText: { color: '#fff', fontSize: 14, fontWeight: '500', textAlign: 'center' },
   safeArea: { flex: 1 },
   container: { flex: 1 },
-  scrollContent: { paddingTop: 51 },
+  scrollContent: { paddingTop: 51, paddingBottom: 40 },
   // ─── 사진 ───
   photoSection: { alignItems: 'center', paddingVertical: 20, gap: 8 },
   photoCircle: {
@@ -847,29 +927,33 @@ const styles = StyleSheet.create({
   photoHintSub: { fontSize: 10, color: 'rgba(167, 139, 250, 0.5)' },
   photoRemove: { fontSize: 12, color: '#FCA5A5' },
   banner: {
-    backgroundColor: 'rgba(120, 53, 15, 0.3)', paddingHorizontal: 16, paddingVertical: 8, marginBottom: 8,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(251, 191, 36, 0.2)',
+    backgroundColor: 'rgba(30, 58, 138, 0.4)', paddingHorizontal: 16, paddingVertical: 8, marginBottom: 8,
+    borderBottomWidth: 1, borderBottomColor: 'rgba(96, 165, 250, 0.2)',
   },
-  bannerText: { fontSize: 11, color: '#FDE68A', textAlign: 'center' },
+  bannerText: { fontSize: 11, color: '#93C5FD', textAlign: 'center' },
   section: { paddingHorizontal: 24, marginBottom: 24 },
-  label: { fontSize: 15, fontWeight: '600', color: '#F3E8FF', marginBottom: 12 },
+  label: { fontSize: 15, fontWeight: '500', color: '#fff', marginBottom: 12 },
   labelOptional: { fontSize: 13, fontWeight: '400', color: 'rgba(167,139,250,0.55)' },
   labelRequired: { fontSize: 13, fontWeight: '600', color: '#db2777' },
   inputTall: { minHeight: 100, paddingTop: 14 },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 14, padding: 14, fontSize: 16, color: '#FFFFFF',
     ...(({ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }) as any),
   },
   inputHint: { fontSize: 12, color: 'rgba(167, 139, 250, 0.6)', marginTop: 6 },
   relationRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   relationBtn: {
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)', backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 20, overflow: 'hidden',
+    borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  relationBtnActive: { backgroundColor: '#7C3AED', borderColor: '#7C3AED' },
+  relationBtnInner: {
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    alignItems: 'center', justifyContent: 'center',
+  },
   relationText: { fontSize: 13, color: 'rgba(196, 181, 253, 0.8)' },
-  relationTextActive: { color: '#FFFFFF', fontWeight: '600' },
+  relationTextActive: { fontSize: 13, color: '#FFFFFF', fontWeight: '600' },
   tabRow: {
     flexDirection: 'row', borderRadius: 999, backgroundColor: 'rgba(255, 255, 255, 0.05)',
     padding: 4, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -879,7 +963,7 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 13, color: 'rgba(196, 181, 253, 0.7)' },
   tabTextActive: { color: '#FFFFFF', fontWeight: '600' },
   manualInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 14, padding: 14, fontSize: 14, color: '#FFFFFF', minHeight: 220,
   },
   charCount: { fontSize: 12, color: 'rgba(167, 139, 250, 0.6)', textAlign: 'right', marginTop: 4 },
