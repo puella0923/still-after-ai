@@ -152,7 +152,7 @@ const ko = {
   login: {
     brand: '당신 곁을 여전히',
     noCreditCard: '💳 카드 등록 없이 바로 시작할 수 있어요',
-    freeTrial: '지금은 무료로 대화할 수 있어요',
+    freeTrial: '무료로 이용할 수 있어요',
     disclaimer: 'Still After는 실제 인물을 복원하지 않아요. 감정이 자연스럽게 자리 잡을 수 있도록 조심스럽게 함께하는 공간이에요.',
     googleBtn: '구글로 시작하기',
     emailBtn: '이메일로 시작하기',
@@ -467,7 +467,7 @@ const ko = {
     emptyTitle: (name: string) => `${name}와 대화를 시작하세요`,
     emptyHint: '먼저 인사를 건네보세요.',
     aiBanner: '이 대화는 기억을 바탕으로 한 응답이에요. 실제 인물을 대체하지 않아요.',
-    freeNudge: (n: number) => `💜 무료 대화가 ${n}회 남아있어요. 이야기를 더 이어가고 싶다면 프리미엄을 이용해보세요.`,
+    freeNudge: (_n: number) => '',
     closureLetterBtn: '🌸 천천히 보내드릴 준비가 되셨나요? 마지막 편지를 써볼게요 →',
     closureEndBanner: '🌸 이별을 마무리한 대화예요. 새 메시지를 보낼 수 없어요.',
     archivedBanner: '💜 이 대화는 소중히 마무리되었어요. 대화 기록을 언제든 다시 읽을 수 있어요.',

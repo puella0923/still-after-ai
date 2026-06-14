@@ -154,7 +154,7 @@ const en: Translations = {
   login: {
     brand: 'Still by your side',
     noCreditCard: '💳 No credit card required to start',
-    freeTrial: 'Free conversations during the beta',
+    freeTrial: 'Free to use',
     disclaimer: "Still After doesn't restore real people. It's a careful space for your emotions to naturally find their place.",
     googleBtn: 'Continue with Google',
     emailBtn: 'Continue with Email',
@@ -475,7 +475,7 @@ const en: Translations = {
     emptyTitle: (name: string) => `Start a conversation with ${name}`,
     emptyHint: 'Say hello first.',
     aiBanner: "This conversation is a response based on memories. It doesn't replace the real person.",
-    freeNudge: (n: number) => `💜 ${n} free conversation${n !== 1 ? 's' : ''} remaining. Consider premium to keep chatting.`,
+    freeNudge: (_n: number) => '',
     closureLetterBtn: '🌸 Ready to say goodbye? Let\'s write a final letter →',
     closureEndBanner: '🌸 This conversation has ended. No new messages can be sent.',
     archivedBanner: '💜 This conversation has been gently completed. You can revisit it anytime.',
