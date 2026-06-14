@@ -119,6 +119,15 @@ export default function TimingCheckScreen({ navigation, route }: Props) {
       </ScrollView>
 
       <View style={styles.footer}>
+        {selected === 'within_week' && (
+          <TouchableOpacity
+            onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Main' }] })}
+            activeOpacity={0.7}
+            style={styles.laterBtn}
+          >
+            <Text style={styles.laterBtnText}>{t.timingCheck.laterBtn}</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity onPress={handleNext} disabled={!canProceed} activeOpacity={0.85}
           style={styles.nextButton}>
           {canProceed ? (
@@ -172,7 +181,13 @@ const styles = StyleSheet.create({
   },
   earlyGriefEmoji: { fontSize: 24 },
   earlyGriefText: { flex: 1, fontSize: 13, color: 'rgba(243, 232, 255, 0.9)', lineHeight: 20 },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 28, paddingBottom: 32, paddingTop: 12 },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 28, paddingBottom: 32, paddingTop: 12, gap: 12 },
+  laterBtn: {
+    alignItems: 'center', paddingVertical: 14, borderRadius: 14,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  laterBtnText: { fontSize: 15, color: 'rgba(255,255,255,0.55)', fontWeight: '500' },
   nextButton: { borderRadius: 14, overflow: 'hidden', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', paddingVertical: 16 },
   nextGrad: { width: '100%', paddingVertical: 16, alignItems: 'center', borderRadius: 14 },
   nextText: { color: '#fff', fontSize: 16, fontWeight: '500', letterSpacing: 0.5 },

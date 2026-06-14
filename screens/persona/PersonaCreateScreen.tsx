@@ -876,10 +876,10 @@ ${manualText.trim()}
               <Text style={styles.submitBtnText}>
                 {canSubmit() ? t.personaCreate.submitBtn
                   : !name.trim() ? t.personaCreate.errorNameRequired
-                  : isPet && petLastMemory.trim().length < 10 ? '마지막 기억을 10자 이상 적어주세요'
+                  : isPet && petLastMemory.trim().length < 10 ? t.personaCreate.validationPetMemory
                   : !isPet && !relationship ? t.personaCreate.errorRelationRequired
                   : !isPet && activeTab === 'manual' && manualText.trim().length < 20 ? t.personaCreate.errorMemoryTooShort
-                  : !isPet && activeTab === 'kakao' && !parseResult ? '카카오톡 파일을 먼저 업로드해주세요.'
+                  : !isPet && activeTab === 'kakao' && !parseResult ? t.personaCreate.errorKakaoRequired
                   : !agreedToService ? t.personaCreate.errorConsentRequired
                   : t.personaCreate.submitBtn}
               </Text>

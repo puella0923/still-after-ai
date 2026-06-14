@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  ScrollView, KeyboardAvoidingView, Platform,
+  ScrollView, KeyboardAvoidingView, Platform, Animated,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -29,6 +29,18 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
   const [selectedRelation, setSelectedRelation] = useState<PersonRelationKey | PetTypeKey | null>(null)
   const [customRelation, setCustomRelation] = useState('')
   const [name, setName] = useState('')
+  const empathyOpacity = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    if (selectedRelation) {
+      empathyOpacity.setValue(0)
+      Animated.timing(empathyOpacity, {
+        toValue: 1, duration: 400, useNativeDriver: Platform.OS !== 'web',
+      }).start()
+    } else {
+      empathyOpacity.setValue(0)
+    }
+  }, [selectedRelation, empathyOpacity])
 
   const relationLabels = isPerson ? t.relation.relations : t.relation.petTypes
   const showCustomInput = selectedRelation === 'other'
@@ -95,6 +107,12 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
               )
             })}
           </View>
+
+          {selectedRelation && (
+            <Animated.Text style={[styles.empathyMsg, { opacity: empathyOpacity }]}>
+              {t.relationSetup.selectedMsg}
+            </Animated.Text>
+          )}
 
           {/* 기타 선택 시 직접 입력 */}
           {showCustomInput && (
@@ -172,6 +190,9 @@ const styles = StyleSheet.create({
   },
   chipText: { fontSize: 15, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
   chipTextSelected: { fontSize: 15, color: '#fff', fontWeight: '500' },
+  empathyMsg: {
+    fontSize: 14, color: '#c4b5fd', textAlign: 'center', marginTop: 16,
+  },
   inputSection: { gap: 10 },
   inputLabel: { fontSize: 15, color: '#fff', fontWeight: '500' },
   textInput: {

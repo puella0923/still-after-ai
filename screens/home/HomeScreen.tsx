@@ -20,6 +20,7 @@ import { useFocusEffect } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useAuth } from '../../context/AuthContext'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../../services/supabase'
 import { deletePersona, Persona } from '../../services/personaService'
 import { C, RADIUS } from '../theme'
@@ -48,6 +49,7 @@ export default function HomeScreen() {
   const [personas, setPersonas] = useState<Persona[]>([])
   const [archivedPersonas, setArchivedPersonas] = useState<Persona[]>([])
   const [loading, setLoading] = useState(true)
+  const [showAiBanner, setShowAiBanner] = useState(false)
   const [filter, setFilter] = useState<StageFilter>('all')
   const [conversationCounts, setConversationCounts] = useState<Record<string, number>>({})
   const [error, setError] = useState(false)
@@ -61,6 +63,15 @@ export default function HomeScreen() {
 
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: Platform.OS !== 'web' }).start()
+  }, [])
+
+  useEffect(() => {
+    AsyncStorage.getItem('@stillafter/ai_banner_seen').then(seen => {
+      if (!seen) {
+        setShowAiBanner(true)
+        AsyncStorage.setItem('@stillafter/ai_banner_seen', 'true').catch(() => {})
+      }
+    }).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -226,12 +237,14 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* AI Disclosure Banner */}
+        {/* AI Disclosure Banner — 최초 1회만 */}
+        {showAiBanner && (
         <View style={styles.aiBanner}>
           <Text style={styles.aiBannerText}>
             {t.home.aiBanner}
           </Text>
         </View>
+        )}
 
         {/* Section Header */}
         <Animated.View style={[styles.sectionHeader, { opacity: fadeAnim }]}>

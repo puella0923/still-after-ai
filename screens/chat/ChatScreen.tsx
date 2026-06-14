@@ -127,6 +127,13 @@ export default function ChatScreen({ navigation, route }: Props) {
 
   const listRef = useRef<FlatList<Message>>(null)
   const toastOpacity = useRef(new Animated.Value(0)).current
+  const emotionalStageRef = useRef<'replay' | 'stable' | 'closure'>('replay')
+
+  useEffect(() => {
+    if (persona?.emotional_stage) {
+      emotionalStageRef.current = persona.emotional_stage as 'replay' | 'stable' | 'closure'
+    }
+  }, [persona?.emotional_stage])
 
   const showToast = useCallback((msg: string) => {
     setToastText(msg)
@@ -140,6 +147,14 @@ export default function ChatScreen({ navigation, route }: Props) {
   // Load persona & conversations
   useEffect(() => {
     if (!personaId) { navigation.replace('PersonaList'); return }
+    setLoading(true)
+    setMessages([])
+    setPersona(null)
+    setStageMessageCount(0)
+    setUserMessageCount(0)
+    setClosureLetter(null)
+    emotionalStageRef.current = 'replay'
+
     const load = async () => {
       diagnoseDatabaseHealth().then(({ ok, issues }) => {
         if (!ok) showToast(t.chat.dbHealthIssue(issues[0]))
@@ -223,7 +238,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
             setMessages([{ id: makeId(), role: 'assistant', content: greeting }])
             saveConversation({ personaId: p.id, role: 'assistant', content: greeting }).catch(() => {})
           } catch {
-            setMessages([{ id: makeId(), role: 'assistant', content: t.chat.greetingFallback(p.name) }])
+            setMessages([{ id: makeId(), role: 'assistant', content: t.chat.greetingFallback }])
           }
         }
       } catch {
@@ -285,7 +300,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         }]
       })
     }
-  }, [loading, persona?.emotional_stage, stageMessageCount])
+  }, [loading, persona?.emotional_stage, stageMessageCount, t, makeId])
 
   const showDangerAlert = useCallback((userMessage: string) => {
     setShowDangerModal(true)
@@ -342,23 +357,30 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       await supabase.from('personas').update({ emotional_stage: 'stable' }).eq('id', persona.id).eq('user_id', user.id)
+      emotionalStageRef.current = 'stable'
       setPersona(prev => prev ? { ...prev, emotional_stage: 'stable' } : prev)
       setStageMessageCount(0)
       setMessages(prev => prev.filter(m => m.action !== 'goto_stable'))
       setMessages(prev => [...prev, { id: makeId(), role: 'system', content: t.chat.systemStableEntered }])
     } catch { showToast(t.chat.retryLater) }
-  }, [persona, showToast])
+  }, [persona, showToast, t, makeId])
 
   const navigateToClosureLetter = useCallback((aiFarewell?: string) => {
     if (!persona) return
-    const lastAiMsg = [...messages].reverse().find(m => m.role === 'assistant')
+    const closureAiMsgs = messages.filter(m => m.role === 'assistant' && !m.action)
+    const lastAiMsg = closureAiMsgs.at(-1)
+    const farewell = aiFarewell ?? lastAiMsg?.content ?? ''
+    if (!farewell) {
+      showToast(t.chat.closureNotReady)
+      return
+    }
     navigation.navigate('ClosureCeremony', {
       personaId: persona.id,
       personaName: persona.name,
-      aiFarewell: aiFarewell ?? lastAiMsg?.content ?? '',
+      aiFarewell: farewell,
       careType: persona.care_type ?? 'human',
     })
-  }, [persona, messages, navigation])
+  }, [persona, messages, navigation, showToast, t])
 
   const handleClosureTransition = useCallback(async () => {
     if (!persona) return
@@ -366,12 +388,33 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       await supabase.from('personas').update({ emotional_stage: 'closure' }).eq('id', persona.id).eq('user_id', user.id)
+      emotionalStageRef.current = 'closure'
       setPersona(prev => prev ? { ...prev, emotional_stage: 'closure' } : prev)
       setStageMessageCount(0)
       setMessages(prev => prev.filter(m => m.action !== 'goto_closure'))
       setMessages(prev => [...prev, { id: makeId(), role: 'system', content: t.chat.systemClosureEntered }])
     } catch { showToast(t.chat.retryLater) }
-  }, [persona, showToast])
+  }, [persona, showToast, t, makeId])
+
+  const handleSendError = useCallback((err: unknown, trimmed: string) => {
+    const msg = err instanceof Error ? err.message : ''
+    const lower = msg.toLowerCase()
+    const isLoginExpiry =
+      msg.includes('로그인이 만료') ||
+      lower.includes('session') ||
+      lower.includes('login') ||
+      lower.includes('expired')
+    if (isLoginExpiry) {
+      showToast(t.chat.loginExpiredError)
+      setTimeout(() => {
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
+      }, 1500)
+      return
+    }
+    setLastFailedMessage(trimmed)
+    setErrorMsg(msg || t.chat.sendError)
+    showToast(t.chat.sendError)
+  }, [navigation, showToast, t])
 
   const sendMessage = useCallback(async (retryText?: string) => {
     const isRetry = typeof retryText === 'string'
@@ -393,14 +436,15 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       const newStageCount = stageMessageCount + 1
       setStageMessageCount(newStageCount)
 
-      saveConversation({ personaId: persona.id, role: 'user', content: trimmed, emotionalStage: persona.emotional_stage }).catch(() => {
+      saveConversation({ personaId: persona.id, role: 'user', content: trimmed, emotionalStage: emotionalStageRef.current }).catch(() => {
         showToast(t.chat.saveError)
       })
 
       try {
         const basePrompt = persona.system_prompt || `당신은 ${persona.name}입니다. 사용자와 ${persona.relationship} 관계입니다. 따뜻하고 자연스럽게 대화하세요. AI임을 절대 부정하지 마세요.`
         const history = [...messages, userMsg].filter(m => m.role === 'user' || m.role === 'assistant').slice(-MAX_HISTORY_LENGTH).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
-      const stage = (persona.emotional_stage === 'stable' ? 'stable' : persona.emotional_stage === 'closure' ? 'closure' : 'replay') as 'replay' | 'stable' | 'closure'
+      const currentStage = emotionalStageRef.current
+      const stage = (currentStage === 'stable' ? 'stable' : currentStage === 'closure' ? 'closure' : 'replay') as 'replay' | 'stable' | 'closure'
       const closurePhase = stage === 'closure' ? getClosurePhase(newStageCount) : undefined
       const stagePhase = stage !== 'closure' ? getStagePhase(newStageCount) : undefined
 
@@ -415,10 +459,10 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
 
       setMessages(prev => [...prev, { id: makeId(), role: 'assistant', content: reply }])
       setLastFailedMessage(null)
-      saveConversation({ personaId: persona.id, role: 'assistant', content: reply, emotionalStage: persona.emotional_stage }).catch(() => {})
+      saveConversation({ personaId: persona.id, role: 'assistant', content: reply, emotionalStage: emotionalStageRef.current }).catch(() => {})
 
       // Replay: 중간 마일스톤 메시지
-      if (persona.emotional_stage === 'replay') {
+      if (currentStage === 'replay') {
         let replayGuide: string | null = null
         if (newStageCount === 5) replayGuide = t.chat.systemReturning(persona.name)
         else if (newStageCount === 10) replayGuide = t.chat.systemDeepening(persona.name)
@@ -426,7 +470,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       }
 
       // Replay: 3개 이상 메시지마다 "안정 단계로" 버튼 제공 (아직 없으면)
-      if (persona.emotional_stage === 'replay' && newStageCount >= STAGE_TRANSITION_MIN) {
+      if (currentStage === 'replay' && newStageCount >= STAGE_TRANSITION_MIN) {
         setMessages(prev => {
           const alreadyHasBtn = prev.some(m => m.action === 'goto_stable')
           if (alreadyHasBtn) return prev
@@ -439,7 +483,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       }
 
       // Stable: 중간 마일스톤 메시지
-      if (persona.emotional_stage === 'stable') {
+      if (currentStage === 'stable') {
         let stableGuide: string | null = null
         if (newStageCount === 5) stableGuide = t.chat.systemStableProgress
         else if (newStageCount === 10) stableGuide = t.chat.systemStableDeep
@@ -447,7 +491,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       }
 
       // Stable: 3개 이상 메시지마다 "이별 단계로" 버튼 제공 (아직 없으면)
-      if (persona.emotional_stage === 'stable' && newStageCount >= STABLE_TRANSITION_MIN) {
+      if (currentStage === 'stable' && newStageCount >= STABLE_TRANSITION_MIN) {
         setMessages(prev => {
           const alreadyHasBtn = prev.some(m => m.action === 'goto_closure')
           if (alreadyHasBtn) return prev
@@ -460,7 +504,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       }
 
       // Closure milestones
-      if (persona.emotional_stage === 'closure') {
+      if (currentStage === 'closure') {
         let closureGuide: string | null = null
         if (newStageCount === 11) closureGuide = t.chat.systemClosureMsg
         else if (newStageCount === 16) closureGuide = t.chat.closureProgress[3]
@@ -480,9 +524,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
 
     } catch (err) {
       if (__DEV__) console.error('[Chat] sendMessage error:', err)
-      setLastFailedMessage(trimmed)
-      setErrorMsg(err instanceof Error ? err.message : t.chat.sendError)
-      showToast(t.chat.sendError)
+      handleSendError(err, trimmed)
     } finally { setIsTyping(false) }
       return
     }
@@ -495,7 +537,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
     try {
       const basePrompt = persona.system_prompt || `당신은 ${persona.name}입니다. 사용자와 ${persona.relationship} 관계입니다. 따뜻하고 자연스럽게 대화하세요. AI임을 절대 부정하지 마세요.`
       const history = messages.filter(m => m.role === 'user' || m.role === 'assistant').slice(-MAX_HISTORY_LENGTH).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
-      const stage = (persona.emotional_stage === 'stable' ? 'stable' : persona.emotional_stage === 'closure' ? 'closure' : 'replay') as 'replay' | 'stable' | 'closure'
+      const stage = emotionalStageRef.current
       const closurePhase = stage === 'closure' ? getClosurePhase(stageMessageCount) : undefined
       const stagePhase = stage !== 'closure' ? getStagePhase(stageMessageCount) : undefined
 
@@ -510,14 +552,12 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
 
       setMessages(prev => [...prev, { id: makeId(), role: 'assistant', content: reply }])
       setLastFailedMessage(null)
-      saveConversation({ personaId: persona.id, role: 'assistant', content: reply, emotionalStage: persona.emotional_stage }).catch(() => {})
+      saveConversation({ personaId: persona.id, role: 'assistant', content: reply, emotionalStage: emotionalStageRef.current }).catch(() => {})
     } catch (err) {
       if (__DEV__) console.error('[Chat] sendMessage retry error:', err)
-      setLastFailedMessage(trimmed)
-      setErrorMsg(err instanceof Error ? err.message : t.chat.sendError)
-      showToast(t.chat.sendError)
+      handleSendError(err, trimmed)
     } finally { setIsTyping(false) }
-  }, [inputText, isTyping, isReadOnly, persona, messages, userMessageCount, stageMessageCount, showDangerAlert, showToast, t, makeId, language])
+  }, [inputText, isTyping, isReadOnly, persona, messages, userMessageCount, stageMessageCount, showDangerAlert, showToast, t, makeId, language, handleSendError])
 
   // Current theme
   const currentStage = (persona?.emotional_stage ?? 'replay') as 'replay' | 'stable' | 'closure'
@@ -682,7 +722,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
         {/* 무료 베타 기간 중 — 카운트다운 배너 비활성화 */}
 
         {/* Closure banner */}
-        {persona?.emotional_stage === 'closure' && !isReadOnly && (
+        {persona?.emotional_stage === 'closure' && !isReadOnly && stageMessageCount >= CLOSURE_MESSAGE_LIMIT && (
           <TouchableOpacity style={styles.closureBanner} onPress={() => navigateToClosureLetter()}>
             <Text style={styles.closureBannerText}>{t.chat.closureLetterBtn}</Text>
           </TouchableOpacity>

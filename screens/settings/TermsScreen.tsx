@@ -12,7 +12,7 @@ type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Terms'>
 }
 
-const SECTIONS = [
+const SECTIONS_KO = [
   { title: '제1조 (목적)', body: `본 약관은 Still After(이하 "회사")가 제공하는 감정 회복 AI 서비스(이하 "서비스")의 이용 조건 및 절차, 회사와 이용자의 권리·의무 및 책임 사항을 규정함을 목적으로 합니다.` },
   { title: '제2조 (서비스 정의)', body: `"서비스"란 회사가 운영하는 Still After 앱을 통해 제공하는 AI 기반 감정 회복 대화 서비스를 의미합니다.\n\n본 서비스는 사랑하는 사람이나 반려동물을 잃은 이용자가 감정을 안전하게 정리하고 심리적 종결(closure)을 경험할 수 있도록 돕는 것을 목적으로 합니다.\n\n⚠️ 서비스 내 AI 응답은 실제 인물·동물의 생각이나 말을 대변하지 않습니다. 모든 응답은 AI가 생성한 내용입니다.` },
   { title: '제3조 (이용 자격)', body: `서비스는 만 14세 이상의 이용자에게 제공됩니다.\n\n만 14세 미만은 서비스를 이용할 수 없으며, 이에 해당함을 발견한 경우 즉시 계정을 삭제합니다.\n\n정신건강 위기 상태(자해·자살 충동 등)에 있는 분은 전문 의료기관 또는 위기상담전화(1577-0199)를 먼저 이용하시길 권고드립니다. 본 서비스는 정신건강의학과 치료나 전문 심리상담을 대체하지 않습니다.` },
@@ -25,6 +25,19 @@ const SECTIONS = [
   { title: '제10조 (약관의 변경)', body: `회사는 관련 법령 변경 또는 서비스 개선을 위해 약관을 변경할 수 있습니다.\n\n변경 시 적용 7일 전 앱 내 공지 또는 이메일을 통해 안내합니다.\n\n• 현재 버전: 1.0\n• 시행일: 2026년 1월 1일\n• 준거법: 대한민국 법률` },
 ]
 
+const SECTIONS_EN = [
+  { title: 'Article 1 (Purpose)', body: `These Terms of Service govern the use of the emotional recovery AI service provided by Still After ("Company"), including conditions of use, procedures, and the rights, obligations, and responsibilities of the Company and users.` },
+  { title: 'Article 2 (Service Definition)', body: `"Service" means the AI-based emotional recovery conversation service provided through the Still After app operated by the Company.\n\nThis service helps users who have lost a loved one or pet safely process their emotions and experience psychological closure.\n\n⚠️ AI responses in the service do not represent the thoughts or words of actual persons or animals. All responses are AI-generated.` },
+  { title: 'Article 3 (Eligibility)', body: `The service is provided to users aged 14 and older.\n\nUsers under 14 may not use the service. If discovered, the account will be deleted immediately.\n\nIf you are in a mental health crisis (self-harm or suicidal thoughts), please contact a professional medical institution or the crisis counseling line (1577-0199) first. This service does not replace psychiatric treatment or professional counseling.` },
+  { title: 'Article 4 (Account & Registration)', body: `Users may create an account via email or social login.\n\nUsers must keep account information accurate and may not share or transfer their account to others.\n\nAccounts created with false information or impersonation may be deleted immediately.` },
+  { title: 'Article 5 (Service Use)', body: `Still After's AI persona creation and conversation services are currently provided free of charge.\n\nThe Company may change usage conditions based on operational circumstances and will provide advance notice in the app.` },
+  { title: 'Article 6 (User Obligations)', body: `Users must not engage in the following:\n\n• Impersonating others or providing false information\n• Abusing the service or placing undue load on the system\n• Distributing AI responses as if they were the actual words of the deceased\n• Violating applicable laws\n• Infringing on the rights of others\n\nViolations may result in restricted use or account deletion.` },
+  { title: 'Article 7 (AI Content)', body: `Regarding AI-generated content in the service, users agree to the following:\n\n• AI responses do not reflect the thoughts or intentions of actual persons or animals\n• AI generates responses based on information provided by the user\n• The accuracy and appropriateness of AI responses cannot be fully guaranteed\n• Users are responsible for understanding and using AI responses critically\n\nIf you are emotionally vulnerable, we recommend using the service alongside a professional counselor.` },
+  { title: 'Article 8 (Service Restrictions & Suspension)', body: `The Company may restrict or suspend service use in the following cases:\n\n• User violation of these Terms\n• System maintenance, replacement, or failure\n• Force majeure such as national emergency, power outage, or natural disaster\n\nWe will provide advance notice when possible, or notify afterward if unavoidable.` },
+  { title: 'Article 9 (Limitation of Liability)', body: `The Company is not liable for:\n\n• Emotional discomfort or psychological impact from AI responses\n• Damages caused by user negligence\n• Damages from service interruption\n• Accuracy of information posted by users\n\nThis service is not professional psychological treatment or medical care and does not replace such services.` },
+  { title: 'Article 10 (Changes to Terms)', body: `The Company may change these Terms due to legal changes or service improvements.\n\nChanges will be announced at least 7 days in advance via in-app notice or email.\n\n• Current version: 1.0\n• Effective date: January 1, 2026\n• Governing law: Laws of the Republic of Korea` },
+]
+
 const STATIC_ORBS = [
   { top: '-5%', right: '-15%', color: 'rgba(168, 85, 247, 0.1)', size: 280 },
   { bottom: '10%', left: '-10%', color: 'rgba(219, 39, 119, 0.06)', size: 200 },
@@ -33,7 +46,14 @@ const STATIC_ORBS = [
 const glass = Platform.OS === 'web' ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } as any : {}
 
 export default function TermsScreen({ navigation }: Props) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  const sections = language === 'ko' ? SECTIONS_KO : SECTIONS_EN
+  const introText = language === 'ko'
+    ? 'Still After 서비스를 이용하시기 전에 아래 이용약관을 주의 깊게 읽어주세요.'
+    : 'Please read the following Terms of Service carefully before using Still After.'
+  const footerText = language === 'ko'
+    ? '문의사항이 있으시면 ysk@soomukstudio.com으로 연락해 주세요.'
+    : 'If you have any questions, please contact us at ysk@soomukstudio.com.'
   return (
     <View style={styles.root}>
       <CosmicBackground colors={['#1a0118', '#200a2e', '#0f0520']} orbs={STATIC_ORBS} starCount={20} />
@@ -50,12 +70,10 @@ export default function TermsScreen({ navigation }: Props) {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.intro}>
-          <Text style={styles.introText}>
-            Still After 서비스를 이용하시기 전에 아래 이용약관을 주의 깊게 읽어주세요.
-          </Text>
+          <Text style={styles.introText}>{introText}</Text>
         </View>
 
-        {SECTIONS.map((s, i) => (
+        {sections.map((s, i) => (
           <View key={i} style={styles.section}>
             <Text style={styles.sectionTitle}>{s.title}</Text>
             <View style={styles.sectionBodyBox}>
@@ -65,7 +83,7 @@ export default function TermsScreen({ navigation }: Props) {
         ))}
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>문의사항이 있으시면 ysk@soomukstudio.com으로 연락해 주세요.</Text>
+          <Text style={styles.footerText}>{footerText}</Text>
         </View>
       </ScrollView>
     </View>

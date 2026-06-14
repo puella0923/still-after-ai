@@ -21,6 +21,7 @@ import {
   signUpWithEmail,
   sendPasswordReset,
   updatePassword,
+  resendConfirmationEmail,
 } from '../../services/authService'
 import { supabase } from '../../services/supabase'
 import { useAuth } from '../../context/AuthContext'
@@ -83,7 +84,7 @@ const isValidPassword = (v: string) => /^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(v)
 
 export default function EmailAuthScreen({ navigation }: Props) {
   const { session, pendingPasswordRecovery, clearPendingPasswordRecovery } = useAuth()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
 
   const [recoveryMode, setRecoveryMode] = useState(() => {
     if (pendingPasswordRecovery) return true
@@ -132,6 +133,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
   const [agreeAge, setAgreeAge] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [successMsg, setSuccessMsg] = useState('')
+  const [showResendBtn, setShowResendBtn] = useState(false)
   const [noticeModal, setNoticeModal] = useState<NoticeModalState>(NOTICE_HIDDEN)
 
   const fadeAnim = useRef(new Animated.Value(0)).current
@@ -144,7 +146,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
     ]).start()
   }, [])
 
-  const clearMessages = () => { setErrors({}); setSuccessMsg('') }
+  const clearMessages = () => { setErrors({}); setSuccessMsg(''); setShowResendBtn(false) }
   const switchTab = (t: Tab) => {
     setTab(t)
     clearMessages()
@@ -181,24 +183,43 @@ export default function EmailAuthScreen({ navigation }: Props) {
     if (!validateLogin()) return
     setLoading(true)
     try {
-      const result = await signInWithEmail(email.trim(), password)
+      const result = await signInWithEmail(email.trim(), password, language)
       if (result.success) {
         setSuccessMsg(t.auth.successLogin)
         navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
+      } else if (result.needsConfirmation) {
+        setErrors({ general: result.error ?? t.auth.errorEmailNotConfirmed })
+        setShowResendBtn(true)
       } else {
+        setShowResendBtn(false)
         setErrors({ general: result.error ?? t.auth.errorLoginFailed })
       }
     } finally {
       setLoading(false)
     }
-  }, [email, password, navigation])
+  }, [email, password, language, navigation, t])
+
+  const handleResendEmail = useCallback(async () => {
+    setLoading(true)
+    const result = await resendConfirmationEmail(email.trim(), language)
+    if (result.alreadyVerified) {
+      setShowResendBtn(false)
+      setErrors({ general: t.auth.emailAlreadyVerified })
+    } else if (result.success) {
+      setShowResendBtn(false)
+      setSuccessMsg(t.auth.resendEmailSuccess)
+    } else {
+      setErrors({ general: result.error ?? t.auth.resendEmailFail })
+    }
+    setLoading(false)
+  }, [email, language, t])
 
   const handleSignup = useCallback(async () => {
     clearMessages()
     if (!validateSignup()) return
     setLoading(true)
     try {
-      const result = await signUpWithEmail(email.trim(), password, nickname.trim())
+      const result = await signUpWithEmail(email.trim(), password, nickname.trim(), language)
       if (result.success) {
         const { data: { session } } = await supabase.auth.getSession()
         if (session) {
@@ -213,7 +234,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
     } finally {
       setLoading(false)
     }
-  }, [email, password, nickname, passwordConfirm, agreeTerms, agreePrivacy, agreeAge, navigation])
+  }, [email, password, nickname, passwordConfirm, agreeTerms, agreePrivacy, agreeAge, language, navigation, t])
 
   const handleResetPassword = useCallback(async () => {
     clearMessages()
@@ -226,7 +247,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
     }
     setLoading(true)
     try {
-      const result = await updatePassword(newPassword)
+      const result = await updatePassword(newPassword, language)
       if (result.success) {
         setRecoveryMode(false)
         clearPendingPasswordRecovery()
@@ -251,7 +272,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
     } finally {
       setLoading(false)
     }
-  }, [newPassword, newPasswordConfirm, navigation, t, clearPendingPasswordRecovery])
+  }, [newPassword, newPasswordConfirm, language, navigation, t, clearPendingPasswordRecovery])
 
   const handleForgotPassword = async () => {
     if (!email.trim() || !isValidEmail(email)) {
@@ -260,7 +281,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
     }
     setLoading(true)
     try {
-      const result = await sendPasswordReset(email.trim())
+      const result = await sendPasswordReset(email.trim(), language)
       if (result.success) {
         setNoticeModal({
           visible: true,
@@ -324,7 +345,6 @@ export default function EmailAuthScreen({ navigation }: Props) {
                     </LinearGradient>
                   </View>
                   <Text style={styles.title}>Still After</Text>
-                  <Text style={styles.tagline}>{t.login.brand}</Text>
                 </View>
 
                 {recoveryMode ? (
@@ -440,6 +460,12 @@ export default function EmailAuthScreen({ navigation }: Props) {
                     <Text style={styles.errorBoxText}>⚠️ {errors.general}</Text>
                   </View>
                 ) : null}
+
+                {showResendBtn && (
+                  <TouchableOpacity onPress={handleResendEmail} style={styles.forgotBtn}>
+                    <Text style={styles.forgotText}>{t.auth.resendEmailBtn}</Text>
+                  </TouchableOpacity>
+                )}
 
                 {/* Success message */}
                 {successMsg ? (

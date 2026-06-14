@@ -50,6 +50,7 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
   const [completed, setCompleted] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [showDoneModal, setShowDoneModal] = useState(false)
+  const [farewellRevealed, setFarewellRevealed] = useState(false)
   const [draftLoaded, setDraftLoaded] = useState(false)
 
   // 화면 진입 시 임시 저장된 편지 복원
@@ -243,7 +244,18 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
 
       <ScrollView style={styles.scroll}>
         <View style={styles.content}>
-          {!!aiFarewell && (
+          {!!aiFarewell && !farewellRevealed && (
+            <View style={styles.farewellGate}>
+              <Text style={styles.farewellGateText}>
+                {t.closure.farewellGateMsg(personaName)}
+              </Text>
+              <TouchableOpacity onPress={() => setFarewellRevealed(true)} activeOpacity={0.7} style={styles.farewellGateBtn}>
+                <Text style={styles.farewellGateBtnText}>{t.closure.farewellGateBtn}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {!!aiFarewell && farewellRevealed && (
             <View style={styles.farewellCard}>
               <Text style={styles.farewellLabel}>
                 {isPet ? t.closure.petAiLetterLabel(personaName) : t.closure.aiLetterLabel(personaName)}
@@ -326,6 +338,19 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6, textTransform: 'uppercase',
   },
   farewellText: { fontSize: 15, color: 'rgba(255,255,255,0.8)', lineHeight: 24, fontStyle: 'italic' },
+
+  farewellGate: {
+    backgroundColor: 'rgba(99, 102, 241, 0.1)', borderRadius: 14, padding: 18,
+    borderLeftWidth: 3, borderLeftColor: 'rgba(168, 85, 247, 0.5)', gap: 16,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', ...glass,
+    alignItems: 'center',
+  },
+  farewellGateText: { fontSize: 15, color: 'rgba(255,255,255,0.75)', lineHeight: 24, textAlign: 'center' },
+  farewellGateBtn: {
+    paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
+  },
+  farewellGateBtnText: { fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
 
   intro: { fontSize: 15, color: 'rgba(255,255,255,0.6)', lineHeight: 24 },
   letterInput: {

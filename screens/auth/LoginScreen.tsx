@@ -27,13 +27,13 @@ type Props = {
 
 export default function LoginScreen({ navigation }: Props) {
   const { session } = useAuth()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(30)).current
   const iconScale = useRef(new Animated.Value(0)).current
 
   const handleGoogleSignIn = async (): Promise<void> => {
-    const result = await signInWithGoogle()
+    const result = await signInWithGoogle(language)
     if (!result.success) {
       Alert.alert(t.login.googleBtn, result.error ?? t.login.googleError)
     }
@@ -111,7 +111,6 @@ export default function LoginScreen({ navigation }: Props) {
                   </LinearGradient>
                 </Animated.View>
                 <Text style={styles.title}>Still After</Text>
-                <Text style={styles.tagline}>{t.login.brand}</Text>
               </View>
 
               {/* Google login button */}

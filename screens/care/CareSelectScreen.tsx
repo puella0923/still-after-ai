@@ -44,6 +44,9 @@ export default function CareSelectScreen({ navigation }: Props) {
           <Text style={styles.subtitle}>
             {t.careSelect.subtitle}
           </Text>
+          <Text style={styles.notice}>
+            {t.careSelect.notice}
+          </Text>
         </View>
 
         <View style={styles.cardRow}>
@@ -63,10 +66,6 @@ export default function CareSelectScreen({ navigation }: Props) {
             </LinearGradient>
           </TouchableOpacity>
         </View>
-
-        <Text style={styles.notice}>
-          {t.careSelect.notice}
-        </Text>
       </View>
     </View>
   )
@@ -74,10 +73,11 @@ export default function CareSelectScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, overflow: 'hidden' },
-  container: { flex: 1, paddingHorizontal: 28, paddingTop: 110, paddingBottom: 40, justifyContent: 'space-between' },
+  container: { flex: 1, paddingHorizontal: 28, paddingTop: 110, paddingBottom: 40, gap: 32 },
   header: { alignItems: 'center', gap: 14 },
   title: { fontSize: 26, fontWeight: '300', color: '#fff', letterSpacing: 0.5, textAlign: 'center' },
   subtitle: { fontSize: 15, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 24 },
+  notice: { fontSize: 13, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 20, marginTop: 4 },
   cardRow: { flexDirection: 'row', gap: 16 },
   card: {
     flex: 1, borderRadius: 20, overflow: 'hidden',
@@ -88,5 +88,4 @@ const styles = StyleSheet.create({
   cardEmoji: { fontSize: 40 },
   cardTitle: { fontSize: 18, fontWeight: '600', color: '#fff' },
   cardDesc: { fontSize: 12, color: 'rgba(255,255,255,0.5)' },
-  notice: { fontSize: 11, color: 'rgba(255,255,255,0.35)', textAlign: 'center', lineHeight: 18 },
 })

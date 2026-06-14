@@ -14,7 +14,7 @@ type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'CustomerSupport'>
 }
 
-const FAQ_ITEMS = [
+const FAQ_ITEMS_KO = [
   { q: '서비스 내 AI는 실제 고인인가요?', a: 'AI가 생성하는 응답입니다. 이용자가 제공한 카카오톡 대화나 설명을 바탕으로 말투와 성격을 학습하지만, 실제 고인의 생각이나 의도를 반영하지 않습니다.' },
   { q: '카카오톡 파일을 업로드하면 어떻게 되나요?', a: '업로드한 파일은 AI 페르소나 생성에만 사용됩니다. 분석 완료 후 원본 파일은 서버에 저장되지 않으며, 추출된 말투 패턴 데이터만 보관됩니다.' },
   { q: '감정 단계(재연→안정→이별)란 무엇인가요?', a: '재연 단계에서는 그 사람과 다시 대화하는 느낌을 제공합니다. 안정 단계에서는 감정을 정리하고 표현하는 것을 돕습니다. 이별 단계에서는 심리적 종결(closure)을 경험합니다.' },
@@ -22,6 +22,16 @@ const FAQ_ITEMS = [
   { q: '기억(페르소나)은 몇 개까지 만들 수 있나요?', a: '현재 이용자당 제한 없이 여러 기억을 만들 수 있습니다. 각 기억은 독립적으로 관리됩니다.' },
   { q: '계정을 삭제하면 모든 데이터가 사라지나요?', a: '네, 계정 삭제 시 모든 기억, 대화 기록, 개인 정보가 영구 삭제됩니다. 삭제 후에는 복구할 수 없습니다.' },
   { q: '앱이 갑자기 오류가 나거나 작동하지 않아요.', a: '앱을 완전히 종료 후 다시 시작해보세요. 문제가 지속된다면 고객 지원 이메일로 문의해 주세요.' },
+]
+
+const FAQ_ITEMS_EN = [
+  { q: 'Is the AI the actual person I lost?', a: 'No. The responses are AI-generated based on the data you provide. It reflects speech patterns, not real thoughts or intentions.' },
+  { q: 'What happens to my uploaded KakaoTalk file?', a: 'It is only used to create your AI persona. The original file is not stored after processing — only extracted speech pattern data is kept.' },
+  { q: 'What are the emotional stages (Replay → Stable → Closure)?', a: 'Replay: recreates the feeling of talking with them. Stable: helps you express and organize emotions. Closure: guides you to psychological closure.' },
+  { q: 'What if I feel overwhelmed during a conversation?', a: 'You can close the app at any time. If you have thoughts of self-harm, please contact the Korea Mental Health Crisis Line at 1577-0199 (available 24 hours).' },
+  { q: 'How many memories (personas) can I create?', a: 'There is currently no limit. Each memory is managed independently.' },
+  { q: 'If I delete my account, will all data be removed?', a: 'Yes. Deleting your account permanently removes all memories, conversation records, and personal information. This cannot be undone.' },
+  { q: 'The app crashed or stopped working.', a: 'Try fully closing and restarting the app. If the problem persists, contact us by email.' },
 ]
 
 const SUPPORT_ORBS = [
@@ -32,11 +42,16 @@ const SUPPORT_ORBS = [
 const glass = Platform.OS === 'web' ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } as any : {}
 
 export default function CustomerSupportScreen({ navigation }: Props) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
+  const FAQ_ITEMS = language === 'ko' ? FAQ_ITEMS_KO : FAQ_ITEMS_EN
 
   const openEmail = () => {
-    Linking.openURL('mailto:ysk@soomukstudio.com?subject=Still After 고객 지원 문의').catch(() => {
+    Linking.openURL(
+      language === 'ko'
+        ? 'mailto:ysk@soomukstudio.com?subject=Still After 고객 지원 문의'
+        : 'mailto:ysk@soomukstudio.com?subject=Still After Support Inquiry'
+    ).catch(() => {
       Alert.alert(t.customerSupport.emailErrorTitle, t.customerSupport.emailErrorMsg)
     })
   }
@@ -67,8 +82,8 @@ export default function CustomerSupportScreen({ navigation }: Props) {
           {/* Hero */}
           <View style={styles.heroBanner}>
             <Text style={styles.heroEmoji}>💬</Text>
-            <Text style={styles.heroTitle}>무엇을 도와드릴까요?</Text>
-            <Text style={styles.heroSubtitle}>자주 묻는 질문을 먼저 확인해보세요.{'\n'}해결이 안 된다면 이메일로 문의해 주세요.</Text>
+            <Text style={styles.heroTitle}>{t.customerSupport.heroTitle}</Text>
+            <Text style={styles.heroSubtitle}>{t.customerSupport.heroSubtitle}</Text>
           </View>
 
           {/* Crisis */}
@@ -76,15 +91,15 @@ export default function CustomerSupportScreen({ navigation }: Props) {
             <View style={styles.crisisLeft}>
               <Text style={styles.crisisEmoji}>🆘</Text>
               <View>
-                <Text style={styles.crisisTitle}>지금 많이 힘드신가요?</Text>
-                <Text style={styles.crisisSubtitle}>정신건강위기상담전화 1577-0199 (24시간)</Text>
+                <Text style={styles.crisisTitle}>{t.customerSupport.crisisBannerTitle}</Text>
+                <Text style={styles.crisisSubtitle}>{t.customerSupport.crisisBannerDesc}</Text>
               </View>
             </View>
             <Text style={styles.crisisArrow}>›</Text>
           </TouchableOpacity>
 
           {/* FAQ */}
-          <Text style={styles.sectionLabel}>자주 묻는 질문</Text>
+          <Text style={styles.sectionLabel}>{t.customerSupport.faqSection}</Text>
           <View style={styles.faqCard}>
             {FAQ_ITEMS.map((item, i) => {
               const isExpanded = expandedIndex === i
@@ -112,16 +127,16 @@ export default function CustomerSupportScreen({ navigation }: Props) {
           </View>
 
           {/* Contact */}
-          <Text style={styles.sectionLabel}>직접 문의</Text>
+          <Text style={styles.sectionLabel}>{t.customerSupport.contactSection}</Text>
           <View style={styles.contactCard}>
             <View style={styles.contactInfo}>
-              <Text style={styles.contactInfoTitle}>이메일 문의</Text>
-              <Text style={styles.contactInfoDesc}>평일 오전 10시 ~ 오후 6시 운영{'\n'}문의 후 1-2 영업일 내 답변드립니다.</Text>
+              <Text style={styles.contactInfoTitle}>{t.customerSupport.contactTitle}</Text>
+              <Text style={styles.contactInfoDesc}>{t.customerSupport.contactHours}</Text>
               <Text style={styles.contactEmail}>ysk@soomukstudio.com</Text>
             </View>
             <TouchableOpacity onPress={openEmail} activeOpacity={0.85}>
               <LinearGradient colors={['#a855f7', '#db2777']} style={styles.emailBtn}>
-                <Text style={styles.emailBtnText}>이메일 보내기</Text>
+                <Text style={styles.emailBtnText}>{t.customerSupport.emailBtnLabel}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>

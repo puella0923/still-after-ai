@@ -12,7 +12,7 @@ type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'PrivacyPolicy'>
 }
 
-const SECTIONS = [
+const SECTIONS_KO = [
   {
     title: '1. 수집하는 개인정보 항목',
     body: `Still After(이하 "서비스")는 서비스 제공을 위해 아래와 같은 개인정보를 수집합니다.
@@ -98,6 +98,92 @@ AI 서비스 제공을 위해 OpenAI API를 활용하며, OpenAI의 개인정보
   },
 ]
 
+const SECTIONS_EN = [
+  {
+    title: '1. Personal Information Collected',
+    body: `Still After ("Service") collects the following personal information to provide the service.
+
+• Required: email address, service usage records, device information (device ID, OS version)
+• Optional: KakaoTalk conversation export files (user-uploaded), persona description text, profile photos
+
+Automatically generated: IP address, access time, app usage logs, error logs`,
+  },
+  {
+    title: '2. Purpose of Use',
+    body: `Collected information is used only for the following purposes.
+
+• Service provision: AI persona creation, conversation service, member identification and authentication
+• Service improvement: error analysis, quality improvement, new feature development
+• Customer support: inquiry response and dispute resolution
+• Safety: dangerous conversation detection and crisis intervention
+
+We do not use information for purposes other than those stated. If the purpose changes, we will obtain prior consent.`,
+  },
+  {
+    title: '3. Retention Period',
+    body: `Personal information is deleted without delay when you delete your account. However, certain data may be retained as required by law.
+
+• Contract or withdrawal records: 5 years (E-Commerce Act)
+• Consumer complaint and dispute records: 3 years (E-Commerce Act)
+• Access logs: 3 months (Communications Secrets Protection Act)
+
+Uploaded KakaoTalk files are not stored on our servers after persona creation is complete — only analyzed data is retained.`,
+  },
+  {
+    title: '4. Third-Party Disclosure',
+    body: `We do not provide your personal information to third parties in principle.
+
+Exceptions apply when:
+• You have given prior consent
+• Required by law or requested by investigative authorities
+
+We use the OpenAI API for AI services, subject to OpenAI's privacy policy. Conversation content is transmitted only for AI response generation and is not used by OpenAI to train its models via the API.`,
+  },
+  {
+    title: '5. Destruction of Personal Information',
+    body: `When the retention period expires or the processing purpose is achieved, personal information is destroyed without delay.
+
+• Electronic files: permanently deleted by irrecoverable methods
+• Paper documents: shredded or incinerated
+
+You may request immediate deletion via Settings → Delete Account in the app.`,
+  },
+  {
+    title: '6. Your Rights',
+    body: `You may exercise the following rights at any time.
+
+• Request access to your personal information
+• Request correction if there are errors
+• Request deletion (except where retention is required by law)
+• Request suspension of processing
+
+You may exercise these rights via the in-app settings or by email (ysk@soomukstudio.com). Requests are processed within 10 days.
+
+Users under 14 years of age may not use this service.`,
+  },
+  {
+    title: '7. Privacy Officer',
+    body: `The person responsible for personal information processing is as follows.
+
+• Name: Still After Privacy Team
+• Email: ysk@soomukstudio.com
+• Contact: ysk@soomukstudio.com
+
+For privacy violation reports or consultations, you may contact:
+• Personal Information Infringement Report Center: privacy.kisa.or.kr (118)
+• Personal Information Dispute Mediation Committee: www.kopico.go.kr`,
+  },
+  {
+    title: '8. Policy Changes',
+    body: `This Privacy Policy may be updated in accordance with applicable laws and internal policies.
+
+When changes occur, we will notify you in advance via in-app notice or email.
+
+• Current version: 1.0
+• Effective date: January 1, 2026`,
+  },
+]
+
 const STATIC_ORBS = [
   { top: '-5%', right: '-15%', color: 'rgba(168, 85, 247, 0.1)', size: 280 },
   { bottom: '10%', left: '-10%', color: 'rgba(219, 39, 119, 0.06)', size: 200 },
@@ -106,7 +192,14 @@ const STATIC_ORBS = [
 const glass = Platform.OS === 'web' ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } as any : {}
 
 export default function PrivacyPolicyScreen({ navigation }: Props) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  const sections = language === 'ko' ? SECTIONS_KO : SECTIONS_EN
+  const introText = language === 'ko'
+    ? 'Still After(이하 "회사")는 이용자의 개인정보를 소중히 여기며, 「개인정보 보호법」 및 관련 법령을 준수합니다.'
+    : 'Still After ("Company") values your privacy and complies with applicable privacy laws and regulations.'
+  const footerText = language === 'ko'
+    ? '본 방침에 동의하지 않으시면 서비스 이용을 중단하고 계정을 삭제하실 수 있습니다.'
+    : 'If you do not agree with this policy, you may stop using the service and delete your account.'
   return (
     <View style={styles.root}>
       <CosmicBackground colors={['#1a0118', '#200a2e', '#0f0520']} orbs={STATIC_ORBS} starCount={20} />
@@ -123,12 +216,10 @@ export default function PrivacyPolicyScreen({ navigation }: Props) {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.intro}>
-          <Text style={styles.introText}>
-            Still After(이하 "회사")는 이용자의 개인정보를 소중히 여기며, 「개인정보 보호법」 및 관련 법령을 준수합니다.
-          </Text>
+          <Text style={styles.introText}>{introText}</Text>
         </View>
 
-        {SECTIONS.map((s, i) => (
+        {sections.map((s, i) => (
           <View key={i} style={styles.section}>
             <Text style={styles.sectionTitle}>{s.title}</Text>
             <View style={styles.sectionBodyBox}>
@@ -138,9 +229,7 @@ export default function PrivacyPolicyScreen({ navigation }: Props) {
         ))}
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            본 방침에 동의하지 않으시면 서비스 이용을 중단하고 계정을 삭제하실 수 있습니다.
-          </Text>
+          <Text style={styles.footerText}>{footerText}</Text>
         </View>
       </ScrollView>
     </View>

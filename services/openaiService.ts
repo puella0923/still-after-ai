@@ -440,18 +440,38 @@ function backoffDelay(attempt: number): number {
   return Math.min(2000 * Math.pow(2, attempt), 10000)
 }
 
-const LOGIN_EXPIRED_MSG = '로그인이 만료되었어요. 다시 로그인해주세요.'
-const NETWORK_ERROR_MSG = '응답을 받지 못했어요. 네트워크 연결을 확인하고 다시 시도해주세요.'
+const LOGIN_EXPIRED_MSG = (lang: string) =>
+  lang === 'en'
+    ? 'Your session has expired. Please log in again.'
+    : '로그인이 만료되었어요. 다시 로그인해주세요.'
+
+const NETWORK_ERROR_MSG = (lang: string) =>
+  lang === 'en'
+    ? 'No response received. Please check your network connection and try again.'
+    : '응답을 받지 못했어요. 네트워크 연결을 확인하고 다시 시도해주세요.'
+
+const noResponseMsg = (lang: string) =>
+  lang === 'en' ? 'No response received.' : '응답을 받지 못했어요.'
+
+function isLoginExpiredMessage(message: string): boolean {
+  const lower = message.toLowerCase()
+  return (
+    message.includes('로그인이 만료') ||
+    lower.includes('session') ||
+    lower.includes('login') ||
+    lower.includes('expired')
+  )
+}
 
 /** 재시도마다 호출 — 만료 임박 시 세션 갱신 */
-async function ensureValidSession() {
+async function ensureValidSession(language = 'ko') {
   let session = (await supabase.auth.getSession()).data.session
-  if (!session) throw new Error(LOGIN_EXPIRED_MSG)
+  if (!session) throw new Error(LOGIN_EXPIRED_MSG(language))
   const expiresAt = session.expires_at ?? 0
   const now = Math.floor(Date.now() / 1000)
   if (expiresAt - now < 60) {
     const { data, error } = await supabase.auth.refreshSession()
-    if (error || !data.session) throw new Error(LOGIN_EXPIRED_MSG)
+    if (error || !data.session) throw new Error(LOGIN_EXPIRED_MSG(language))
     session = data.session
   }
   return session
@@ -479,7 +499,7 @@ export async function getChatResponse(params: {
   careType?: string       // 'human' | 'pet'
   language?: string
 }): Promise<string> {
-  const { systemPrompt, conversationHistory, userMessage, stage = 'replay', phase, closurePhase, userNickname, relationship, careType, language } = params
+  const { systemPrompt, conversationHistory, userMessage, stage = 'replay', phase, closurePhase, userNickname, relationship, careType, language = 'ko' } = params
 
   const fullPrompt = buildSystemPrompt(systemPrompt, stage, phase, closurePhase, userNickname, relationship, careType, language)
 
@@ -497,7 +517,7 @@ export async function getChatResponse(params: {
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const session = await ensureValidSession()
+      const session = await ensureValidSession(language)
 
       const resp = await fetch(EDGE_FUNCTION_URL, {
         method: 'POST',
@@ -511,9 +531,9 @@ export async function getChatResponse(params: {
       const data = await resp.json()
 
       if (!resp.ok) {
-        const errorMsg = data?.error || '응답을 받지 못했어요.'
+        const errorMsg = data?.error || noResponseMsg(language)
         if (resp.status === 401) {
-          throw new Error(LOGIN_EXPIRED_MSG)
+          throw new Error(LOGIN_EXPIRED_MSG(language))
         }
         // 429, 5xx는 재시도 가능
         if ((resp.status === 429 || resp.status >= 500) && attempt < MAX_RETRIES) {
@@ -526,13 +546,13 @@ export async function getChatResponse(params: {
       }
 
       const content = data?.content
-      if (!content) throw new Error('응답을 받지 못했습니다.')
+      if (!content) throw new Error(language === 'en' ? 'No response received.' : '응답을 받지 못했습니다.')
       return content.trim()
     } catch (error) {
       lastError = error
       if (__DEV__) console.warn(`[Chat] 요청 실패 (시도 ${attempt + 1}/${MAX_RETRIES + 1}):`, error)
 
-      const isLoginError = error instanceof Error && error.message === LOGIN_EXPIRED_MSG
+      const isLoginError = error instanceof Error && isLoginExpiredMessage(error.message)
       const canRetry = attempt < MAX_RETRIES && !isLoginError
 
       if (canRetry) {
@@ -546,9 +566,9 @@ export async function getChatResponse(params: {
 
   // 모든 시도 실패 → 사용자 친화적 메시지로 에러 전달
   if (lastError instanceof Error) {
-    if (lastError.message === LOGIN_EXPIRED_MSG) throw lastError
-    if (isNetworkError(lastError)) throw new Error(NETWORK_ERROR_MSG)
+    if (isLoginExpiredMessage(lastError.message)) throw lastError
+    if (isNetworkError(lastError)) throw new Error(NETWORK_ERROR_MSG(language))
     throw lastError
   }
-  throw new Error(NETWORK_ERROR_MSG)
+  throw new Error(NETWORK_ERROR_MSG(language))
 }

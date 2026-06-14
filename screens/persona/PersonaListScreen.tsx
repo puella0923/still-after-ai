@@ -12,6 +12,7 @@ import {
   Image,
   Dimensions,
   Platform,
+  Alert,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useFocusEffect } from '@react-navigation/native'
@@ -66,7 +67,10 @@ export default function PersonaListScreen({ navigation }: Props) {
     if (modal.type !== 'delete_step2') return
     setModalLoading(true)
     try { await deletePersona(modal.persona.id); setPersonas(prev => prev.filter(p => p.id !== modal.persona.id)); setModal({ type: 'none' }) }
-    catch { setModal({ type: 'none' }) }
+    catch {
+      setModal({ type: 'none' })
+      Alert.alert(t.personaList.deleteError)
+    }
     finally { setModalLoading(false) }
   }
   const handleStartChat = (persona: Persona) => navigation.navigate('Chat', { personaId: persona.id })

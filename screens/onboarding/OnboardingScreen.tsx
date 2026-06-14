@@ -405,9 +405,11 @@ export default function OnboardingScreen({ navigation }: Props) {
               <View style={[styles.stageLeft, isNarrow && styles.stageLeftNarrow]}>
                 <Text style={styles.stageNum}>Step 03</Text>
                 <Text style={styles.stageName}>{o.stageClosureName}</Text>
+                {!!o.stageLimitBadge && (
                 <View style={styles.stageLimitBadge}>
                   <Text style={styles.stageLimitText}>{o.stageLimitBadge}</Text>
                 </View>
+                )}
               </View>
               <View style={[styles.stageRight, isNarrow && styles.stageRightNarrow]}>
                 <Text style={styles.stageDesc}>{o.stage3Desc}</Text>
