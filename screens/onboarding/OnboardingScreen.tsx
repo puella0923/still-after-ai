@@ -194,7 +194,7 @@ export default function OnboardingScreen({ navigation }: Props) {
               </View>
 
               <View style={styles.parseFlow}>
-                {(['📄', '🔍', '💜'] as const).map((icon, i, arr) => ({icon, label: o.howSteps[i]})).map((step, i, arr) => (
+                {(['📤', '📂', '🔍', '💜'] as const).map((icon, i, arr) => ({icon, label: o.howSteps[i]})).map((step, i, arr) => (
                   <View key={i}>
                     <View style={styles.parseStep}>
                       <View style={styles.parseIcon}>

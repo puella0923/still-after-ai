@@ -177,7 +177,7 @@ async function testKakaoFileUpload(page) {
   const tmpFile = resolve(tmpDir, 'kakao_sample.txt')
   writeFileSync(tmpFile, SAMPLE_KAKAO, 'utf8')
 
-  const uploadBtn = page.locator('text=/Select \\.txt|\\.txt.*\\.csv|파일 선택|📂/').first()
+  const uploadBtn = page.locator('text=/내보낸 파일|Upload exported|📂/').first()
   await uploadBtn.scrollIntoViewIfNeeded()
   const [fileChooser] = await Promise.all([
     page.waitForEvent('filechooser', { timeout: 15000 }),

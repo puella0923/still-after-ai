@@ -689,7 +689,10 @@ ${manualText.trim()}
                 {t.personaCreate.kakaoDesc}
               </Text>
               <Text style={styles.kakaoGuideSub}>
-                {t.personaCreate.kakaoInstructions}
+                {t.personaCreate.kakaoStep1}
+              </Text>
+              <Text style={[styles.kakaoGuideSub, { marginBottom: 4 }]}>
+                {t.personaCreate.kakaoStep2}
               </Text>
               <Text style={[styles.kakaoGuideSub, { color: '#F59E0B', marginTop: 4 }]}>
                 {t.personaCreate.kakaoOnlyDirect}
