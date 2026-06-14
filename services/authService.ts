@@ -288,6 +288,9 @@ export async function updatePassword(
 // ─── 카카오 OAuth ───────────────────────────
 
 export async function signInWithKakao(): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured) {
+    return { success: false, error: connectionErrorMessage() }
+  }
   try {
     const redirectUrl = getOAuthRedirectUrl()
     const isWeb = Platform.OS === 'web'

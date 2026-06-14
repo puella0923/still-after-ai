@@ -156,8 +156,10 @@ const en: Translations = {
     freeTrial: 'Free conversations during the beta',
     disclaimer: "Still After doesn't restore real people. It's a careful space for your emotions to naturally find their place.",
     googleBtn: 'Continue with Google',
+    kakaoBtn: 'Continue with Kakao',
     emailBtn: 'Continue with Email',
     googleError: 'Google sign-in failed.',
+    kakaoError: 'Kakao sign-in failed.',
   },
 
   // ── Email Auth ──
@@ -170,6 +172,7 @@ const en: Translations = {
     placeholderEmail: 'your@email.com',
     labelPassword: 'Password',
     placeholderPasswordLogin: '••••••••',
+    placeholderPassword: '8+ characters, letters & numbers',
     placeholderPasswordSignup: '8+ characters, letters & numbers',
     labelPasswordConfirm: 'Confirm Password',
     placeholderPasswordConfirm: 'Re-enter password',
@@ -204,6 +207,7 @@ const en: Translations = {
     errorNicknameRequired: 'Please enter a nickname.',
     errorNicknameInvalid: 'Nickname must be 2–10 characters (letters and numbers only).',
     errorPasswordWeak: '8+ characters, combining letters and numbers.',
+    errorPasswordInvalid: '8+ characters, combining letters and numbers.',
     errorPasswordConfirmRequired: 'Please confirm your password.',
     errorPasswordMismatch: 'Passwords do not match.',
     errorTermsRequired: 'Please agree to the Terms of Service.',

@@ -182,14 +182,24 @@ const STAGE_BASE_PROMPTS = {
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!
 const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/chat`
 
-const DANGER_KEYWORDS = [
+const DANGER_KEYWORDS_KO = [
   '자해', '자살', '죽고 싶', '사라지고 싶',
   '끝내고 싶', '살기 싫', '죽어버리고',
 ]
 
+const DANGER_KEYWORDS_EN = [
+  'self-harm', 'self harm', 'suicide', 'kill myself', 'want to die',
+  'end my life', 'want to disappear', "don't want to live", 'dont want to live',
+  'hurt myself', 'end it all', 'take my life', 'not worth living',
+]
+
 /** 사용자 메시지에서 위험 키워드 감지 */
 export function detectDanger(text: string): boolean {
-  return DANGER_KEYWORDS.some(keyword => text.includes(keyword))
+  const lower = text.toLowerCase()
+  return (
+    DANGER_KEYWORDS_KO.some(keyword => text.includes(keyword)) ||
+    DANGER_KEYWORDS_EN.some(keyword => lower.includes(keyword))
+  )
 }
 
 export type EmotionalStage = 'replay' | 'stable' | 'closure'

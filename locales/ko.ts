@@ -154,8 +154,10 @@ const ko = {
     freeTrial: '지금은 무료로 대화할 수 있어요',
     disclaimer: 'Still After는 실제 인물을 복원하지 않아요. 감정이 자연스럽게 자리 잡을 수 있도록 조심스럽게 함께하는 공간이에요.',
     googleBtn: '구글로 시작하기',
+    kakaoBtn: '카카오로 시작하기',
     emailBtn: '이메일로 시작하기',
     googleError: '구글 로그인에 실패했습니다.',
+    kakaoError: '카카오 로그인에 실패했습니다.',
   },
 
   // ── Email Auth ──
@@ -168,6 +170,7 @@ const ko = {
     placeholderEmail: 'your@email.com',
     labelPassword: '비밀번호',
     placeholderPasswordLogin: '••••••••',
+    placeholderPassword: '8자 이상, 영문+숫자 조합',
     placeholderPasswordSignup: '8자 이상, 영문+숫자 조합',
     labelPasswordConfirm: '비밀번호 확인',
     placeholderPasswordConfirm: '비밀번호 재입력',
@@ -202,6 +205,7 @@ const ko = {
     errorNicknameRequired: '닉네임을 입력해주세요.',
     errorNicknameInvalid: '닉네임은 2~10자, 한글/영문/숫자만 가능합니다.',
     errorPasswordWeak: '8자 이상, 영문과 숫자를 조합해주세요.',
+    errorPasswordInvalid: '8자 이상, 영문과 숫자를 조합해주세요.',
     errorPasswordConfirmRequired: '비밀번호 확인을 입력해주세요.',
     errorPasswordMismatch: '비밀번호가 일치하지 않습니다.',
     errorTermsRequired: '서비스 이용약관에 동의해주세요.',

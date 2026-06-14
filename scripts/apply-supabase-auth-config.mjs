@@ -81,6 +81,14 @@ const payload = {
   mailer_templates_recovery_content: readTemplate('reset-password.html'),
 }
 
+const KAKAO_CLIENT_ID = process.env.SUPABASE_KAKAO_CLIENT_ID
+const KAKAO_CLIENT_SECRET = process.env.SUPABASE_KAKAO_CLIENT_SECRET
+if (KAKAO_CLIENT_ID && KAKAO_CLIENT_SECRET) {
+  payload.external_kakao_enabled = true
+  payload.external_kakao_client_id = KAKAO_CLIENT_ID
+  payload.external_kakao_secret = KAKAO_CLIENT_SECRET
+}
+
 const API = `https://api.supabase.com/v1/projects/${PROJECT_REF}/config/auth`
 
 async function main() {
@@ -111,6 +119,11 @@ async function main() {
   console.log('\n✅ 적용 완료!')
   console.log(`  - 이메일 인증: ${after.mailer_autoconfirm ? '생략 (자동 확인)' : '필수'}`)
   console.log(`  - Site URL: ${after.site_url}`)
+  if (KAKAO_CLIENT_ID && KAKAO_CLIENT_SECRET) {
+    console.log(`  - Kakao OAuth: ${after.external_kakao_enabled ? '활성화' : '비활성화'}`)
+  } else {
+    console.log('  - Kakao OAuth: SUPABASE_KAKAO_CLIENT_ID/SECRET 없음 — Dashboard에서 수동 설정 필요')
+  }
   console.log('\n📱 회원가입 후 바로 로그인됩니다.\n')
 }
 
