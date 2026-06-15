@@ -1,7 +1,6 @@
 import React from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen'
-import LoginScreen from '../screens/auth/LoginScreen'
 import EmailAuthScreen from '../screens/auth/EmailAuthScreen'
 import PersonaListScreen from '../screens/persona/PersonaListScreen'
 import PersonaCreateScreen from '../screens/persona/PersonaCreateScreen'
@@ -22,7 +21,6 @@ import PaywallScreen from '../screens/paywall/PaywallScreen'
 
 export type RootStackParamList = {
   Onboarding: undefined
-  Login: undefined
   EmailAuth: undefined
   PersonaList: undefined
   CareSelect: undefined
@@ -61,7 +59,6 @@ export default function RootNavigator({ initialRouteName }: Props) {
       screenOptions={{ headerShown: false }}
     >
       <Stack.Screen name="Onboarding"      component={OnboardingScreen} />
-      <Stack.Screen name="Login"           component={LoginScreen} />
       <Stack.Screen name="EmailAuth"       component={EmailAuthScreen} />
       <Stack.Screen name="PersonaList"     component={PersonaListScreen} />
       <Stack.Screen name="CareSelect"       component={CareSelectScreen} />

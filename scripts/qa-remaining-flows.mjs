@@ -65,9 +65,7 @@ async function checkSupabaseOAuth() {
 }
 
 async function loginBrowser(page, email, password) {
-  await page.goto(`${BASE}/Login`, { waitUntil: 'networkidle', timeout: 30000 })
-  await page.getByText(/이메일|Email/i).first().click()
-  await page.waitForTimeout(600)
+  await page.goto(`${BASE}/EmailAuth`, { waitUntil: 'networkidle', timeout: 30000 })
   const loginTab = page.getByText(/^로그인$|^Log in$|^Login$/i).first()
   if (await loginTab.isVisible({ timeout: 3000 }).catch(() => false)) await loginTab.click()
   const inputs = page.locator('input')
@@ -76,13 +74,13 @@ async function loginBrowser(page, email, password) {
   await inputs.nth(1).fill(password)
   await page.getByText(/^로그인$|^Log in$|^Login$/i).last().click()
   await page.waitForTimeout(4000)
-  const ok = !page.url().includes('EmailAuth') && !page.url().includes('Login')
+  const ok = !page.url().includes('EmailAuth')
   if (ok) pass('browser-login', page.url())
   else fail('browser-login', page.url())
 }
 
 async function testGoogleOAuthInit(page) {
-  await page.goto(`${BASE}/Login`, { waitUntil: 'networkidle', timeout: 30000 })
+  await page.goto(`${BASE}/EmailAuth`, { waitUntil: 'networkidle', timeout: 30000 })
   const googleBtn = page.getByText(/Google|구글/i).first()
   if (await googleBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
     fail('oauth-google-ui', '구글 로그인 버튼이仍 표시됨')
@@ -93,7 +91,7 @@ async function testGoogleOAuthInit(page) {
 }
 
 async function testKakaoLoginUI(page) {
-  await page.goto(`${BASE}/Login`, { waitUntil: 'networkidle' })
+  await page.goto(`${BASE}/EmailAuth`, { waitUntil: 'networkidle' })
   const kakaoLoginBtn = page.getByRole('button', { name: /카카오.*로그인|Kakao.*log in|Continue with Kakao/i })
     .or(page.locator('button, [role="button"]').filter({ hasText: /^카카오$|^Kakao$/ }))
   if (await kakaoLoginBtn.count() === 0) {

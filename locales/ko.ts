@@ -153,9 +153,7 @@ const ko = {
   // ── Login ──
   login: {
     brand: '당신 곁을 여전히',
-    noCreditCard: '💳 카드 등록 없이 바로 시작할 수 있어요',
-    freeTrial: '무료로 이용할 수 있어요',
-    disclaimer: 'Still After는 실제 인물을 복원하지 않아요. 감정이 자연스럽게 자리 잡을 수 있도록 조심스럽게 함께하는 공간이에요.',
+    disclaimer: 'Stillafter는 실제 인물을 복원하지 않아요.\n감정이 자연스럽게 자리 잡을 수 있도록\n조심스럽게 함께하는 공간이에요.',
     emailBtn: '이메일로 시작하기',
   },
 
@@ -184,7 +182,6 @@ const ko = {
     agreePrivacy: '[필수] 개인정보 처리방침 동의',
     agreeAge: '[필수] 만 14세 이상입니다',
     viewFull: '전문보기',
-    noCreditCard: '지금 바로 시작할 수 있어요',
     checkInbox: '메일함을 확인해주세요',
     brandedEmailNote: 'Still After에서 보낸 [Still After] 제목의 메일을 확인해주세요.',
     otpLabel: '인증 코드 (6자리)',

@@ -41,14 +41,14 @@ async function main() {
       fail('온보딩 랜딩', 'CTA 텍스트 없음')
     }
 
-    // CTA 클릭 → Login
+    // CTA 클릭 → EmailAuth
     const startBtn = page.getByText(/천천히 시작|Start slowly|무료로 시작|Start for free/i).first()
     if (await startBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await startBtn.click()
       await page.waitForTimeout(1500)
       pass('온보딩 → 로그인 이동')
     } else {
-      await page.goto(`${BASE}/Login`, { waitUntil: 'networkidle' })
+      await page.goto(`${BASE}/EmailAuth`, { waitUntil: 'networkidle' })
       pass('로그인 페이지 직접 진입')
     }
 

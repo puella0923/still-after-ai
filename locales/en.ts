@@ -155,8 +155,6 @@ const en: Translations = {
   // ── Login ──
   login: {
     brand: 'Still by your side',
-    noCreditCard: '💳 No credit card required to start',
-    freeTrial: 'Free to use',
     disclaimer: "Still After doesn't restore real people. It's a careful space for your emotions to naturally find their place.",
     emailBtn: 'Continue with Email',
   },
@@ -186,7 +184,6 @@ const en: Translations = {
     agreePrivacy: '[Required] Agree to Privacy Policy',
     agreeAge: '[Required] I am 14 years of age or older',
     viewFull: 'View Full',
-    noCreditCard: 'Start right away, no sign-up fees.',
     checkInbox: 'Check your inbox',
     brandedEmailNote: 'Look for an email from Still After with the subject [Still After].',
     otpLabel: 'Verification code (6 digits)',

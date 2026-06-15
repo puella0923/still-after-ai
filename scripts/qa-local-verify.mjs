@@ -32,20 +32,20 @@ async function main() {
   const browser = await chromium.launch({ headless: true })
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } })
 
-  // 1. Login — Email만 표시, Google/Kakao 없음
-  await page.goto(`${BASE}/Login`, { waitUntil: 'networkidle', timeout: 30000 })
+  // 1. EmailAuth — 로그인 폼 직접 진입, Google/Kakao 없음
+  await page.goto(`${BASE}/EmailAuth`, { waitUntil: 'networkidle', timeout: 30000 })
   const googleBtn = page.getByText(/Google|구글/i).first()
-  const emailBtn = page.getByText(/이메일|Email/i).first()
+  const loginTab = page.getByText(/^로그인$|^Log in$|^Login$/i).first()
   const kakaoBtn = page.getByText(/카카오로 시작|Continue with Kakao/i).first()
   if (await googleBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-    fail('Login Google 버튼 없음', '구글 버튼이仍 표시됨')
+    fail('EmailAuth Google 버튼 없음', '구글 버튼이仍 표시됨')
   } else {
-    pass('Login Google 버튼 없음')
+    pass('EmailAuth Google 버튼 없음')
   }
-  if (await emailBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-    pass('Login Email 버튼')
+  if (await loginTab.isVisible({ timeout: 3000 }).catch(() => false)) {
+    pass('EmailAuth 로그인 탭')
   } else {
-    fail('Login Email 버튼', '미표시')
+    fail('EmailAuth 로그인 탭', '미표시')
   }
   if (await kakaoBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
     fail('Login Kakao 버튼 없음', '카카오 버튼이仍 표시됨')

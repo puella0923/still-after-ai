@@ -431,7 +431,7 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
     if (isLoginExpiry) {
       showToast(t.chat.loginExpiredError)
       setTimeout(() => {
-        navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
+        navigation.reset({ index: 0, routes: [{ name: 'EmailAuth' }] })
       }, 1500)
       return
     }

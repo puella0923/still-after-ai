@@ -175,7 +175,7 @@ async function testKakaoUploadE2E() {
   const browser = await chromium.launch({ headless: true })
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } })
 
-  await page.goto(`${BASE}/Login`, { waitUntil: 'networkidle' })
+  await page.goto(`${BASE}/EmailAuth`, { waitUntil: 'networkidle' })
   await page.getByText(/이메일|Email/i).first().click()
   await page.waitForTimeout(400)
   await page.getByText(/^로그인$|^Log in$|^Login$/i).first().click().catch(() => {})

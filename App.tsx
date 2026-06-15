@@ -93,10 +93,9 @@ const linking: LinkingOptions<RootStackParamList> = {
   config: {
     screens: {
       Onboarding:      '',
-      Login:           'Login',
       EmailAuth:       {
         path: 'EmailAuth',
-        alias: ['auth/callback', 'auth/reset-password'],
+        alias: ['Login', 'auth/callback', 'auth/reset-password'],
       },
       Main:            {
         path: 'Main',
@@ -193,21 +192,22 @@ function AppContent() {
     config: {
       screens: {
         Onboarding: '',
-        Login: 'Login',
         EmailAuth: {
           path: 'EmailAuth',
-          alias: ['auth/callback', 'auth/reset-password'],
+          alias: ['Login', 'auth/callback', 'auth/reset-password'],
         },
       },
     },
-    // /Login 직접 접근 시 navigation 스택에 Onboarding을 앞에 삽입
-    // → 브라우저/하드웨어 뒤로가기 시 Onboarding으로 이동 (탭/앱 종료 방지)
+    // /Login·/EmailAuth 직접 접근 시 Onboarding을 스택에 포함 → 브라우저 뒤로가기 지원
     getStateFromPath: (path: string, options: any) => {
       const clean = stripLangPrefix(path)
       const state = defaultGetStateFromPath(clean, options)
-      if (clean === '/Login' || clean === 'Login') {
+      if (
+        clean === '/Login' || clean === 'Login' ||
+        clean === '/EmailAuth' || clean === 'EmailAuth'
+      ) {
         return {
-          routes: [{ name: 'Onboarding' }, { name: 'Login' }],
+          routes: [{ name: 'Onboarding' }, { name: 'EmailAuth' }],
           index: 1,
         }
       }

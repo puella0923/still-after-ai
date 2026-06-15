@@ -384,7 +384,7 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
   const handleCreate = async () => {
     if (!user) {
       Alert.alert(t.personaCreate.alertLoginTitle, t.personaCreate.alertLoginMsg, [
-        { text: t.common.confirm, onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Login' }] }) },
+        { text: t.common.confirm, onPress: () => navigation.reset({ index: 0, routes: [{ name: 'EmailAuth' }] }) },
       ])
       return
     }

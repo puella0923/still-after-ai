@@ -617,17 +617,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
                   </TouchableOpacity>
                 )}
 
-                {/* Info box */}
-                <View style={styles.infoBox}>
-                  <Text style={styles.infoText}>
-                    {t.auth.noCreditCard}
-                  </Text>
-                </View>
-
-                {/* Back */}
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                  <Text style={styles.backBtnText}>{t.common.back}</Text>
-                </TouchableOpacity>
+                <Text style={styles.aiNotice}>{t.login.disclaimer}</Text>
                 </>
                 )}
               </LinearGradient>
@@ -778,16 +768,12 @@ const styles = StyleSheet.create({
   forgotBtn: { alignItems: 'center', marginTop: 14 },
   forgotText: { fontSize: 13, color: 'rgba(167, 139, 250, 0.7)' },
 
-  // Info
-  infoBox: {
-    backgroundColor: 'rgba(88, 28, 135, 0.3)', borderRadius: RADIUS.MD,
-    padding: 16, marginTop: 20, borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.2)',
-    ...(({ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }) as any),
-  },
-  infoText: {
-    fontSize: 12, color: 'rgba(196, 181, 253, 0.7)',
-    textAlign: 'center', lineHeight: 20,
+  aiNotice: {
+    fontSize: 11,
+    color: C.TEXT_MUTED,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginTop: 16,
   },
 
   // Back

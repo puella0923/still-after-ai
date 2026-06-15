@@ -68,7 +68,7 @@ async function main() {
 
   // ── 1. 프로덕션 페이지 로드 ──
   await checkUrl('/', 'Still After')
-  await checkUrl('/Login', 'Still After')
+  await checkUrl('/EmailAuth', 'Still After')
   await checkUrl('/EmailAuth', 'Still After')
 
   if (!SUPABASE_URL || !ANON_KEY) {

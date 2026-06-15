@@ -122,7 +122,7 @@ export default function OnboardingScreen({ navigation }: Props) {
 
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={() => { analytics.serviceStart(); navigation.replace('Login') }}
+            onPress={() => { analytics.serviceStart(); navigation.replace('EmailAuth') }}
             activeOpacity={0.85}
           >
             <LinearGradient
@@ -441,7 +441,7 @@ export default function OnboardingScreen({ navigation }: Props) {
 
             <TouchableOpacity
               style={styles.ctaButton}
-              onPress={() => { analytics.serviceStart(); navigation.replace('Login') }}
+              onPress={() => { analytics.serviceStart(); navigation.replace('EmailAuth') }}
               activeOpacity={0.85}
             >
               <LinearGradient
@@ -496,7 +496,7 @@ export default function OnboardingScreen({ navigation }: Props) {
         pointerEvents={showStickyCta ? 'auto' : 'none'}
       >
         <TouchableOpacity
-          onPress={() => { analytics.serviceStart(); navigation.replace('Login') }}
+          onPress={() => { analytics.serviceStart(); navigation.replace('EmailAuth') }}
           activeOpacity={0.85}
           style={styles.stickyBtn}
         >

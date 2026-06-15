@@ -56,10 +56,7 @@ async function main() {
   else pass('테스트 계정 생성')
 
   // 로그인 플로우
-  await page.goto(`${BASE}/Login`, { waitUntil: 'networkidle' })
-  const emailLogin = page.getByText(/이메일|Email/i).first()
-  await emailLogin.click()
-  await page.waitForTimeout(800)
+  await page.goto(`${BASE}/EmailAuth`, { waitUntil: 'networkidle' })
   const loginTab = page.getByText(/^로그인$|^Log in$|^Login$/i).first()
   if (await loginTab.isVisible({ timeout: 3000 }).catch(() => false)) await loginTab.click()
   const inputs = page.locator('input')
