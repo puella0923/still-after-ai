@@ -350,6 +350,8 @@ export default function EmailAuthScreen({ navigation }: Props) {
                   <Text style={styles.title}>Still After</Text>
                 </View>
 
+                <Text style={styles.aiNotice}>{t.login.disclaimer}</Text>
+
                 {recoveryMode ? (
                   <>
                     <Text style={styles.resetTitle}>{t.auth.resetPasswordTitle}</Text>
@@ -616,8 +618,6 @@ export default function EmailAuthScreen({ navigation }: Props) {
                     <Text style={styles.forgotText}>{t.auth.forgotPassword}</Text>
                   </TouchableOpacity>
                 )}
-
-                <Text style={styles.aiNotice}>{t.login.disclaimer}</Text>
                 </>
                 )}
               </LinearGradient>
@@ -665,7 +665,7 @@ const styles = StyleSheet.create({
   // Header
   resetTitle: { fontSize: 20, fontWeight: '700', color: '#F3E8FF', textAlign: 'center', marginBottom: 8 },
   resetDesc: { fontSize: 14, color: 'rgba(196, 181, 253, 0.8)', textAlign: 'center', marginBottom: 20 },
-  header: { alignItems: 'center', marginBottom: 28 },
+  header: { alignItems: 'center', marginBottom: 12 },
   iconWrap: { marginBottom: 20 },
   iconGradient: {
     width: 56, height: 56, borderRadius: 28,
@@ -773,7 +773,7 @@ const styles = StyleSheet.create({
     color: C.TEXT_MUTED,
     textAlign: 'center',
     lineHeight: 18,
-    marginTop: 16,
+    marginBottom: 24,
   },
 
   // Back
