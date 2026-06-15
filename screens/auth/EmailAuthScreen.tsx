@@ -78,12 +78,130 @@ function AuthNoticeModal({ modal, onClose }: {
   )
 }
 
+// ── 비밀번호 찾기 전용 모달 ───────────────────────────────────────
+function ForgotPasswordModal({
+  visible,
+  onClose,
+  language,
+  t,
+}: {
+  visible: boolean
+  onClose: () => void
+  language: string
+  t: ReturnType<typeof useLanguage>['t']
+}) {
+  const [fpEmail, setFpEmail] = useState('')
+  const [fpError, setFpError] = useState('')
+  const [fpLoading, setFpLoading] = useState(false)
+  const [fpSent, setFpSent] = useState(false)
+
+  const handleClose = () => {
+    setFpEmail('')
+    setFpError('')
+    setFpSent(false)
+    onClose()
+  }
+
+  const handleSend = async () => {
+    if (!fpEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fpEmail)) {
+      setFpError(t.auth.errorPasswordResetEmailRequired)
+      return
+    }
+    setFpLoading(true)
+    setFpError('')
+    try {
+      const result = await sendPasswordReset(fpEmail.trim(), language)
+      if (result.success) {
+        setFpSent(true)
+      } else {
+        setFpError(result.error ?? t.auth.alertResendFailMsg)
+      }
+    } finally {
+      setFpLoading(false)
+    }
+  }
+
+  if (!visible) return null
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
+      <TouchableOpacity style={styles.noticeBackdrop} activeOpacity={1} onPress={handleClose}>
+        <TouchableOpacity style={styles.noticeBox} activeOpacity={1} onPress={() => {}}>
+          {fpSent ? (
+            <>
+              <Text style={styles.noticeTitle}>✉️ {t.auth.alertResetTitle}</Text>
+              <Text style={styles.noticeMessage}>
+                {t.auth.alertResetMsg(fpEmail.trim())}
+              </Text>
+              <TouchableOpacity onPress={handleClose} activeOpacity={0.85}>
+                <LinearGradient
+                  colors={['#7C3AED', '#3B82F6']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={styles.noticePrimaryBtn}
+                >
+                  <Text style={styles.noticePrimaryText}>{t.common.confirm}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.noticeTitle}>{t.auth.forgotPassword}</Text>
+              <Text style={[styles.noticeMessage, { marginBottom: 16 }]}>
+                {t.auth.forgotPasswordDesc}
+              </Text>
+
+              <View style={[styles.inputWrap, fpError ? styles.inputError : null, { marginBottom: 4 }]}>
+                <Text style={styles.inputIcon}>✉️</Text>
+                <TextInput
+                  style={styles.inputField}
+                  value={fpEmail}
+                  onChangeText={(v) => { setFpEmail(v); setFpError('') }}
+                  placeholder={t.auth.placeholderEmail}
+                  placeholderTextColor="rgba(167, 139, 250, 0.5)"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoFocus
+                />
+              </View>
+              {fpError ? <Text style={[styles.fieldError, { marginBottom: 16 }]}>{fpError}</Text> : <View style={{ height: 20 }} />}
+
+              <TouchableOpacity
+                onPress={handleSend}
+                disabled={fpLoading}
+                activeOpacity={0.85}
+              >
+                <LinearGradient
+                  colors={fpLoading
+                    ? ['rgba(124,58,237,0.5)', 'rgba(59,130,246,0.5)']
+                    : ['#7C3AED', '#3B82F6']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={styles.noticePrimaryBtn}
+                >
+                  {fpLoading
+                    ? <ActivityIndicator color="#fff" />
+                    : <Text style={styles.noticePrimaryText}>{t.auth.sendResetEmailBtn}</Text>
+                  }
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={handleClose} style={[styles.backBtn, { marginTop: 12 }]}>
+                <Text style={styles.backBtnText}>{t.common.cancel}</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  )
+}
+
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 const isValidNickname = (v: string) => /^[가-힣a-zA-Z0-9]{2,10}$/.test(v)
 const isValidPassword = (v: string) => /^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(v)
 
 export default function EmailAuthScreen({ navigation }: Props) {
-  const { session, pendingPasswordRecovery, clearPendingPasswordRecovery } = useAuth()
+  const { session, pendingPasswordRecovery, clearPendingPasswordRecovery, signOut } = useAuth()
   const { t, language } = useLanguage()
 
   const [recoveryMode, setRecoveryMode] = useState(() => {
@@ -135,6 +253,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
   const [successMsg, setSuccessMsg] = useState('')
   const [showResendBtn, setShowResendBtn] = useState(false)
   const [noticeModal, setNoticeModal] = useState<NoticeModalState>(NOTICE_HIDDEN)
+  const [showForgotModal, setShowForgotModal] = useState(false)
 
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(30)).current
@@ -249,12 +368,11 @@ export default function EmailAuthScreen({ navigation }: Props) {
     try {
       const result = await updatePassword(newPassword, language)
       if (result.success) {
-        setRecoveryMode(false)
         clearPendingPasswordRecovery()
         setNewPassword('')
         setNewPasswordConfirm('')
         if (Platform.OS === 'web' && typeof window !== 'undefined') {
-          window.history.replaceState(null, '', '/Main')
+          window.history.replaceState(null, '', window.location.pathname.replace(/#.*$/, ''))
         }
         setNoticeModal({
           visible: true,
@@ -263,7 +381,12 @@ export default function EmailAuthScreen({ navigation }: Props) {
           primaryLabel: t.common.confirm,
           onPrimary: () => {
             setNoticeModal(NOTICE_HIDDEN)
-            navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
+            void signOut().then(() => {
+              setRecoveryMode(false)
+              setTab('login')
+              setEmail('')
+              setPassword('')
+            })
           },
         })
       } else {
@@ -272,37 +395,9 @@ export default function EmailAuthScreen({ navigation }: Props) {
     } finally {
       setLoading(false)
     }
-  }, [newPassword, newPasswordConfirm, language, navigation, t, clearPendingPasswordRecovery])
+  }, [newPassword, newPasswordConfirm, language, t, clearPendingPasswordRecovery, signOut])
 
-  const handleForgotPassword = async () => {
-    if (!email.trim() || !isValidEmail(email)) {
-      setErrors({ email: t.auth.errorPasswordResetEmailRequired })
-      return
-    }
-    setLoading(true)
-    try {
-      const result = await sendPasswordReset(email.trim(), language)
-      if (result.success) {
-        setNoticeModal({
-          visible: true,
-          title: t.auth.alertResetTitle,
-          message: t.auth.alertResetMsg(email.trim()),
-          primaryLabel: t.common.confirm,
-          onPrimary: () => setNoticeModal(NOTICE_HIDDEN),
-        })
-      } else {
-        setNoticeModal({
-          visible: true,
-          title: t.auth.alertResendFailTitle,
-          message: result.error ?? t.auth.alertResendFailMsg,
-          primaryLabel: t.common.confirm,
-          onPrimary: () => setNoticeModal(NOTICE_HIDDEN),
-        })
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
+  const handleForgotPassword = () => setShowForgotModal(true)
 
   const allAgreed = agreeTerms && agreePrivacy && agreeAge
   const toggleAllAgree = () => {
@@ -412,13 +507,6 @@ export default function EmailAuthScreen({ navigation }: Props) {
                           : <Text style={styles.submitBtnText}>{t.auth.resetPasswordBtn}</Text>
                         }
                       </LinearGradient>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      onPress={() => { setRecoveryMode(false); navigation.goBack() }}
-                      style={styles.backBtn}
-                    >
-                      <Text style={styles.backBtnText}>{t.common.back}</Text>
                     </TouchableOpacity>
                   </>
                 ) : (
@@ -582,7 +670,7 @@ export default function EmailAuthScreen({ navigation }: Props) {
                               <Text style={styles.agreeText}>{label}</Text>
                             </TouchableOpacity>
                             {screen && (
-                              <TouchableOpacity onPress={() => navigation.navigate(screen)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                              <TouchableOpacity onPress={() => navigation.push(screen)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                                 <Text style={styles.viewFullText}>{t.auth.viewFull}</Text>
                               </TouchableOpacity>
                             )}
@@ -626,6 +714,12 @@ export default function EmailAuthScreen({ navigation }: Props) {
         </KeyboardAvoidingView>
       </SafeAreaView>
       <AuthNoticeModal modal={noticeModal} onClose={() => setNoticeModal(NOTICE_HIDDEN)} />
+      <ForgotPasswordModal
+        visible={showForgotModal}
+        onClose={() => setShowForgotModal(false)}
+        language={language}
+        t={t}
+      />
     </View>
   )
 }

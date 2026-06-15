@@ -32,6 +32,8 @@ export default function TopStickyControls({
 }: Props) {
   const hasStep = typeof stepCurrent === 'number' && typeof stepTotal === 'number'
 
+  const rightContent = rightSlot ?? (showLanguageToggle ? <LanguageToggle style={style} /> : null)
+
   return (
     <View style={[
       styles.stickyHeader,
@@ -39,19 +41,19 @@ export default function TopStickyControls({
       containerStyle,
     ]}>
       <View style={styles.headerRow}>
-        <View style={styles.sideSlot}>
-          <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
-            <Text style={styles.backText}>{backLabel}</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.centerSlot}>
-          {title ? (
+        <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
+          <Text style={styles.backText}>{backLabel}</Text>
+        </TouchableOpacity>
+        {title ? (
+          <View style={styles.titleOverlay} pointerEvents="none">
             <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
-          ) : null}
-        </View>
-        <View style={[styles.sideSlot, styles.sideSlotRight]}>
-          {rightSlot ?? (showLanguageToggle ? <LanguageToggle style={style} /> : null)}
-        </View>
+          </View>
+        ) : null}
+        {rightContent ? (
+          <View style={styles.rightSlot}>{rightContent}</View>
+        ) : (
+          <View style={styles.rightSpacer} />
+        )}
       </View>
       {hasStep && (
         <StepIndicator current={stepCurrent} total={stepTotal} />
@@ -82,11 +84,24 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     paddingBottom: 8,
   },
-  headerRow: { flexDirection: 'row', alignItems: 'center', width: '100%' },
-  sideSlot: { width: 140, justifyContent: 'center' },
-  sideSlotRight: { alignItems: 'flex-end' },
-  centerSlot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  backButton: { alignSelf: 'flex-start', justifyContent: 'center' },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    position: 'relative',
+    minHeight: 27,
+  },
+  backButton: { zIndex: 1, justifyContent: 'center' },
   backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
-  titleText: { fontSize: 17, fontWeight: '600', color: '#fff' },
+  titleOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 72,
+  },
+  titleText: { fontSize: 17, fontWeight: '600', color: '#fff', textAlign: 'center' },
+  rightSlot: { marginLeft: 'auto', zIndex: 1 },
+  rightSpacer: { width: 1 },
 })

@@ -174,6 +174,8 @@ const en: Translations = {
     labelPasswordConfirm: 'Confirm Password',
     placeholderPasswordConfirm: 'Re-enter password',
     forgotPassword: 'Forgot your password?',
+    forgotPasswordDesc: "Enter your email and we'll send you a reset link.",
+    sendResetEmailBtn: 'Send Reset Email',
     resetPasswordTitle: 'Set a new password',
     resetPasswordDesc: 'Enter your new password below.',
     resetPasswordBtn: 'Update password',
@@ -182,6 +184,8 @@ const en: Translations = {
     agreeAll: 'Agree to All',
     agreeTerms: '[Required] Agree to Terms of Service',
     agreePrivacy: '[Required] Agree to Privacy Policy',
+    termsDocTitle: 'Terms of Service',
+    privacyDocTitle: 'Privacy Policy',
     agreeAge: '[Required] I am 14 years of age or older',
     viewFull: 'View Full',
     checkInbox: 'Check your inbox',
@@ -217,7 +221,7 @@ const en: Translations = {
     errorEmailNotConfirmed: 'Please verify your email. Check your inbox.',
     errorEmailVerificationRequired: 'Email verification is required.',
     errorSignupFailed: 'Sign-up failed.',
-    errorPasswordResetEmailRequired: 'Please enter your email first to reset your password.',
+    errorPasswordResetEmailRequired: 'Please enter a valid email address.',
     alertResendTitle: 'Email Sent',
     alertResendMsg: 'Verification email resent. Please check your inbox.',
     alertResendFailTitle: 'Failed to Send',
@@ -277,11 +281,6 @@ const en: Translations = {
     namePlaceholderHuman: 'e.g. Mom, Alex',
     namePlaceholderPet: 'e.g. Buddy, Luna',
     nextBtn: 'Next',
-  },
-
-  // ── Relation Setup ──
-  relationSetup: {
-    selectedMsg: "We'll be with you.",
   },
 
   // ── Timing Check ──

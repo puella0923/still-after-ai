@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  ScrollView, KeyboardAvoidingView, Platform, Animated,
+  ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -10,6 +10,7 @@ import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useLanguage } from '../../context/LanguageContext'
 import CosmicBackground from '../../components/CosmicBackground'
 import TopStickyControls from '../../components/TopStickyControls'
+import { goBackWithFallback } from '../../utils/navigationBack'
 import { PERSON_RELATION_KEYS, PET_TYPE_KEYS, type PersonRelationKey, type PetTypeKey } from '../../constants/relations'
 
 type Props = {
@@ -29,18 +30,6 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
   const [selectedRelation, setSelectedRelation] = useState<PersonRelationKey | PetTypeKey | null>(null)
   const [customRelation, setCustomRelation] = useState('')
   const [name, setName] = useState('')
-  const empathyOpacity = useRef(new Animated.Value(0)).current
-
-  useEffect(() => {
-    if (selectedRelation) {
-      empathyOpacity.setValue(0)
-      Animated.timing(empathyOpacity, {
-        toValue: 1, duration: 400, useNativeDriver: Platform.OS !== 'web',
-      }).start()
-    } else {
-      empathyOpacity.setValue(0)
-    }
-  }, [selectedRelation, empathyOpacity])
 
   const relationLabels = isPerson ? t.relation.relations : t.relation.petTypes
   const showCustomInput = selectedRelation === 'other'
@@ -53,7 +42,7 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
 
   const handleNext = () => {
     if (!canProceed) return
-    navigation.navigate('TimingCheck', {
+    navigation.push('TimingCheck', {
       careType,
       relation: resolvedRelation,
       name: name.trim(),
@@ -68,7 +57,7 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
 
       <TopStickyControls
         backLabel={t.common.back}
-        onBackPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('CareSelect' as any)}
+        onBackPress={() => goBackWithFallback(navigation, { name: 'CareSelect' })}
         stepCurrent={2}
         stepTotal={4}
       />
@@ -107,12 +96,6 @@ export default function RelationSetupScreen({ navigation, route }: Props) {
               )
             })}
           </View>
-
-          {selectedRelation && (
-            <Animated.Text style={[styles.empathyMsg, { opacity: empathyOpacity }]}>
-              {t.relationSetup.selectedMsg}
-            </Animated.Text>
-          )}
 
           {/* 기타 선택 시 직접 입력 */}
           {showCustomInput && (
@@ -190,9 +173,6 @@ const styles = StyleSheet.create({
   },
   chipText: { fontSize: 15, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
   chipTextSelected: { fontSize: 15, color: '#fff', fontWeight: '500' },
-  empathyMsg: {
-    fontSize: 14, color: '#c4b5fd', textAlign: 'center', marginTop: 16,
-  },
   inputSection: { gap: 10 },
   inputLabel: { fontSize: 15, color: '#fff', fontWeight: '500' },
   textInput: {

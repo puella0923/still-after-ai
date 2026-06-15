@@ -8,6 +8,7 @@ import { LanguageProvider } from './context/LanguageContext'
 import RootNavigator, { RootStackParamList } from './navigation/RootNavigator'
 import VercelAnalytics from './components/VercelAnalytics'
 import { C } from './screens/theme'
+import { withParentStack } from './utils/linkingStack'
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -159,7 +160,7 @@ function AppContent() {
       },
     },
     getStateFromPath: (path: string, options: any) =>
-      defaultGetStateFromPath(stripLangPrefix(path), options),
+      withParentStack(defaultGetStateFromPath(stripLangPrefix(path), options)),
   } : isAuthed ? {
     ...linking,
     config: {
@@ -186,7 +187,7 @@ function AppContent() {
       },
     },
     getStateFromPath: (path: string, options: any) =>
-      defaultGetStateFromPath(stripLangPrefix(path), options),
+      withParentStack(defaultGetStateFromPath(stripLangPrefix(path), options)),
   } : {
     ...linking,
     config: {
@@ -211,7 +212,7 @@ function AppContent() {
           index: 1,
         }
       }
-      return state
+      return withParentStack(state) ?? state
     },
   }
 

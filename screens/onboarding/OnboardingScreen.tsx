@@ -464,13 +464,13 @@ export default function OnboardingScreen({ navigation }: Props) {
           <View style={styles.footerDivider} />
           <Text style={styles.footerLogo}>Still After</Text>
           <View style={styles.footerLinks}>
-            <TouchableOpacity onPress={() => navigation.navigate('PrivacyPolicy')}>
+            <TouchableOpacity onPress={() => navigation.push('PrivacyPolicy')}>
               <Text style={styles.footerLink}>{o.footerPrivacy}</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('Terms')}>
+            <TouchableOpacity onPress={() => navigation.push('Terms')}>
               <Text style={styles.footerLink}>{o.footerTerms}</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('CustomerSupport')}>
+            <TouchableOpacity onPress={() => navigation.push('CustomerSupport')}>
               <Text style={styles.footerLink}>{o.footerSupport}</Text>
             </TouchableOpacity>
           </View>

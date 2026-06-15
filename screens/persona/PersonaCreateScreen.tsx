@@ -14,6 +14,7 @@ import { useLanguage } from '../../context/LanguageContext'
 import { C, RADIUS, Z } from '../theme'
 import CosmicBackground from '../../components/CosmicBackground'
 import TopStickyControls from '../../components/TopStickyControls'
+import { goBackWithFallback } from '../../utils/navigationBack'
 import { PERSON_RELATION_KEYS_FULL, PET_TYPE_KEYS } from '../../constants/relations'
 
 type Props = {
@@ -363,22 +364,14 @@ export default function PersonaCreateScreen({ navigation, route }: Props) {
   }
 
   const handleBack = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack()
-      return
-    }
-
-    // Direct entry or stack reset case: only navigate to TimingCheck when required params exist.
     if (routeRelation && routeName) {
-      navigation.navigate('TimingCheck', {
-        careType,
-        relation: routeRelation,
-        name: routeName,
+      goBackWithFallback(navigation, {
+        name: 'TimingCheck',
+        params: { careType, relation: routeRelation, name: routeName },
       })
       return
     }
-
-    navigation.navigate('CareSelect')
+    goBackWithFallback(navigation, { name: 'CareSelect' })
   }
 
   const handleCreate = async () => {

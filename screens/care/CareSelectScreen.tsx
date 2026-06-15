@@ -8,6 +8,7 @@ import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useLanguage } from '../../context/LanguageContext'
 import CosmicBackground from '../../components/CosmicBackground'
 import TopStickyControls from '../../components/TopStickyControls'
+import { goBackWithFallback } from '../../utils/navigationBack'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'CareSelect'>
@@ -21,7 +22,7 @@ const CARE_SCREEN_ORBS = [
 export default function CareSelectScreen({ navigation }: Props) {
   const { t } = useLanguage()
   const handleSelect = (careType: 'human' | 'pet') => {
-    navigation.navigate('RelationSetup', { careType })
+    navigation.push('RelationSetup', { careType })
   }
 
   return (
@@ -30,10 +31,7 @@ export default function CareSelectScreen({ navigation }: Props) {
 
       <TopStickyControls
         backLabel={t.common.back}
-        onBackPress={() => {
-          if (navigation.canGoBack()) navigation.goBack()
-          else navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
-        }}
+        onBackPress={() => goBackWithFallback(navigation, { name: 'Main' })}
         stepCurrent={1}
         stepTotal={4}
       />

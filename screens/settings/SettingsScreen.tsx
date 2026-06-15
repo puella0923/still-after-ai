@@ -274,9 +274,9 @@ export default function SettingsScreen({ navigation }: Props) {
         {/* Info Section */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>{t.settings.infoTitle}</Text>
-          <SettingRow label={t.settings.privacyPolicy} isFirst onPress={() => navigation.navigate('PrivacyPolicy')} />
-          <SettingRow label={t.settings.terms} onPress={() => navigation.navigate('Terms')} />
-          <SettingRow label={t.settings.support} onPress={() => navigation.navigate('CustomerSupport')} />
+          <SettingRow label={t.settings.privacyPolicy} isFirst onPress={() => navigation.push('PrivacyPolicy')} />
+          <SettingRow label={t.settings.terms} onPress={() => navigation.push('Terms')} />
+          <SettingRow label={t.settings.support} onPress={() => navigation.push('CustomerSupport')} />
           <SettingRow label={t.settings.appVersion} value={APP_VERSION} />
         </View>
 

@@ -7,6 +7,7 @@ import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useLanguage } from '../../context/LanguageContext'
 import CosmicBackground from '../../components/CosmicBackground'
 import TopStickyControls from '../../components/TopStickyControls'
+import { goBackWithFallback } from '../../utils/navigationBack'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Terms'>
@@ -60,11 +61,8 @@ export default function TermsScreen({ navigation }: Props) {
 
       <TopStickyControls
         backLabel={t.common.back}
-        onBackPress={() => {
-          if (navigation.canGoBack()) navigation.goBack()
-          else navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] })
-        }}
-        title={t.settings.terms}
+        onBackPress={() => goBackWithFallback(navigation, { name: 'Main' })}
+        title={t.auth.termsDocTitle}
         showLanguageToggle={false}
       />
 

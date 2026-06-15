@@ -7,6 +7,7 @@ import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useLanguage } from '../../context/LanguageContext'
 import CosmicBackground from '../../components/CosmicBackground'
 import TopStickyControls from '../../components/TopStickyControls'
+import { goBackWithFallback } from '../../utils/navigationBack'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'TimingCheck'>
@@ -29,7 +30,7 @@ export default function TimingCheckScreen({ navigation, route }: Props) {
 
   const handleNext = () => {
     if (!canProceed) return
-    navigation.navigate('PersonaCreate', { careType, relation, name, timing: selected })
+    navigation.push('PersonaCreate', { careType, relation, name, timing: selected })
   }
 
   return (
@@ -38,10 +39,10 @@ export default function TimingCheckScreen({ navigation, route }: Props) {
 
       <TopStickyControls
         backLabel={t.common.back}
-        onBackPress={() => {
-          if (navigation.canGoBack()) navigation.goBack()
-          else navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
-        }}
+        onBackPress={() => goBackWithFallback(navigation, {
+          name: 'RelationSetup',
+          params: { careType },
+        })}
         stepCurrent={3}
         stepTotal={4}
       />

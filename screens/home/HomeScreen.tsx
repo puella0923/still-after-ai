@@ -256,7 +256,7 @@ export default function HomeScreen() {
           </View>
           <TouchableOpacity
             style={styles.createBtn}
-            onPress={() => navigation.navigate('CareSelect')}
+            onPress={() => navigation.push('CareSelect')}
             activeOpacity={0.85}
           >
             <LinearGradient
@@ -331,7 +331,7 @@ export default function HomeScreen() {
               <Text style={styles.emptyTitle}>{t.home.emptyTitle}</Text>
               <Text style={styles.emptyDesc}>{t.home.emptyDesc}</Text>
               <TouchableOpacity
-                onPress={() => navigation.navigate('CareSelect')}
+                onPress={() => navigation.push('CareSelect')}
                 activeOpacity={0.85}
               >
                 <LinearGradient

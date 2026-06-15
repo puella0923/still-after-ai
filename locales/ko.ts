@@ -172,6 +172,8 @@ const ko = {
     labelPasswordConfirm: '비밀번호 확인',
     placeholderPasswordConfirm: '비밀번호 재입력',
     forgotPassword: '비밀번호를 잊으셨나요?',
+    forgotPasswordDesc: '가입한 이메일을 입력하면 재설정 링크를 보내드려요.',
+    sendResetEmailBtn: '재설정 메일 보내기',
     resetPasswordTitle: '새 비밀번호 설정',
     resetPasswordDesc: '새 비밀번호를 입력해주세요.',
     resetPasswordBtn: '비밀번호 변경하기',
@@ -180,6 +182,8 @@ const ko = {
     agreeAll: '전체 동의',
     agreeTerms: '[필수] 서비스 이용약관 동의',
     agreePrivacy: '[필수] 개인정보 처리방침 동의',
+    termsDocTitle: '서비스 이용약관 동의',
+    privacyDocTitle: '개인정보 처리방침 동의',
     agreeAge: '[필수] 만 14세 이상입니다',
     viewFull: '전문보기',
     checkInbox: '메일함을 확인해주세요',
@@ -215,7 +219,7 @@ const ko = {
     errorEmailNotConfirmed: '이메일 인증이 필요합니다. 메일함을 확인해주세요.',
     errorEmailVerificationRequired: '이메일 인증이 필요합니다.',
     errorSignupFailed: '회원가입에 실패했습니다.',
-    errorPasswordResetEmailRequired: '비밀번호 재설정을 위해 이메일을 먼저 입력해주세요.',
+    errorPasswordResetEmailRequired: '올바른 이메일을 입력해주세요.',
     alertResendTitle: '발송 완료',
     alertResendMsg: '인증 메일을 재발송했습니다. 메일함을 확인해주세요.',
     alertResendFailTitle: '발송 실패',
@@ -275,11 +279,6 @@ const ko = {
     namePlaceholderHuman: '예) 엄마, 김민준',
     namePlaceholderPet: '예) 초코, 뭉치',
     nextBtn: '다음',
-  },
-
-  // ── Relation Setup ──
-  relationSetup: {
-    selectedMsg: '함께하겠습니다.',
   },
 
   // ── Timing Check ──
