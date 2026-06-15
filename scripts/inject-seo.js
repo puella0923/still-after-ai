@@ -30,8 +30,8 @@ const seoTags = `
     <meta property="og:image" content="https://stillafter.com/og-image-v2.jpg" />
     <meta property="og:image:secure_url" content="https://stillafter.com/og-image-v2.jpg" />
     <meta property="og:image:type" content="image/jpeg" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    <meta property="og:image:width" content="1024" />
+    <meta property="og:image:height" content="537" />
     <meta property="og:image:alt" content="Still After — 아직 전하지 못한 말이 있다면" />
     <meta property="og:url" content="https://stillafter.com" />
     <meta property="og:type" content="website" />
