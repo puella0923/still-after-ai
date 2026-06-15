@@ -13,7 +13,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
 import { C, RADIUS, Z } from '../theme'
 import CosmicBackground from '../../components/CosmicBackground'
-import TopStickyControls from '../../components/TopStickyControls'
+import TopStickyControls, { TOP_STICKY_WITH_STEP_HEIGHT } from '../../components/TopStickyControls'
 import { goBackWithFallback } from '../../utils/navigationBack'
 import { PERSON_RELATION_KEYS_FULL, PET_TYPE_KEYS } from '../../constants/relations'
 
@@ -906,7 +906,7 @@ const styles = StyleSheet.create({
   snackbarText: { color: '#fff', fontSize: 14, fontWeight: '500', textAlign: 'center' },
   safeArea: { flex: 1 },
   container: { flex: 1 },
-  scrollContent: { paddingTop: 51, paddingBottom: 40 },
+  scrollContent: { paddingTop: TOP_STICKY_WITH_STEP_HEIGHT + 14, paddingBottom: 40 },
   // ─── 사진 ───
   photoSection: { alignItems: 'center', paddingVertical: 20, gap: 8 },
   photoCircle: {

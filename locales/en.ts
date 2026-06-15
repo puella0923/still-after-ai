@@ -803,35 +803,6 @@ const en: Translations = {
     deleteErrorTitle: 'Deletion Failed',
     deleteErrorMsg: 'An error occurred while deleting your account. Please try again later.',
   },
-
-  // ── Paywall ──
-  paywall: {
-    subtitle: "It's okay to keep going. We'll be here, slowly, when you're ready.",
-    freeRemaining: (n: number) => `You can still chat ${n} more time${n !== 1 ? 's' : ''} for free`,
-    continueBtn: 'Continue chatting',
-    continueBtnSub: (n: number) => `${n} more conversation${n !== 1 ? 's' : ''} available`,
-    exhaustedMsg: "📬 You've used all 10 free conversations",
-    orDivider: 'or',
-    premiumBtn: 'Unlock unlimited conversations',
-    premiumBtnSub: (price: number) => `$${(price / 1300).toFixed(2)}/month · One-time payment`,
-    benefitUnlimited: '✓ Unlimited chats',
-    benefitOneTime: '✓ One-time payment',
-    benefitRefund: '✓ Refund guarantee',
-    backBtn: 'Go back',
-    notice: "This service doesn't replace real people. It's a space for emotional healing.",
-    paymentWaiting: 'Proceed in the payment window',
-    paymentWaitingDesc: "Payment will continue automatically when complete. If you closed the window, press the button below.",
-    paymentCompleteBtn: 'Payment complete →',
-    verifying: 'Verifying...',
-    incompleteTitle: 'Payment incomplete',
-    incompleteMsg: 'Payment was not completed. Did you close the payment window?',
-    errorTitle: 'Error',
-    paymentErrorTitle: 'Payment error',
-    paymentErrorMsg: 'An error occurred while verifying the payment.',
-    requestFailTitle: 'Payment request failed',
-    loginRequiredTitle: 'Login required',
-    loginRequiredMsg: 'Please log in to continue.',
-  },
 };
 
 export default en;

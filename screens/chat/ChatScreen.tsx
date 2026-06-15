@@ -34,7 +34,6 @@ import {
   CLOSURE_MESSAGE_LIMIT,
   STABLE_TRANSITION_MIN,
   MAX_HISTORY_LENGTH,
-  FREE_MESSAGE_LIMIT,
 } from '../../constants/chat'
 import { analytics } from '../../utils/analytics'
 
@@ -450,11 +449,6 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
       if (detectDanger(trimmed)) { showDangerAlert(trimmed); setInputText(''); return }
 
       const newUserCount = userMessageCount + 1
-      if (newUserCount > FREE_MESSAGE_LIMIT) {
-        navigation.navigate('Paywall', { personaId: persona.id })
-        return
-      }
-
       const userMsg: Message = { id: makeId(), role: 'user', content: trimmed }
       setMessages(prev => [...prev, userMsg])
       setInputText('')

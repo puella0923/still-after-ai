@@ -800,35 +800,6 @@ const ko = {
     deleteErrorTitle: '탈퇴 실패',
     deleteErrorMsg: '계정 삭제 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.',
   },
-
-  // ── Paywall ──
-  paywall: {
-    subtitle: '이야기를 이어가는 것이 괜찮으시죠. 천천히, 준비될 때 함께할 것입니다.',
-    freeRemaining: (n: number) => `아직 무료로 ${n}번 더 대화할 수 있어요`,
-    continueBtn: '이어서 대화하기',
-    continueBtnSub: (n: number) => `${n}번 더 이야기할 수 있어요`,
-    exhaustedMsg: '📬 무료 10회 대화를 모두 사용하셨어요',
-    orDivider: '또는',
-    premiumBtn: '결제하고 무한 대화하기',
-    premiumBtnSub: (price: number) => `한 달에 ${price.toLocaleString()}원 (1회 결제) · 페이샵`,
-    benefitUnlimited: '✓ 무한 대화',
-    benefitOneTime: '✓ 1회 결제',
-    benefitRefund: '✓ 환불 보증',
-    backBtn: '돌아가기',
-    notice: '이 서비스는 실제 인물을 대체하지 않습니다. 감정 회복을 위한 공간입니다.',
-    paymentWaiting: '결제 창에서 진행해주세요',
-    paymentWaitingDesc: '결제를 완료하면 자동으로 이어져요. 창을 닫으셨다면 아래 버튼을 눌러주세요.',
-    paymentCompleteBtn: '결제 완료했어요 →',
-    verifying: '결제 중...',
-    incompleteTitle: '결제 미완료',
-    incompleteMsg: '결제가 완료되지 않았습니다. 결제 창을 닫으셨나요?',
-    errorTitle: '오류',
-    paymentErrorTitle: '결제 오류',
-    paymentErrorMsg: '결제 확인 중 문제가 발생했어요.',
-    requestFailTitle: '결제 요청 실패',
-    loginRequiredTitle: '로그인 필수',
-    loginRequiredMsg: '로그인 후 이용할 수 있어요.',
-  },
 };
 
 export default ko;

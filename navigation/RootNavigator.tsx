@@ -17,7 +17,6 @@ import ClosureCeremonyScreen from '../screens/closure/ClosureCeremonyScreen'
 import PersonaEditScreen from '../screens/persona/PersonaEditScreen'
 import TabNavigator from './TabNavigator'
 import ChatScreen from '../screens/chat/ChatScreen'
-import PaywallScreen from '../screens/paywall/PaywallScreen'
 
 export type RootStackParamList = {
   Onboarding: undefined
@@ -43,7 +42,6 @@ export type RootStackParamList = {
   ClosureCeremony: { personaId: string; personaName: string; aiFarewell: string; careType?: string }
   Main: undefined
   Chat: { personaId: string }
-  Paywall: { personaId: string }
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -75,7 +73,6 @@ export default function RootNavigator({ initialRouteName }: Props) {
       <Stack.Screen name="ClosureCeremony"  component={ClosureCeremonyScreen} />
       <Stack.Screen name="Main"             component={TabNavigator} />
       <Stack.Screen name="Chat"             component={ChatScreen} />
-      <Stack.Screen name="Paywall"          component={PaywallScreen} />
     </Stack.Navigator>
   )
 }
