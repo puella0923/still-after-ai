@@ -25,7 +25,7 @@ import {
 } from '../../services/authService'
 import { supabase } from '../../services/supabase'
 import { useAuth } from '../../context/AuthContext'
-import { C, RADIUS } from '../theme'
+import { C, RADIUS, Z } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
 import CosmicBackground from '../../components/CosmicBackground'
@@ -314,7 +314,6 @@ export default function EmailAuthScreen({ navigation }: Props) {
     <View style={styles.root}>
       <CosmicBackground starCount={35} />
 
-      <LanguageToggle style={{ position: 'absolute', top: 56, right: 20, zIndex: 100 }} />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView
@@ -334,6 +333,10 @@ export default function EmailAuthScreen({ navigation }: Props) {
                 end={{ x: 1, y: 1 }}
                 style={styles.cardGradient}
               >
+                <View style={styles.cardTopRow}>
+                  <LanguageToggle />
+                </View>
+
                 {/* Header */}
                 <View style={styles.header}>
                   <View style={styles.iconWrap}>
@@ -651,6 +654,8 @@ const styles = StyleSheet.create({
   // Card
   card: {
     width: '100%', maxWidth: 420, borderRadius: 24, overflow: 'hidden',
+    position: 'relative',
+    zIndex: Z.CARD,
     shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3, shadowRadius: 24, elevation: 10,
   },
@@ -658,6 +663,13 @@ const styles = StyleSheet.create({
     padding: 28, borderRadius: 24,
     borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.3)',
     ...(({ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }) as any),
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: -4,
+    marginRight: -4,
+    marginBottom: 4,
   },
 
   // Header

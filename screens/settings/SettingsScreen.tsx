@@ -128,7 +128,7 @@ function SettingRow({ label, value, onPress, danger = false, rightEl, isFirst = 
 // ─── Main ───────────────────────────────────────────────────────────────────
 export default function SettingsScreen({ navigation }: Props) {
   const { user, signOut } = useAuth()
-  const { t, language, toggleLanguage } = useLanguage()
+  const { t } = useLanguage()
   const [notifEnabled, setNotifEnabled] = useState(false)
   const [personaCount, setPersonaCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -267,17 +267,7 @@ export default function SettingsScreen({ navigation }: Props) {
           <SettingRow
             label={t.settings.languageLabel}
             isFirst
-            rightEl={
-              <TouchableOpacity onPress={toggleLanguage} activeOpacity={0.7}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 6,
-                  backgroundColor: 'rgba(168,85,247,0.15)', borderRadius: 20,
-                  paddingHorizontal: 12, paddingVertical: 5,
-                  borderWidth: 1, borderColor: 'rgba(168,85,247,0.35)' }}>
-                <Text style={{ fontSize: 13, color: language === 'ko' ? '#c084fc' : 'rgba(255,255,255,0.4)', fontWeight: language === 'ko' ? '600' : '400' }}>{t.common.langKo}</Text>
-                <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>|</Text>
-                <Text style={{ fontSize: 13, color: language === 'en' ? '#c084fc' : 'rgba(255,255,255,0.4)', fontWeight: language === 'en' ? '600' : '400' }}>{t.common.langEn}</Text>
-              </TouchableOpacity>
-            }
+            rightEl={<LanguageToggle />}
           />
         </View>
 

@@ -13,6 +13,7 @@ import { supabase } from '../../services/supabase'
 import { useLanguage } from '../../context/LanguageContext'
 import CosmicBackground from '../../components/CosmicBackground'
 import TopStickyControls from '../../components/TopStickyControls'
+import { analytics } from '../../utils/analytics'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'ClosureCeremony'>
@@ -53,10 +54,17 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
   const [farewellRevealed, setFarewellRevealed] = useState(false)
   const [draftLoaded, setDraftLoaded] = useState(false)
 
+  // letter_draft 이벤트 — 사용자가 직접 첫 글자를 입력할 때 1회 발화
+  const draftTrackedRef = useRef(false)
+
   // 화면 진입 시 임시 저장된 편지 복원
   useEffect(() => {
     AsyncStorage.getItem(draftKey).then(draft => {
-      if (draft) setLetter(draft)
+      if (draft) {
+        setLetter(draft)
+        // 이미 초안이 있으면 draft 이벤트는 이미 발화된 것으로 간주
+        draftTrackedRef.current = true
+      }
       setDraftLoaded(true)
     }).catch(() => setDraftLoaded(true))
   }, [draftKey])
@@ -75,6 +83,15 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
     }, 500)
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
   }, [letter, draftKey, draftLoaded])
+
+  // letter_draft — 사용자가 직접 입력한 첫 타이핑 시 발화
+  const handleLetterChange = useCallback((text: string) => {
+    setLetter(text)
+    if (!draftTrackedRef.current && text.trim().length > 0) {
+      draftTrackedRef.current = true
+      analytics.letterDraft()
+    }
+  }, [])
 
   const overlayOpacity = useRef(new Animated.Value(0)).current
   const letterOpacity = useRef(new Animated.Value(1)).current
@@ -169,6 +186,7 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
     }, 900)
 
     setTimeout(() => {
+      analytics.letterSend()
       setCompleted(true)
       setShowDoneModal(true)
       Animated.timing(completedOpacity, { toValue: 1, duration: 1100, useNativeDriver: Platform.OS !== 'web' }).start()
@@ -277,7 +295,7 @@ export default function ClosureCeremonyScreen({ navigation, route }: Props) {
             placeholder={isPet ? t.closure.petPlaceholder(personaName) : t.closure.placeholder(personaName)}
             placeholderTextColor="rgba(255,255,255,0.25)"
             value={letter}
-            onChangeText={setLetter}
+            onChangeText={handleLetterChange}
             textAlignVertical="top"
           />
           <Text style={styles.charCount}>{t.closure.charCount(letter.length)}</Text>

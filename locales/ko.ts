@@ -18,7 +18,7 @@ const ko = {
     no: '아니요',
     goBack: '← 돌아가기',
     stepIndicator: (current: number, total: number) => `기억 만들기 · ${current}/${total}`,
-    langKo: '한국어',
+    langKo: 'KO',
     langEn: 'EN',
   },
 
@@ -73,7 +73,6 @@ const ko = {
     phraseTagsLabel: '추출된 표현 예시',
     phraseTags: ['우리 꿀돼지~', '우리 딸', '밥은 먹었어?', '얼른 자~~~~', '뭐해ㅋ 자고 있어?', '그래도 잘 했어', '엄마가 다 알지~'],
     howDividerText: '두 방법 모두 대화 시작까지 5분이면 충분해요',
-    ctaDesc: '천천히 시작해도 괜찮아요.',
     stageReplayName: '재연',
     stageHealingName: '안정',
     stageClosureName: '이별',
@@ -145,7 +144,7 @@ const ko = {
     promiseDesc2: '감정의 끝을 함께 합니다.',
     ctaTitle: '아직 보내지 못해도,\n괜찮아요',
     ctaNote: '하지 못한 말부터, 천천히 시작해요',
-    ctaBtn: '하고 싶은 말, 조심스럽게 꺼내보기',
+    ctaBtn: '조심스럽게 꺼내보기',
     footerPrivacy: '개인정보처리방침',
     footerTerms: '이용약관',
     footerSupport: '고객지원',
@@ -160,6 +159,12 @@ const ko = {
     googleBtn: '구글로 시작하기',
     emailBtn: '이메일로 시작하기',
     googleError: '구글 로그인에 실패했습니다.',
+    inAppBrowserTitle: '외부 브라우저에서 열어주세요',
+    inAppBrowserDesc: 'Google 로그인은 이 앱 내 브라우저에서 지원되지 않습니다.\nSafari 또는 Chrome에서 열어주세요.',
+    inAppBrowserHint: '우측 상단 ··· 메뉴 → "브라우저에서 열기" 또는 "Safari에서 열기"',
+    inAppBrowserOpen: '링크 복사하기',
+    inAppBrowserCopied: '링크가 복사되었어요',
+    inAppBrowserDismiss: '이메일로 계속하기',
   },
 
   // ── Email Auth ──

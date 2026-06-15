@@ -1,24 +1,23 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Pressable,
   SafeAreaView,
   Animated,
   Alert,
-  Linking,
   Platform,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useAuth } from '../../context/AuthContext'
-import { C, RADIUS } from '../theme'
-import { signInWithGoogle } from '../../services/authService'
+import { C, RADIUS, Z } from '../theme'
+import { signInWithGoogle, isInAppBrowser } from '../../services/authService'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
+import InAppBrowserBanner from '../../components/InAppBrowserBanner'
 import CosmicBackground from '../../components/CosmicBackground'
 
 type Props = {
@@ -31,10 +30,26 @@ export default function LoginScreen({ navigation }: Props) {
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(30)).current
   const iconScale = useRef(new Animated.Value(0)).current
+  const [inAppBrowser, setInAppBrowser] = useState(false)
+  const [showInAppBanner, setShowInAppBanner] = useState(false)
+
+  useEffect(() => {
+    const detected = isInAppBrowser()
+    setInAppBrowser(detected)
+    if (detected) setShowInAppBanner(true)
+  }, [])
 
   const handleGoogleSignIn = async (): Promise<void> => {
+    if (inAppBrowser) {
+      setShowInAppBanner(true)
+      return
+    }
     const result = await signInWithGoogle(language)
     if (!result.success) {
+      if (result.code === 'in_app_browser' || result.isInAppBrowserError) {
+        setShowInAppBanner(true)
+        return
+      }
       Alert.alert(t.login.googleBtn, result.error ?? t.login.googleError)
     }
   }
@@ -74,9 +89,6 @@ export default function LoginScreen({ navigation }: Props) {
     <View style={styles.root}>
       <CosmicBackground starCount={40} />
 
-      {/* Language toggle — absolute top-right */}
-      <LanguageToggle style={{ position: 'absolute', top: 56, right: 20, zIndex: 100 }} />
-
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.centerWrap}>
           <Animated.View
@@ -88,13 +100,27 @@ export default function LoginScreen({ navigation }: Props) {
               },
             ]}
           >
-            {/* Glassmorphism card */}
             <LinearGradient
               colors={['rgba(88, 28, 135, 0.4)', 'rgba(30, 58, 138, 0.4)']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.cardGradient}
             >
+              <View style={styles.cardTopRow}>
+                <LanguageToggle />
+              </View>
+
+              {inAppBrowser && (
+                <TouchableOpacity
+                  style={styles.inAppWarning}
+                  onPress={() => setShowInAppBanner(true)}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.inAppWarningText}>{t.login.inAppBrowserDesc}</Text>
+                  <Text style={styles.inAppWarningLink}>{t.login.inAppBrowserOpen} →</Text>
+                </TouchableOpacity>
+              )}
+
               {/* Header */}
               <View style={styles.header}>
                 <Animated.View
@@ -115,7 +141,7 @@ export default function LoginScreen({ navigation }: Props) {
 
               {/* Google login button */}
               <TouchableOpacity
-                style={styles.googleButton}
+                style={[styles.googleButton, inAppBrowser && styles.googleButtonDisabled]}
                 onPress={handleGoogleSignIn}
                 activeOpacity={0.85}
               >
@@ -169,6 +195,11 @@ export default function LoginScreen({ navigation }: Props) {
           </Animated.View>
         </View>
       </SafeAreaView>
+
+      <InAppBrowserBanner
+        visible={showInAppBanner}
+        onClose={() => setShowInAppBanner(false)}
+      />
     </View>
   )
 }
@@ -181,6 +212,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
+    paddingVertical: 40,
   },
 
   // Card
@@ -189,6 +221,8 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     borderRadius: 24,
     overflow: 'hidden',
+    position: 'relative',
+    zIndex: Z.CARD,
     // Shadow
     shadowColor: '#7C3AED',
     shadowOffset: { width: 0, height: 8 },
@@ -201,8 +235,33 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     borderColor: 'rgba(167, 139, 250, 0.3)',
-    // CSS backdropFilter for web
     ...(({ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }) as any),
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: -8,
+    marginRight: -8,
+    marginBottom: 8,
+  },
+  inAppWarning: {
+    backgroundColor: 'rgba(251, 191, 36, 0.12)',
+    borderRadius: RADIUS.MD,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(251, 191, 36, 0.35)',
+  },
+  inAppWarningText: {
+    fontSize: 12,
+    color: 'rgba(253, 230, 138, 0.9)',
+    lineHeight: 18,
+    marginBottom: 4,
+  },
+  inAppWarningLink: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FDE68A',
   },
 
   // Header
@@ -244,6 +303,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(167, 139, 250, 0.4)',
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  googleButtonDisabled: {
+    opacity: 0.55,
   },
   googleButtonInner: {
     flexDirection: 'row',

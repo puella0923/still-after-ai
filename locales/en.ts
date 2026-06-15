@@ -20,7 +20,7 @@ const en: Translations = {
     no: 'No',
     goBack: '← Go Back',
     stepIndicator: (current: number, total: number) => `Create Memory · ${current}/${total}`,
-    langKo: '한국어',
+    langKo: 'KO',
     langEn: 'EN',
   },
 
@@ -75,7 +75,6 @@ const en: Translations = {
     phraseTagsLabel: 'Sample extracted phrases',
     phraseTags: ['my honey~', 'my dear', 'did you eat?', 'go to sleep~', 'what are you up to?', 'you did well', 'mom knows best~'],
     howDividerText: 'Either way, you can start talking in 5 minutes',
-    ctaDesc: 'It\'s okay to start slowly.',
     stageReplayName: 'Replay',
     stageHealingName: 'Stability',
     stageClosureName: 'Farewell',
@@ -147,7 +146,7 @@ const en: Translations = {
     promiseDesc2: 'we walk with you to the end.',
     ctaTitle: 'It\'s okay if you\nhaven\'t said goodbye yet',
     ctaNote: 'Start slowly, with what was left unsaid.',
-    ctaBtn: 'Gently share what you want to say',
+    ctaBtn: 'Share gently',
     footerPrivacy: 'Privacy Policy',
     footerTerms: 'Terms of Service',
     footerSupport: 'Support',
@@ -162,6 +161,12 @@ const en: Translations = {
     googleBtn: 'Continue with Google',
     emailBtn: 'Continue with Email',
     googleError: 'Google sign-in failed.',
+    inAppBrowserTitle: 'Open in your browser',
+    inAppBrowserDesc: 'Google sign-in is not supported in this in-app browser.\nPlease open in Safari or Chrome.',
+    inAppBrowserHint: 'Tap ··· → "Open in Browser" or "Open in Safari"',
+    inAppBrowserOpen: 'Copy link',
+    inAppBrowserCopied: 'Link copied',
+    inAppBrowserDismiss: 'Continue with email',
   },
 
   // ── Email Auth ──

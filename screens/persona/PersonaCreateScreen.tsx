@@ -11,7 +11,7 @@ import { parseKakaoChat, generateSystemPrompt, generatePetSystemPrompt, ParsedKa
 import { createPersona, uploadPersonaPhoto } from '../../services/personaService'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
-import { C, RADIUS } from '../theme'
+import { C, RADIUS, Z } from '../theme'
 import CosmicBackground from '../../components/CosmicBackground'
 import TopStickyControls from '../../components/TopStickyControls'
 import { PERSON_RELATION_KEYS_FULL, PET_TYPE_KEYS } from '../../constants/relations'
@@ -906,7 +906,7 @@ const styles = StyleSheet.create({
   snackbar: {
     position: 'absolute', bottom: 32, left: 24, right: 24,
     backgroundColor: 'rgba(239,68,68,0.92)', borderRadius: 12,
-    paddingVertical: 14, paddingHorizontal: 18, zIndex: 999,
+    paddingVertical: 14, paddingHorizontal: 18, zIndex: Z.SNACKBAR,
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 10,
   },

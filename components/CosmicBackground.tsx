@@ -7,6 +7,7 @@ import React from 'react'
 import { View, StyleSheet, Dimensions, Animated, Platform } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import ShootingMeteor from './ShootingMeteor'
+import { Z } from '../screens/theme'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -156,7 +157,7 @@ export default function CosmicBackground({
 const styles = StyleSheet.create({
   backgroundRoot: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: -100,
+    zIndex: Z.BEHIND,
   },
   orbContainer: {
     ...StyleSheet.absoluteFillObject,

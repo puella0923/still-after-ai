@@ -22,7 +22,7 @@ import { useAuth } from '../../context/AuthContext'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../../services/supabase'
 import { deletePersona, Persona } from '../../services/personaService'
-import { C, RADIUS } from '../theme'
+import { C, RADIUS, Z } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
 import CosmicBackground from '../../components/CosmicBackground'
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
   menuDotBtn: { padding: 4 },
   menuDotText: { fontSize: 18, color: 'rgba(196, 181, 253, 0.6)', letterSpacing: 1 },
   dropdown: {
-    position: 'absolute', top: 28, right: 0, zIndex: 100,
+    position: 'absolute', top: 28, right: 0, zIndex: Z.DROPDOWN,
     backgroundColor: '#1e1030', borderRadius: 10, overflow: 'hidden',
     borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.2)',
     minWidth: 100,

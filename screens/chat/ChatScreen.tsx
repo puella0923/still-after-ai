@@ -36,6 +36,7 @@ import {
   MAX_HISTORY_LENGTH,
   FREE_MESSAGE_LIMIT,
 } from '../../constants/chat'
+import { analytics } from '../../utils/analytics'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -257,7 +258,10 @@ ${p.user_nickname ? `- 사용자를 '${p.user_nickname}'(이)라고 불러주세
   useFocusEffect(useCallback(() => {
     if (!personaId || loading) return
     getPersonaById(personaId).then(p => {
-      if (p) setPersona(p)
+      if (p) {
+        setPersona(p)
+        analytics.chatEnter({ persona_id: personaId, stage: p.emotional_stage ?? undefined })
+      }
     })
   }, [personaId, loading]))
 

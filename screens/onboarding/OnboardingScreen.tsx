@@ -17,7 +17,9 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
-import { C, RADIUS } from '../theme'
+import LanguageToggle from '../../components/LanguageToggle'
+import { C, RADIUS, Z } from '../theme'
+import { analytics } from '../../utils/analytics'
 
 const { width } = Dimensions.get('window')
 
@@ -27,7 +29,7 @@ type Props = {
 
 export default function OnboardingScreen({ navigation }: Props) {
   const { session } = useAuth()
-  const { t, language, toggleLanguage } = useLanguage()
+  const { t } = useLanguage()
   const o = t.onboarding
   const { width: screenWidth, height: screenHeight } = useWindowDimensions()
   const isNarrow = screenWidth <= 380
@@ -93,15 +95,7 @@ export default function OnboardingScreen({ navigation }: Props) {
 
         {/* ── 언어 토글 ── */}
         <View style={styles.langToggleRow}>
-          <TouchableOpacity
-            onPress={toggleLanguage}
-            activeOpacity={0.75}
-            style={styles.langToggle}
-          >
-            <Text style={[styles.langOption, language === 'ko' && styles.langOptionActive]}>{t.common.langKo}</Text>
-            <Text style={styles.langDivider}>/</Text>
-            <Text style={[styles.langOption, language === 'en' && styles.langOptionActive]}>{t.common.langEn}</Text>
-          </TouchableOpacity>
+          <LanguageToggle />
         </View>
 
         {/* ════ ① HERO ════ */}
@@ -128,7 +122,7 @@ export default function OnboardingScreen({ navigation }: Props) {
 
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={() => navigation.replace('Login')}
+            onPress={() => { analytics.serviceStart(); navigation.replace('Login') }}
             activeOpacity={0.85}
           >
             <LinearGradient
@@ -444,11 +438,10 @@ export default function OnboardingScreen({ navigation }: Props) {
             style={[styles.ctaCard, isNarrow && styles.ctaCardNarrow]}
           >
             <Text style={[styles.ctaTitle, isNarrow && styles.ctaTitleNarrow]}>{o.ctaTitle}</Text>
-            <Text style={[styles.ctaDesc, isNarrow && styles.ctaDescNarrow]}>{o.ctaDesc}</Text>
 
             <TouchableOpacity
               style={styles.ctaButton}
-              onPress={() => navigation.replace('Login')}
+              onPress={() => { analytics.serviceStart(); navigation.replace('Login') }}
               activeOpacity={0.85}
             >
               <LinearGradient
@@ -503,7 +496,7 @@ export default function OnboardingScreen({ navigation }: Props) {
         pointerEvents={showStickyCta ? 'auto' : 'none'}
       >
         <TouchableOpacity
-          onPress={() => navigation.replace('Login')}
+          onPress={() => { analytics.serviceStart(); navigation.replace('Login') }}
           activeOpacity={0.85}
           style={styles.stickyBtn}
         >
@@ -546,7 +539,7 @@ const styles = StyleSheet.create({
 
   // Sticky CTA footer — 첫 뷰포트 스크롤 이후 노출
   stickyFooter: {
-    position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 200,
+    position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: Z.TOAST,
     paddingHorizontal: 20, paddingVertical: 12, paddingBottom: 20,
     backgroundColor: 'rgba(10, 1, 24, 0.88)',
     borderTopWidth: 1, borderTopColor: 'rgba(167, 139, 250, 0.15)',
@@ -570,15 +563,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 8,
   },
-  langToggle: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
-  },
-  langOption: { fontSize: 12, color: 'rgba(255,255,255,0.35)', fontWeight: '500' },
-  langOptionActive: { color: '#fff', fontWeight: '700' },
-  langDivider: { fontSize: 11, color: 'rgba(255,255,255,0.2)' },
   contentWrapper: { width: '100%', maxWidth: 680 },
 
   // 배경
@@ -886,19 +870,11 @@ const styles = StyleSheet.create({
   ctaTitle: {
     fontSize: 30, fontWeight: '300', color: C.TEXT,
     textAlign: 'center', lineHeight: 40,
-    marginBottom: 14, letterSpacing: -0.5,
+    marginBottom: 32, letterSpacing: -0.5,
   },
   ctaTitleNarrow: {
     fontSize: 24,
     lineHeight: 32,
-  },
-  ctaDesc: {
-    fontSize: 16, color: 'rgba(196, 181, 253, 0.7)',
-    textAlign: 'center', marginBottom: 36,
-  },
-  ctaDescNarrow: {
-    fontSize: 14,
-    lineHeight: 22,
     marginBottom: 28,
   },
   ctaButton: { borderRadius: 14, overflow: 'hidden', marginBottom: 16 },

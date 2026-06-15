@@ -168,7 +168,9 @@ export default function AccountProfileScreen({ navigation }: Props) {
           <Text style={[styles.backText, Platform.OS === 'web' ? { whiteSpace: 'nowrap' } as any : {}]}>{t.common.back}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t.account.header}</Text>
-        <LanguageToggle style={styles.langToggle} />
+        <View style={styles.headerSideRight}>
+          <LanguageToggle />
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -428,7 +430,7 @@ const styles = StyleSheet.create({
   backBtn: { height: 36, minWidth: 60, alignItems: 'center', justifyContent: 'center' },
   backText: { fontSize: 15, color: 'rgba(255,255,255,0.5)' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '600', color: '#fff' },
-  langToggle: { minWidth: 100, alignItems: 'flex-end' },
+  headerSideRight: { minWidth: 60, alignItems: 'flex-end', justifyContent: 'center' },
 
   content: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 20 },
 

@@ -72,6 +72,22 @@ export const RADIUS = {
   FULL: 999,
 }
 
+/**
+ * Z-index 레이어 체계
+ * 모든 z-index는 이 상수를 사용해 일관성 유지
+ */
+export const Z = {
+  BEHIND: -1,    // 배경 뒤
+  BASE: 0,       // 기본 콘텐츠
+  CARD: 10,      // 카드 / 글래스 패널
+  HEADER: 20,    // 스티키 헤더 & 언어 토글
+  DROPDOWN: 30,  // 드롭다운 / 컨텍스트 메뉴
+  SNACKBAR: 40,  // 스낵바 / 인라인 알림
+  MODAL: 50,     // 모달 / 바텀시트 / 드로어
+  OVERLAY: 80,   // 반투명 오버레이 dim
+  TOAST: 120,    // 토스트 / 스티키 CTA
+}
+
 export const SHADOW = {
   SM: {
     shadowColor: '#7C3AED',

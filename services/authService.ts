@@ -8,6 +8,17 @@ import * as WebBrowser from 'expo-web-browser'
 import { Platform } from 'react-native'
 import type { Session } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured } from './supabase'
+import { isInAppBrowser } from '../utils/inAppBrowser'
+
+export type AuthResult = {
+  success: boolean
+  error?: string
+  code?: 'in_app_browser'
+  /** @deprecated use code === 'in_app_browser' */
+  isInAppBrowserError?: boolean
+}
+
+export { isInAppBrowser } from '../utils/inAppBrowser'
 
 export function connectionErrorMessage(lang = 'ko'): string {
   return lang === 'en'
@@ -383,10 +394,22 @@ export async function updatePassword(
 
 // ─── 구글 OAuth ───────────────────────────
 
-export async function signInWithGoogle(lang = 'ko'): Promise<{ success: boolean; error?: string }> {
+export async function signInWithGoogle(lang = 'ko'): Promise<AuthResult> {
   if (!isSupabaseConfigured) {
     return { success: false, error: connectionErrorMessage(lang) }
   }
+
+  if (isInAppBrowser()) {
+    return {
+      success: false,
+      code: 'in_app_browser',
+      isInAppBrowserError: true,
+      error: lang === 'en'
+        ? 'Google sign-in is not supported in this in-app browser. Please open in Safari or Chrome.'
+        : 'Google 로그인은 이 앱 내 브라우저에서 지원되지 않습니다.\nSafari 또는 Chrome에서 열어주세요.',
+    }
+  }
+
   try {
     const redirectUrl = getOAuthRedirectUrl()
     const isWeb = Platform.OS === 'web'

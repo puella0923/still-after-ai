@@ -19,7 +19,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { getPersonas, getArchivedPersonas, deletePersona, Persona } from '../../services/personaService'
 import { supabase } from '../../services/supabase'
-import { C, RADIUS } from '../theme'
+import { C, RADIUS, Z } from '../theme'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
 import CosmicBackground from '../../components/CosmicBackground'
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 11, color: 'rgba(196, 181, 253, 0.5)', marginTop: 4 },
 
   // ⋯ Menu
-  menuWrap: { position: 'absolute', top: 12, right: 12, zIndex: 10 },
+  menuWrap: { position: 'absolute', top: 12, right: 12, zIndex: Z.DROPDOWN },
   menuBtn: {
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',

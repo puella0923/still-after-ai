@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react'
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, StyleProp, View } from 'react-native'
 import LanguageToggle from './LanguageToggle'
 import StepIndicator from './StepIndicator'
+import { Z } from '../screens/theme'
 
 export const TOP_STICKY_HEADER_HEIGHT = 51
 export const TOP_STICKY_WITH_STEP_HEIGHT = 96
@@ -66,7 +67,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: TOP_STICKY_HEADER_HEIGHT,
-    zIndex: 100,
+    zIndex: Z.HEADER,
     justifyContent: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
