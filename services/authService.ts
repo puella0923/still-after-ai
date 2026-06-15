@@ -1,24 +1,11 @@
 /**
- * 인증 서비스 — 이메일 + OAuth (카카오/구글)
- * Supabase Auth 기반
+ * 인증 서비스 — 이메일 (Supabase Auth)
  */
 
 import * as Linking from 'expo-linking'
-import * as WebBrowser from 'expo-web-browser'
 import { Platform } from 'react-native'
 import type { Session } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured } from './supabase'
-import { isInAppBrowser } from '../utils/inAppBrowser'
-
-export type AuthResult = {
-  success: boolean
-  error?: string
-  code?: 'in_app_browser'
-  /** @deprecated use code === 'in_app_browser' */
-  isInAppBrowserError?: boolean
-}
-
-export { isInAppBrowser } from '../utils/inAppBrowser'
 
 export function connectionErrorMessage(lang = 'ko'): string {
   return lang === 'en'
@@ -389,116 +376,6 @@ export async function updatePassword(
     return { success: true }
   } catch {
     return { success: false, error: connectionErrorMessage(lang) }
-  }
-}
-
-// ─── 구글 OAuth ───────────────────────────
-
-export async function signInWithGoogle(lang = 'ko'): Promise<AuthResult> {
-  if (!isSupabaseConfigured) {
-    return { success: false, error: connectionErrorMessage(lang) }
-  }
-
-  if (isInAppBrowser()) {
-    return {
-      success: false,
-      code: 'in_app_browser',
-      isInAppBrowserError: true,
-      error: lang === 'en'
-        ? 'Google sign-in is not supported in this in-app browser. Please open in Safari or Chrome.'
-        : 'Google 로그인은 이 앱 내 브라우저에서 지원되지 않습니다.\nSafari 또는 Chrome에서 열어주세요.',
-    }
-  }
-
-  try {
-    const redirectUrl = getOAuthRedirectUrl()
-    const isWeb = Platform.OS === 'web'
-
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        ...(isWeb ? {} : { skipBrowserRedirect: true }),
-      },
-    })
-
-    if (error) return { success: false, error: error.message }
-    if (!data.url) {
-      return {
-        success: false,
-        error: lang === 'en'
-          ? 'Failed to get Google login URL.'
-          : '구글 로그인 URL을 가져올 수 없습니다.',
-      }
-    }
-
-    if (isWeb) {
-      if (typeof window !== 'undefined' && window.location.href !== data.url) {
-        window.location.assign(data.url)
-      }
-      return { success: true }
-    }
-
-    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl)
-
-    if (result.type === 'success' && result.url) {
-      await handleOAuthCallback(result.url)
-      return { success: true }
-    }
-
-    if (result.type === 'cancel' || result.type === 'dismiss') {
-      return {
-        success: false,
-        error: lang === 'en' ? 'Login was cancelled.' : '로그인이 취소되었습니다.',
-      }
-    }
-
-    return {
-      success: false,
-      error: lang === 'en' ? 'Google login failed.' : '구글 로그인에 실패했습니다.',
-    }
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : ''
-    if (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed to fetch')) {
-      return { success: false, error: connectionErrorMessage(lang) }
-    }
-    return {
-      success: false,
-      error: lang === 'en'
-        ? 'An error occurred during Google login.'
-        : '구글 로그인 중 오류가 발생했습니다.',
-    }
-  }
-}
-
-// ─── OAuth 콜백 처리 (공통) ───────────────────────────
-
-async function handleOAuthCallback(url: string): Promise<void> {
-  try {
-    // Fragment (#) 파싱
-    const hashPart = url.split('#')[1] ?? ''
-    const hashParams = new URLSearchParams(hashPart)
-    const accessToken = hashParams.get('access_token')
-    const refreshToken = hashParams.get('refresh_token')
-
-    if (accessToken && refreshToken) {
-      await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      })
-      return
-    }
-
-    // Query string (?) 파싱 — 일부 환경
-    const queryPart = url.split('?')[1]?.split('#')[0] ?? ''
-    const queryParams = new URLSearchParams(queryPart)
-    const code = queryParams.get('code')
-
-    if (code) {
-      await supabase.auth.exchangeCodeForSession(code)
-    }
-  } catch (e) {
-    console.error('[Auth] OAuth callback error:', e)
   }
 }
 

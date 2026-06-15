@@ -156,15 +156,7 @@ const ko = {
     noCreditCard: '💳 카드 등록 없이 바로 시작할 수 있어요',
     freeTrial: '무료로 이용할 수 있어요',
     disclaimer: 'Still After는 실제 인물을 복원하지 않아요. 감정이 자연스럽게 자리 잡을 수 있도록 조심스럽게 함께하는 공간이에요.',
-    googleBtn: '구글로 시작하기',
     emailBtn: '이메일로 시작하기',
-    googleError: '구글 로그인에 실패했습니다.',
-    inAppBrowserTitle: '외부 브라우저에서 열어주세요',
-    inAppBrowserDesc: 'Google 로그인은 이 앱 내 브라우저에서 지원되지 않습니다.\nSafari 또는 Chrome에서 열어주세요.',
-    inAppBrowserHint: '우측 상단 ··· 메뉴 → "브라우저에서 열기" 또는 "Safari에서 열기"',
-    inAppBrowserOpen: '링크 복사하기',
-    inAppBrowserCopied: '링크가 복사되었어요',
-    inAppBrowserDismiss: '이메일로 계속하기',
   },
 
   // ── Email Auth ──

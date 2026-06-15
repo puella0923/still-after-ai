@@ -58,8 +58,8 @@ async function checkSupabaseOAuth() {
     headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
   })
   const cfg = await res.json()
-  if (cfg.external_google_enabled) pass('oauth-google-enabled', 'Supabase Google OAuth 활성화')
-  else fail('oauth-google-enabled', 'Google OAuth 비활성화')
+  if (cfg.external_google_enabled) skip('oauth-google-enabled', '앱에서 Google 로그인 미사용 — Supabase 설정은 유지될 수 있음')
+  else skip('oauth-google-enabled', 'Google OAuth 비활성화')
   if (cfg.external_kakao_enabled) pass('oauth-kakao-enabled', 'Supabase Kakao OAuth 활성화')
   else fail('oauth-kakao-enabled', 'Kakao OAuth 비활성화')
 }
@@ -84,28 +84,12 @@ async function loginBrowser(page, email, password) {
 async function testGoogleOAuthInit(page) {
   await page.goto(`${BASE}/Login`, { waitUntil: 'networkidle', timeout: 30000 })
   const googleBtn = page.getByText(/Google|구글/i).first()
-  if (!(await googleBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
-    fail('oauth-google-ui', '구글 로그인 버튼 없음')
+  if (await googleBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+    fail('oauth-google-ui', '구글 로그인 버튼이仍 표시됨')
     return
   }
-  pass('oauth-google-ui', '구글 로그인 버튼 표시')
-
-  // OAuth URL 생성 확인 (리다이렉트 전 URL 캡처)
-  const [popup] = await Promise.all([
-    page.waitForEvent('popup', { timeout: 8000 }).catch(() => null),
-    page.waitForURL(/accounts\.google\.com|supabase\.co\/auth/, { timeout: 8000 }).catch(() => null),
-    googleBtn.click(),
-  ])
-
-  await page.waitForTimeout(2000)
-  const url = popup?.url() ?? page.url()
-  if (/accounts\.google\.com|provider=google|supabase\.co\/auth/.test(url)) {
-    pass('oauth-google-redirect', url.slice(0, 80) + '…')
-    if (popup) await popup.close().catch(() => {})
-  } else {
-    fail('oauth-google-redirect', `예상 외 URL: ${url}`)
-  }
-  await page.goto(`${BASE}/Login`, { waitUntil: 'networkidle' }).catch(() => {})
+  skip('oauth-google-ui', '이메일 로그인만 제공 — Google 버튼 제거됨')
+  skip('oauth-google-redirect', 'Google OAuth 미사용')
 }
 
 async function testKakaoLoginUI(page) {

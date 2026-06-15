@@ -32,15 +32,15 @@ async function main() {
   const browser = await chromium.launch({ headless: true })
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } })
 
-  // 1. Login — Google/Email 표시, Kakao 없음
+  // 1. Login — Email만 표시, Google/Kakao 없음
   await page.goto(`${BASE}/Login`, { waitUntil: 'networkidle', timeout: 30000 })
   const googleBtn = page.getByText(/Google|구글/i).first()
   const emailBtn = page.getByText(/이메일|Email/i).first()
   const kakaoBtn = page.getByText(/카카오로 시작|Continue with Kakao/i).first()
-  if (await googleBtn.isVisible({ timeout: 8000 }).catch(() => false)) {
-    pass('Login Google 버튼')
+  if (await googleBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+    fail('Login Google 버튼 없음', '구글 버튼이仍 표시됨')
   } else {
-    fail('Login Google 버튼', '미표시')
+    pass('Login Google 버튼 없음')
   }
   if (await emailBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
     pass('Login Email 버튼')

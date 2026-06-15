@@ -158,15 +158,7 @@ const en: Translations = {
     noCreditCard: '💳 No credit card required to start',
     freeTrial: 'Free to use',
     disclaimer: "Still After doesn't restore real people. It's a careful space for your emotions to naturally find their place.",
-    googleBtn: 'Continue with Google',
     emailBtn: 'Continue with Email',
-    googleError: 'Google sign-in failed.',
-    inAppBrowserTitle: 'Open in your browser',
-    inAppBrowserDesc: 'Google sign-in is not supported in this in-app browser.\nPlease open in Safari or Chrome.',
-    inAppBrowserHint: 'Tap ··· → "Open in Browser" or "Open in Safari"',
-    inAppBrowserOpen: 'Copy link',
-    inAppBrowserCopied: 'Link copied',
-    inAppBrowserDismiss: 'Continue with email',
   },
 
   // ── Email Auth ──

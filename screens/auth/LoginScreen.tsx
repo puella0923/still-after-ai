@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef } from 'react'
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Animated,
-  Alert,
   Platform,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -14,10 +13,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/RootNavigator'
 import { useAuth } from '../../context/AuthContext'
 import { C, RADIUS, Z } from '../theme'
-import { signInWithGoogle, isInAppBrowser } from '../../services/authService'
 import { useLanguage } from '../../context/LanguageContext'
 import LanguageToggle from '../../components/LanguageToggle'
-import InAppBrowserBanner from '../../components/InAppBrowserBanner'
 import CosmicBackground from '../../components/CosmicBackground'
 
 type Props = {
@@ -26,37 +23,11 @@ type Props = {
 
 export default function LoginScreen({ navigation }: Props) {
   const { session } = useAuth()
-  const { t, language } = useLanguage()
+  const { t } = useLanguage()
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(30)).current
   const iconScale = useRef(new Animated.Value(0)).current
-  const [inAppBrowser, setInAppBrowser] = useState(false)
-  const [showInAppBanner, setShowInAppBanner] = useState(false)
 
-  useEffect(() => {
-    const detected = isInAppBrowser()
-    setInAppBrowser(detected)
-    if (detected) setShowInAppBanner(true)
-  }, [])
-
-  const handleGoogleSignIn = async (): Promise<void> => {
-    if (inAppBrowser) {
-      setShowInAppBanner(true)
-      return
-    }
-    const result = await signInWithGoogle(language)
-    if (!result.success) {
-      if (result.code === 'in_app_browser' || result.isInAppBrowserError) {
-        setShowInAppBanner(true)
-        return
-      }
-      Alert.alert(t.login.googleBtn, result.error ?? t.login.googleError)
-    }
-  }
-
-  // 웹 전용: 마운트 시 브라우저 history에 Onboarding(/) 엔트리 주입
-  // React Navigation이 Onboarding→Login 이동 시 replaceState를 사용해 / 엔트리가 사라짐
-  // → pushState로 / 복원 후 /Login 재등록하면 브라우저 back = Onboarding ✓
   useEffect(() => {
     if (typeof window === 'undefined') return
     const currentState = window.history.state
@@ -69,7 +40,6 @@ export default function LoginScreen({ navigation }: Props) {
       navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
     }
   }, [session, navigation])
-
 
   useEffect(() => {
     Animated.parallel([
@@ -110,18 +80,6 @@ export default function LoginScreen({ navigation }: Props) {
                 <LanguageToggle />
               </View>
 
-              {inAppBrowser && (
-                <TouchableOpacity
-                  style={styles.inAppWarning}
-                  onPress={() => setShowInAppBanner(true)}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.inAppWarningText}>{t.login.inAppBrowserDesc}</Text>
-                  <Text style={styles.inAppWarningLink}>{t.login.inAppBrowserOpen} →</Text>
-                </TouchableOpacity>
-              )}
-
-              {/* Header */}
               <View style={styles.header}>
                 <Animated.View
                   style={[
@@ -139,19 +97,6 @@ export default function LoginScreen({ navigation }: Props) {
                 <Text style={styles.title}>Still After</Text>
               </View>
 
-              {/* Google login button */}
-              <TouchableOpacity
-                style={[styles.googleButton, inAppBrowser && styles.googleButtonDisabled]}
-                onPress={handleGoogleSignIn}
-                activeOpacity={0.85}
-              >
-                <View style={styles.googleButtonInner}>
-                  <Text style={styles.googleButtonIcon}>G</Text>
-                  <Text style={styles.googleButtonText}>{t.login.googleBtn}</Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Email login button */}
               <TouchableOpacity
                 style={styles.emailButton}
                 onPress={() => navigation.navigate('EmailAuth')}
@@ -168,7 +113,6 @@ export default function LoginScreen({ navigation }: Props) {
                 </LinearGradient>
               </TouchableOpacity>
 
-              {/* Free trial notice */}
               <View style={styles.infoBox}>
                 <Text style={styles.infoText}>
                   {t.login.noCreditCard}{'\n'}
@@ -176,12 +120,10 @@ export default function LoginScreen({ navigation }: Props) {
                 </Text>
               </View>
 
-              {/* AI Notice */}
               <Text style={styles.aiNotice}>
                 {t.login.disclaimer}
               </Text>
 
-              {/* Back */}
               <TouchableOpacity
                 onPress={() => {
                   if (navigation.canGoBack()) navigation.goBack()
@@ -195,11 +137,6 @@ export default function LoginScreen({ navigation }: Props) {
           </Animated.View>
         </View>
       </SafeAreaView>
-
-      <InAppBrowserBanner
-        visible={showInAppBanner}
-        onClose={() => setShowInAppBanner(false)}
-      />
     </View>
   )
 }
@@ -214,8 +151,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 40,
   },
-
-  // Card
   card: {
     width: '100%',
     maxWidth: 420,
@@ -223,7 +158,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
     zIndex: Z.CARD,
-    // Shadow
     shadowColor: '#7C3AED',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
@@ -244,27 +178,6 @@ const styles = StyleSheet.create({
     marginRight: -8,
     marginBottom: 8,
   },
-  inAppWarning: {
-    backgroundColor: 'rgba(251, 191, 36, 0.12)',
-    borderRadius: RADIUS.MD,
-    padding: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(251, 191, 36, 0.35)',
-  },
-  inAppWarningText: {
-    fontSize: 12,
-    color: 'rgba(253, 230, 138, 0.9)',
-    lineHeight: 18,
-    marginBottom: 4,
-  },
-  inAppWarningLink: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FDE68A',
-  },
-
-  // Header
   header: {
     alignItems: 'center',
     marginBottom: 32,
@@ -290,50 +203,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     letterSpacing: 1,
   },
-  tagline: {
-    fontSize: 14,
-    color: 'rgba(196, 181, 253, 0.8)',
-  },
-
-  // Google button
-  googleButton: {
-    borderRadius: RADIUS.MD,
-    overflow: 'hidden',
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.4)',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  googleButtonDisabled: {
-    opacity: 0.55,
-  },
-  googleButtonInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    gap: 8,
-  },
-  googleButtonIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#FFFFFF',
-    color: '#111827',
-    textAlign: 'center',
-    lineHeight: 22,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  googleButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
-  },
-
-  // Email button
   emailButton: {
     borderRadius: RADIUS.MD,
     overflow: 'hidden',
@@ -360,31 +229,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: 0.3,
   },
-
-  // Feature mini cards
-  featureRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
-  featureCard: {
-    flex: 1,
-    backgroundColor: 'rgba(88, 28, 135, 0.25)',
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.15)',
-  },
-  featureEmoji: { fontSize: 20, marginBottom: 6 },
-  featureLabel: {
-    fontSize: 10,
-    color: 'rgba(196, 181, 253, 0.8)',
-    textAlign: 'center',
-    lineHeight: 15,
-  },
-
-  // Info box
   infoBox: {
     backgroundColor: 'rgba(88, 28, 135, 0.3)',
     borderRadius: RADIUS.MD,
@@ -404,8 +248,6 @@ const styles = StyleSheet.create({
     color: 'rgba(196, 181, 253, 1)',
     fontWeight: '600',
   },
-
-  // AI notice
   aiNotice: {
     fontSize: 11,
     color: C.TEXT_MUTED,
@@ -413,27 +255,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: 14,
   },
-
-  // Footer links
-  footerLinksRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  footerLink: {
-    fontSize: 11,
-    color: 'rgba(167, 139, 250, 0.6)',
-    textDecorationLine: 'underline',
-    paddingVertical: 6,
-    paddingHorizontal: 2,
-  },
-  footerDot: {
-    fontSize: 11,
-    color: 'rgba(167, 139, 250, 0.3)',
-  },
-
-  // Back
   backButton: { alignItems: 'center', paddingVertical: 4 },
   backText: {
     fontSize: 14,
